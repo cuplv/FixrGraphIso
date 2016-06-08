@@ -22,5 +22,7 @@ add_executable(fixrgraphiso
 )
 
 target_link_libraries(fixrgraphiso
+  ${FIXR_GRAPH_ISO_LINK_LIBS}
   ${PROTOBUF_LIBRARY}
+  ${Z3_LIBRARIES}
 )

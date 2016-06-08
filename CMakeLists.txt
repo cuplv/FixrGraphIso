@@ -15,10 +15,18 @@ endif()
 # check for protobuf
 include(FindProtobuf)
 if (NOT PROTOBUF_FOUND)
-  message(FATAL_ERROR "ERROR: protobuf no found")
+  message(FATAL_ERROR "ERROR: protobuf not found")
 endif(NOT PROTOBUF_FOUND)
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
+
+# check for Z3
+include(FindZ3)
+if (NOT Z3_FOUND)
+  message(FATAL_ERROR "ERROR: z3 not found")
+endif(NOT Z3_FOUND)
+include_directories(${Z3_INCLUDEDIR})
+
 
 #############################################################################
 # external dependencies
@@ -31,8 +39,6 @@ set(FIXR_GRAPH_EXTRACTOR_DIRECTORY_PROTOBUF "${FIXR_GRAPH_EXTRACTOR_DIRECTORY}/s
 
 message("Setting ${PROTOBUF_IMPORT_DIRS} to: ${FIXR_GRAPH_EXTRACTOR_DIRECTORY_PROTOBUF}")
 set(PROTOBUF_IMPORT_DIRS "${FIXR_GRAPH_EXTRACTOR_DIRECTORY_PROTOBUF}")
-
-
 
 #############################################################################
 include_directories(${PROJECT_SOURCE_DIR}/src)
