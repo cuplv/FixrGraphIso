@@ -88,6 +88,7 @@ typedef std::vector<Edge> edges_t;
 class Acdfg {
 public:
   Acdfg();
+  ~Acdfg();
 
   void add_node(Node node);
   void add_edge(Edge edge);
