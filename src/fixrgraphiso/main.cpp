@@ -76,4 +76,7 @@ void clean(acdfg_protobuf::Acdfg* proto_acdfg_1,
   if (NULL != proto_acdfg_2) delete proto_acdfg_2;
   if (NULL != acdfg_1) delete acdfg_1;
   if (NULL != acdfg_2) delete acdfg_2;
+
+  // Optional:  Delete all global objects allocated by libprotobuf.
+  google::protobuf::ShutdownProtobufLibrary();
 }

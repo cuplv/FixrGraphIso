@@ -90,7 +90,7 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
     const acdfg_protobuf::Acdfg_DefEdge& proto_edge =
       proto_acdfg->def_edge(j);
 
-    addEdge(acdfg, idToNodeMap,proto_edge);
+    addEdge(acdfg, idToNodeMap, proto_edge);
   }
 
   for (int j = 0; j < proto_acdfg->use_edge_size(); j++) {

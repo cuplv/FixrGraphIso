@@ -19,12 +19,13 @@ using std::string;
 class Node {
 public:
   Node() {};
+  Node(const Node& node);
   Node(long id);
   long get_id() const;
 
   friend std::ostream& operator<<(std::ostream&, const Node&);
 
-private:
+protected:
   long id_;
 };
 
@@ -32,12 +33,13 @@ private:
 class DataNode : public Node {
 public:
   DataNode(long id, const string& name, const string& data_type);
+  DataNode(const DataNode& node);
   const string& get_name() const;
   const string& get_data_type() const;
 
   friend std::ostream& operator<<(std::ostream&, const DataNode&);
 
-private:
+protected:
   string name_;
   string data_type_;
 };
@@ -55,6 +57,7 @@ public:
   MethodNode(long id, const string& name,
              const DataNode* receiver,
              std::vector<DataNode*> arguments);
+  MethodNode(const MethodNode& node);
 
   const string& get_name() const;
   const DataNode* get_receiver() const;
@@ -62,7 +65,7 @@ public:
 
   friend std::ostream& operator<<(std::ostream&, const MethodNode&);
 
-private:
+protected:
   // Name of the method
   string name_;
   // Id of the receiver of the method
@@ -75,13 +78,14 @@ private:
 class Edge {
 public:
   Edge(long id, Node* src, Node* dst) {id_ = id; src_ = src; dst_ = dst;};
+  Edge(const Edge& edge);
   const long get_id() const;
   const Node* get_src() const;
   const Node* get_dst() const;
 
   friend std::ostream& operator<<(std::ostream&, const Edge&);
 
-private:
+protected:
   long id_;
   // Src node
   Node* src_;
@@ -92,17 +96,19 @@ private:
 class DefEdge : public Edge {
 public:
   DefEdge(long id, Node* src, Node* dst) : Edge(id, src, dst) {};
+  DefEdge(const DefEdge& edge);
 };
 class UseEdge : public Edge {};
 class ControlEdge : public Edge {};
 
-typedef std::vector<Node> nodes_t;
-typedef std::vector<Edge> edges_t;
+typedef std::vector<Node*> nodes_t;
+typedef std::vector<Edge*> edges_t;
 
 class Acdfg {
 public:
-  Node* add_node(Node node);
-  Edge* add_edge(Edge edge);
+  ~Acdfg();
+  Node* add_node(const Node& node);
+  Edge* add_edge(const Edge& edge);
 
   nodes_t::const_iterator begin_nodes();
   nodes_t::const_iterator end_nodes();
