@@ -10,7 +10,7 @@
 
 #include <vector>
 #include <string>
-
+#include <ostream>
 
 namespace fixrgraphiso {
 using std::string;
@@ -20,7 +20,9 @@ class Node {
 public:
   Node() {};
   Node(long id);
-  long get_id();
+  long get_id() const;
+
+  friend std::ostream& operator<<(std::ostream&, const Node&);
 
 private:
   long id_;
@@ -30,8 +32,10 @@ private:
 class DataNode : public Node {
 public:
   DataNode(long id, const string& name, const string& data_type);
-  const string& get_name();
-  const string& get_data_type();
+  const string& get_name() const;
+  const string& get_data_type() const;
+
+  friend std::ostream& operator<<(std::ostream&, const DataNode&);
 
 private:
   string name_;
@@ -52,9 +56,11 @@ public:
              const DataNode* receiver,
              std::vector<DataNode*> arguments);
 
-  const string& get_name();
-  const DataNode* get_receiver();
-  const std::vector<DataNode*> get_arguments();
+  const string& get_name() const;
+  const DataNode* get_receiver() const;
+  const std::vector<DataNode*> get_arguments() const;
+
+  friend std::ostream& operator<<(std::ostream&, const MethodNode&);
 
 private:
   // Name of the method
@@ -69,6 +75,11 @@ private:
 class Edge {
 public:
   Edge(long id, Node* src, Node* dst) {id_ = id; src_ = src; dst_ = dst;};
+  const long get_id() const;
+  const Node* get_src() const;
+  const Node* get_dst() const;
+
+  friend std::ostream& operator<<(std::ostream&, const Edge&);
 
 private:
   long id_;
@@ -98,6 +109,8 @@ public:
 
   edges_t::const_iterator begin_edges();
   edges_t::const_iterator end_edges();
+
+  friend std::ostream& operator<<(std::ostream&, const Acdfg&);
 
 private:
   nodes_t nodes_;
