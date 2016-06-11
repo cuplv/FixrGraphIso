@@ -63,7 +63,7 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
     /* read to the receiver */
     DataNode* receiver = (DataNode*) lookup_node(idToNodeMap,
                                                  proto_node.invokee());
-    assert(NULL != receiver);
+    // assert(NULL != receiver);
 
     /* read the arguments */
     std::vector<DataNode*> arguments;
@@ -117,10 +117,10 @@ acdfg_protobuf::Acdfg* AcdfgSerializer::read_protobuf_acdfg(const char* file_nam
   std::fstream input_stream (file_name, std::ios::in | std::ios::binary);
   if (input_stream.is_open()) {
     if (acdfg->ParseFromIstream(&input_stream)) {
-      return NULL;
+      return acdfg;
     }
     else {
-      return acdfg;
+      return NULL;
     }
   }
   else {
@@ -148,6 +148,9 @@ template <typename T> void addEdge(Acdfg* acdfg,
 {
   Node* from = lookup_node(idToNodeMap, proto_edge.from());
   Node* to = lookup_node(idToNodeMap, proto_edge.to());
+  assert(NULL != from);
+  assert(NULL != to);
+
   DefEdge e = DefEdge(proto_edge.id(), from, to);
   acdfg->add_edge(e);
 }
