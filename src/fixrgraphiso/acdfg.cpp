@@ -74,14 +74,16 @@ const std::vector<DataNode*> MethodNode::get_arguments()
 // Implementation of the graph
 //------------------------------------------------------------------------------
 
-void Acdfg::add_node(Node node)
+Node* Acdfg::add_node(Node node)
 {
   nodes_.push_back(node);
+  return &nodes_.back();
 }
 
-void Acdfg::add_edge(Edge edge)
+Edge* Acdfg::add_edge(Edge edge)
 {
   edges_.push_back(edge);
+  return &edges_.back();
 }
 
 nodes_t::const_iterator Acdfg::begin_nodes()

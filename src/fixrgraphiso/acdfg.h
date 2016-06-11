@@ -78,7 +78,10 @@ private:
   Node* dst_;
 };
 
-class DefEdge : public Edge {};
+class DefEdge : public Edge {
+public:
+  DefEdge(long id, Node* src, Node* dst) : Edge(id, src, dst) {};
+};
 class UseEdge : public Edge {};
 class ControlEdge : public Edge {};
 
@@ -87,11 +90,8 @@ typedef std::vector<Edge> edges_t;
 
 class Acdfg {
 public:
-  Acdfg();
-  ~Acdfg();
-
-  void add_node(Node node);
-  void add_edge(Edge edge);
+  Node* add_node(Node node);
+  Edge* add_edge(Edge edge);
 
   nodes_t::const_iterator begin_nodes();
   nodes_t::const_iterator end_nodes();
