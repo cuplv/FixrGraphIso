@@ -16,8 +16,13 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${PROTOBUF_IMPORT_DIRS}/proto_acdfg.
 #MESSAGE("PROTO SOURCES: ${PROTO_SRCS}")
 #MESSAGE("PROTO HDRS: ${PROTO_HDRS}")
 
+# TODO: create a library for reuse
+
+
 add_executable(fixrgraphiso
   main.cpp
+  acdfg.cpp
+  serialization.cpp
   ${PROTO_SRCS}
 )
 
