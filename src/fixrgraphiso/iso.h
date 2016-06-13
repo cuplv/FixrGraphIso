@@ -21,6 +21,8 @@ public:
 
   // TODO: return an object that represent the isomorphism
   bool is_iso();
+  // TODO: return an object that represent the isomorphism
+  bool get_max_embedding();
 
 private:
   Acdfg& acdfg_a;

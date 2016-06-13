@@ -35,7 +35,43 @@ bool Iso::is_iso()
     solver.add(expr);
   }
 
-  return false;
+  {
+    z3::check_result res;
+    res = solver.check();
+    assert(res != z3::unknown);
+
+    return res == z3::sat;
+  }
+}
+
+bool Iso::get_max_embedding()
+{
+  z3::optimize opt(z3_context);
+
+  std::vector<z3::expr> nodes_iso;
+  std::vector<z3::expr> edges_iso;
+
+  // Get the conjuncts of the encodings
+  get_encoding(nodes_iso, edges_iso);
+
+  // assert the conjuncts
+  for (std::vector<z3::expr>::const_iterator it = nodes_iso.begin();
+       it != nodes_iso.end(); ++it) {
+    z3::expr expr = *it;
+    opt.add(expr, 1);
+  }
+  for (std::vector<z3::expr>::const_iterator it = edges_iso.begin();
+       it != edges_iso.end(); ++it) {
+    z3::expr expr = *it;
+    opt.add(expr, 1);
+  }
+
+  {
+    z3::check_result res = opt.check();
+    assert(res != z3::unknown);
+
+    return res == z3::sat;
+  }
 }
 
 void Iso::get_encoding(std::vector<z3::expr>& nodes_iso,
@@ -155,6 +191,9 @@ char* Iso::get_var_name(const char* prefix, long id1, long id2)
           prefix,
           id1_s.c_str(),
           id2_s.c_str());
+
+  // TODO: fill a map with the mapping - to retrieve the isomorphism
+  // relation afterwards
   return var_name;
 }
 
