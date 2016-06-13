@@ -213,5 +213,5 @@ std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
   return stream;
 }
 
-  
+
 } // namespace fixrgraphiso
