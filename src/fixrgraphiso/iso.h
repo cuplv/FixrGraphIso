@@ -13,11 +13,9 @@
 
 namespace fixrgraphiso {
 
-
-
-class Iso {
+class IsoSolver {
 public:
-  Iso(Acdfg& a, Acdfg& b) : acdfg_a(a), acdfg_b(b) {};
+  IsoSolver(Acdfg& a, Acdfg& b) : acdfg_a(a), acdfg_b(b) {};
 
   // TODO: return an object that represent the isomorphism
   bool is_iso();

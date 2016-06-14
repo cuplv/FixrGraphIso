@@ -14,7 +14,7 @@
 
 namespace fixrgraphiso {
 
-bool Iso::is_iso()
+bool IsoSolver::is_iso()
 {
   z3::solver solver(z3_context);
 
@@ -45,7 +45,7 @@ bool Iso::is_iso()
   }
 }
 
-bool Iso::get_max_embedding()
+bool IsoSolver::get_max_embedding()
 {
   z3::optimize opt(z3_context);
 
@@ -75,7 +75,7 @@ bool Iso::get_max_embedding()
   }
 }
 
-void Iso::get_encoding(std::vector<z3::expr>& nodes_iso,
+void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
                        std::vector<z3::expr>& edges_iso)
 {
   // 1. Declare encoding variables
@@ -135,7 +135,7 @@ void Iso::get_encoding(std::vector<z3::expr>& nodes_iso,
   }
 }
 
-z3::expr Iso::get_iso_var(const Node &n_a, const Node &n_b) {
+z3::expr IsoSolver::get_iso_var(const Node &n_a, const Node &n_b) {
   char* var_name = get_var_name("iso_node_",
                                 n_a.get_id(),
                                 n_b.get_id());
@@ -144,7 +144,7 @@ z3::expr Iso::get_iso_var(const Node &n_a, const Node &n_b) {
   return iso_var;
 }
 
-z3::expr Iso::get_iso_var(const Edge &e_a, const Edge &e_b)
+z3::expr IsoSolver::get_iso_var(const Edge &e_a, const Edge &e_b)
 {
   char* var_name = get_var_name("iso_edge_",
                                 e_a.get_id(),
@@ -154,7 +154,7 @@ z3::expr Iso::get_iso_var(const Edge &e_a, const Edge &e_b)
   return iso_var;
 }
 
-bool Iso::may_match(const Node& n_a, const Node& n_b)
+bool IsoSolver::may_match(const Node& n_a, const Node& n_b)
 {
   const std::type_info& t_a = typeid(n_a);
   const std::type_info& t_b = typeid(n_b);
@@ -162,7 +162,7 @@ bool Iso::may_match(const Node& n_a, const Node& n_b)
   return t_a == t_b;
 }
 
-bool Iso::may_match(const DataNode& n_a, const DataNode& n_b)
+bool IsoSolver::may_match(const DataNode& n_a, const DataNode& n_b)
 {
   const std::type_info& t_a = typeid(n_a);
   const std::type_info& t_b = typeid(n_b);
@@ -171,7 +171,7 @@ bool Iso::may_match(const DataNode& n_a, const DataNode& n_b)
     n_a.get_data_type() == n_b.get_data_type();
 }
 
-bool Iso::may_match(const MethodNode& n_a, const MethodNode& n_b)
+bool IsoSolver::may_match(const MethodNode& n_a, const MethodNode& n_b)
 {
   const std::type_info& t_a = typeid(n_a);
   const std::type_info& t_b = typeid(n_b);
@@ -181,7 +181,7 @@ bool Iso::may_match(const MethodNode& n_a, const MethodNode& n_b)
     n_a.get_arguments().size() == n_b.get_arguments().size();
 }
 
-bool Iso::may_match(const Edge& e_a, const Edge& e_b)
+bool IsoSolver::may_match(const Edge& e_a, const Edge& e_b)
 {
   const std::type_info& t_a = typeid(e_a);
   const std::type_info& t_b = typeid(e_b);
@@ -190,7 +190,7 @@ bool Iso::may_match(const Edge& e_a, const Edge& e_b)
 }
 
 
-z3::expr Iso::get_iso_eq(const Node& n_a, const Node& n_b)
+z3::expr IsoSolver::get_iso_eq(const Node& n_a, const Node& n_b)
 {
   /* nothing to match for instances of:
      - Node
@@ -200,7 +200,7 @@ z3::expr Iso::get_iso_eq(const Node& n_a, const Node& n_b)
   return z3_context.bool_val(true);
 }
 
-z3::expr Iso::get_iso_eq(const MethodNode& n_a, const MethodNode& n_b)
+z3::expr IsoSolver::get_iso_eq(const MethodNode& n_a, const MethodNode& n_b)
 {
   /* On a method node we have to match the receiver and all the
      arguments.
@@ -223,14 +223,14 @@ z3::expr Iso::get_iso_eq(const MethodNode& n_a, const MethodNode& n_b)
     match_args;
 }
 
-z3::expr Iso::get_iso_eq(const Edge& e_a, const Edge& e_b)
+z3::expr IsoSolver::get_iso_eq(const Edge& e_a, const Edge& e_b)
 {
   assert(false);
   return z3_context.bool_val(true);
 }
 
 
-char* Iso::get_var_name(const char* prefix, long id1, long id2)
+char* IsoSolver::get_var_name(const char* prefix, long id1, long id2)
 {
   char* var_name;
   string id1_s = get_str(id1);
@@ -249,7 +249,7 @@ char* Iso::get_var_name(const char* prefix, long id1, long id2)
   return var_name;
 }
 
-string Iso::get_str(long id)
+string IsoSolver::get_str(long id)
 {
   std::ostringstream ostr;
   ostr << id;
