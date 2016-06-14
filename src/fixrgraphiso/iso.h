@@ -31,11 +31,14 @@ private:
 
   void get_encoding(std::vector<z3::expr>& nodes_iso,
                     std::vector<z3::expr>& edges_iso);
-  z3::expr get_iso_var(Node &n_a, Node &n_b);
-  z3::expr get_iso_var(Edge &e_a,Edge &e_b);
+  z3::expr get_iso_var(const Node &n_a, const Node &n_b);
+  z3::expr get_iso_var(const Edge &e_a, const Edge &e_b);
   bool may_match(const Node& n_a, const Node& n_b);
+  bool may_match(const DataNode& n_a, const DataNode& n_b);
+  bool may_match(const MethodNode& n_a, const MethodNode& n_b);
   bool may_match(const Edge& e_a, const Edge& e_b);
   z3::expr get_iso_eq(const Node& n_a, const Node& n_b);
+  z3::expr get_iso_eq(const MethodNode& n_a, const MethodNode& n_b);
   z3::expr get_iso_eq(const Edge& e_a, const Edge& e_b);
   char* get_var_name(const char* prefix, long id1, long id2);
   string get_str(long id);
