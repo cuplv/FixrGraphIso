@@ -45,24 +45,32 @@ private:
 */
 class IsoSolver {
 public:
-  IsoSolver(Acdfg& a, Acdfg& b) : acdfg_a(a), acdfg_b(b) {};
+  IsoSolver(Acdfg& a, Acdfg& b) : acdfg_a(a), acdfg_b(b)
+  {
+    last_isomorphism = NULL;
+  };
+  ~IsoSolver();
 
   // TODO: return an object that represent the isomorphism
   bool is_iso();
   // TODO: return an object that represent the isomorphism
   bool get_max_embedding();
 
+  /* Get the last isomorphism */
+  Isomorphism& get_last_isomorphism();
+
 private:
   Acdfg& acdfg_a;
   Acdfg& acdfg_b;
   z3::context z3_context;
-  //  std::map<z3::expr, const nodePair> var2nodes;
   std::map<z3::expr, idPair> var2nodes;
   std::map<z3::expr, idPair> var2edges;
+  Isomorphism* last_isomorphism;
 
   Isomorphism* get_isomorphism(const z3::model model);
   void get_encoding(std::vector<z3::expr>& nodes_iso,
                     std::vector<z3::expr>& edges_iso);
+  void set_last_iso(Isomorphism* new_iso);
   z3::expr get_iso_var(const Node &n_a, const Node &n_b);
   z3::expr get_iso_var(const Edge &e_a, const Edge &e_b);
   bool may_match(const Node& n_a, const Node& n_b);

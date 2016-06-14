@@ -14,6 +14,13 @@
 
 namespace fixrgraphiso {
 
+IsoSolver::~IsoSolver()
+{
+  if (last_isomorphism != NULL) {
+    delete last_isomorphism;
+  }
+}
+
 bool IsoSolver::is_iso()
 {
   z3::solver solver(z3_context);
@@ -40,6 +47,11 @@ bool IsoSolver::is_iso()
     z3::check_result res;
     res = solver.check();
     assert(res != z3::unknown);
+
+    if (res == z3::sat) {
+      Isomorphism* iso = get_isomorphism(solver.get_model());
+      set_last_iso(iso);
+    }
 
     return res == z3::sat;
   }
@@ -71,12 +83,23 @@ bool IsoSolver::get_max_embedding()
     z3::check_result res = opt.check();
     assert(res != z3::unknown);
 
+    if (res == z3::sat) {
+      Isomorphism* iso = get_isomorphism(opt.get_model());
+      set_last_iso(iso);
+    }
+
     return res == z3::sat;
   }
 }
 
+Isomorphism& IsoSolver::get_last_isomorphism()
+{
+  assert(NULL != last_isomorphism);
+  return *last_isomorphism;
+}
+
 void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
-                       std::vector<z3::expr>& edges_iso)
+                             std::vector<z3::expr>& edges_iso)
 {
   // 1. Declare encoding variables
 
@@ -133,6 +156,14 @@ void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
       }
     }
   }
+}
+
+void IsoSolver::set_last_iso(Isomorphism* new_iso)
+{
+  if (last_isomorphism != NULL) {
+    delete last_isomorphism;
+  }
+  last_isomorphism = new_iso;
 }
 
 Isomorphism* IsoSolver::get_isomorphism(const z3::model model)
