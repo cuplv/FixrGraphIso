@@ -30,6 +30,8 @@ public:
   void add_node_map(const long id_a, const long id_b);
   void add_edge_map(const long id_a, const long id_b);
 
+  friend std::ostream& operator<<(std::ostream&, const Isomorphism&);
+
 private:
   Acdfg& acdfg_a;
   Acdfg& acdfg_b;

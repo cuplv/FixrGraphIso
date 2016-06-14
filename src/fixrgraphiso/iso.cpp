@@ -343,4 +343,25 @@ void Isomorphism::add_edge_map(const long id_a, const long id_b)
   edge_mapping[id_a] = id_b;
 }
 
+std::ostream& operator<<(std::ostream& stream, const Isomorphism& iso)
+{
+  stream << "Isomorphism relation\nNode embeddings: ";
+
+  for(std::map<long,long>::const_iterator it = iso.node_mapping.begin();
+      it != iso.node_mapping.end(); it++) {
+    if (it != iso.node_mapping.begin()) stream << ", ";
+    stream << "(" << it->first << "," << it->second << ")";
+  }
+
+  stream << "\nEdges embeddings: ";
+  for(std::map<long,long>::const_iterator it = iso.edge_mapping.begin();
+      it != iso.edge_mapping.end(); it++) {
+    if (it != iso.edge_mapping.begin()) stream << ", ";
+    stream << "(" << it->first << "," << it->second << ")";
+  }
+  stream << std::endl;
+
+  return stream;
+}
+
 } // End of namespace
