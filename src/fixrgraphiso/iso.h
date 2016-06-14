@@ -8,11 +8,41 @@
 #ifndef ISO_H_INCLUDED
 #define ISO_H_INCLUDED
 
+#include <string>
+#include <map>
+#include <vector>
+#include "z3++.h"
 #include "fixrgraphiso/acdfg.h"
-#include"z3++.h"
+
 
 namespace fixrgraphiso {
 
+typedef std::pair<long, long> idPair;
+
+/**
+   \brief Represent a (possibly partial) isomorphism between two
+   graphs.
+ */
+class Isomorphism {
+public:
+  Isomorphism(Acdfg& a, Acdfg& b) : acdfg_a(a), acdfg_b(b) {};
+
+  void add_node_map(const long id_a, const long id_b);
+  void add_edge_map(const long id_a, const long id_b);
+
+private:
+  Acdfg& acdfg_a;
+  Acdfg& acdfg_b;
+
+  /* Map from nodes of a to nodes of b */
+  std::map<long, long> node_mapping;
+  /* Map from edges of a to edges of b */
+  std::map<long, long> edge_mapping;
+};
+
+/**
+  \brief Implement the solver for approximate isomorphism.
+*/
 class IsoSolver {
 public:
   IsoSolver(Acdfg& a, Acdfg& b) : acdfg_a(a), acdfg_b(b) {};
@@ -26,7 +56,11 @@ private:
   Acdfg& acdfg_a;
   Acdfg& acdfg_b;
   z3::context z3_context;
+  //  std::map<z3::expr, const nodePair> var2nodes;
+  std::map<z3::expr, idPair> var2nodes;
+  std::map<z3::expr, idPair> var2edges;
 
+  Isomorphism* get_isomorphism(const z3::model model);
   void get_encoding(std::vector<z3::expr>& nodes_iso,
                     std::vector<z3::expr>& edges_iso);
   z3::expr get_iso_var(const Node &n_a, const Node &n_b);

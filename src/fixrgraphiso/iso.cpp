@@ -135,12 +135,56 @@ void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
   }
 }
 
+Isomorphism* IsoSolver::get_isomorphism(const z3::model model)
+{
+  /* iterates through the model
+     We are only interested in the constant of the model (there are no
+     other symbols)
+   */
+  Isomorphism* iso = new Isomorphism(acdfg_a, acdfg_b);
+  assert(model.num_consts() == model.size());
+  for (unsigned i = 0; i < model.num_consts(); i++) {
+    z3::func_decl v = model.get_const_decl(i);
+    z3::expr e = model.get_const_interp(v);
+
+    if (e == z3_context.bool_val(true)) {
+      // TODO: fix
+      std::map<z3::expr, idPair>::iterator node_iter = var2nodes.find(e);
+      if (var2nodes.end() != node_iter) {
+        /* mapping for nodes */
+        iso->add_node_map(((*node_iter).second).first,
+                          ((*node_iter).second).second);
+      }
+      else {
+        // TODO: fix
+        std::map<z3::expr, idPair>::iterator edge_iter = var2edges.find(e);
+        if (var2edges.end() != edge_iter) {
+          /* mapping for edges */
+          iso->add_edge_map(((*edge_iter).second).first,
+                            ((*edge_iter).second).second);
+        }
+        else {
+          /* it is never the case that we cannot find the pair
+             correspondent to a variable in the current encoding */
+          assert(false);
+        }
+      }
+    }
+  }
+
+  return iso;
+}
+
 z3::expr IsoSolver::get_iso_var(const Node &n_a, const Node &n_b) {
   char* var_name = get_var_name("iso_node_",
                                 n_a.get_id(),
                                 n_b.get_id());
   z3::expr iso_var = z3_context.bool_const(var_name);
   delete var_name;
+
+  idPair p = std::make_pair(n_a.get_id(), n_b.get_id());
+  var2nodes[iso_var] = p;
+
   return iso_var;
 }
 
@@ -151,6 +195,10 @@ z3::expr IsoSolver::get_iso_var(const Edge &e_a, const Edge &e_b)
                                 e_b.get_id());
   z3::expr iso_var = z3_context.bool_const(var_name);
   delete var_name;
+
+  idPair p = std::make_pair(e_a.get_id(), e_b.get_id());
+  var2edges[iso_var] = p;
+
   return iso_var;
 }
 
@@ -244,8 +292,6 @@ char* IsoSolver::get_var_name(const char* prefix, long id1, long id2)
           id1_s.c_str(),
           id2_s.c_str());
 
-  // TODO: fill a map with the mapping - to retrieve the isomorphism
-  // relation afterwards
   return var_name;
 }
 
@@ -256,4 +302,14 @@ string IsoSolver::get_str(long id)
   return ostr.str();
 }
 
-} // end of namespace
+void Isomorphism::add_node_map(const long id_a, const long id_b)
+{
+  node_mapping[id_a] = id_b;
+}
+
+void Isomorphism::add_edge_map(const long id_a, const long id_b)
+{
+  edge_mapping[id_a] = id_b;
+}
+
+} // End of namespace
