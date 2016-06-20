@@ -37,17 +37,17 @@ bool IsoSolver::is_iso()
   get_encoding(nodes_iso, edges_iso, unique,
                nodes_iso_vars, edges_iso_vars);
 
-  // assert the conjuncts
+  // assert all the constraints as hard constraints
   for (std::vector<z3::expr>::const_iterator it = nodes_iso.begin();
-       it != nodes_iso.end(); ++it) {
-    z3::expr expr = *it;
-    solver.add(expr);
-  }
+       it != nodes_iso.end(); ++it) solver.add(*it);
   for (std::vector<z3::expr>::const_iterator it = edges_iso.begin();
-       it != edges_iso.end(); ++it) {
-    z3::expr expr = *it;
-    solver.add(expr);
-  }
+       it != edges_iso.end(); ++it) solver.add(*it);
+  for (std::vector<z3::expr>::const_iterator it = unique.begin();
+       it != unique.end(); ++it) solver.add(*it);
+  for (std::vector<z3::expr>::const_iterator it = nodes_iso_vars.begin();
+       it != nodes_iso_vars.end(); ++it) solver.add(*it);
+  for (std::vector<z3::expr>::const_iterator it = edges_iso_vars.begin();
+       it != edges_iso_vars.end(); ++it) solver.add(*it);
 
   {
     z3::check_result res;
@@ -77,17 +77,19 @@ bool IsoSolver::get_max_embedding()
   get_encoding(nodes_iso, edges_iso, unique,
                nodes_iso_vars, edges_iso_vars);
 
-  // assert the conjuncts
+  // Hard constraints
   for (std::vector<z3::expr>::const_iterator it = nodes_iso.begin();
-       it != nodes_iso.end(); ++it) {
-    z3::expr expr = *it;
-    opt.add(expr, 1);
-  }
+       it != nodes_iso.end(); ++it) opt.add(*it);
   for (std::vector<z3::expr>::const_iterator it = edges_iso.begin();
-       it != edges_iso.end(); ++it) {
-    z3::expr expr = *it;
-    opt.add(expr, 1);
-  }
+       it != edges_iso.end(); ++it) opt.add(*it);
+  for (std::vector<z3::expr>::const_iterator it = unique.begin();
+       it != unique.end(); ++it) opt.add(*it);
+
+  // Soft constraints - to be maximized
+  for (std::vector<z3::expr>::const_iterator it = nodes_iso_vars.begin();
+       it != nodes_iso_vars.end(); ++it) opt.add(*it, 1);
+  for (std::vector<z3::expr>::const_iterator it = edges_iso_vars.begin();
+       it != edges_iso_vars.end(); ++it) opt.add(*it, 1);
 
   {
     z3::check_result res = opt.check();
