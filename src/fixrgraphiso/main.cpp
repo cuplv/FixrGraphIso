@@ -69,15 +69,18 @@ int main (int argc, char *argv[])
 
       /* compute (precise) isomorphism */
       bool is_iso = solver.is_iso();
-      std::cout << "a is isomorphic to b? " << is_iso;
+      std::cout << "Is a isomorphic to b? " << is_iso;
       if (is_iso) {
-        std::cout << solver.get_last_isomorphism();
+        std::cout << "Isomorphism:\n" <<
+          solver.get_last_isomorphism() << std::endl;
       }
 
       bool is_approx_iso = solver.get_max_embedding();
-      std::cout << "a is isomorphic to b? " << is_approx_iso;
+      std::cout << "Is a approximate isomorphic to b? "
+                << is_approx_iso << std::endl;
       if (is_approx_iso) {
-        std::cout << solver.get_last_isomorphism();
+        std::cout << "Approximate isomorphism:\n" <<
+          solver.get_last_isomorphism() << std::endl;
       }
     }
 
