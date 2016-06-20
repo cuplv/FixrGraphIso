@@ -71,7 +71,11 @@ private:
 
   Isomorphism* get_isomorphism(const z3::model model);
   void get_encoding(std::vector<z3::expr>& nodes_iso,
-                    std::vector<z3::expr>& edges_iso);
+                    std::vector<z3::expr>& edges_iso,
+                    std::vector<z3::expr>& uniqueness_constraints,
+                    std::vector<z3::expr>& nodes_iso_vars,
+                    std::vector<z3::expr>& edges_iso_vars);
+  
   void set_last_iso(Isomorphism* new_iso);
   z3::expr get_iso_var(const Node &n_a, const Node &n_b);
   z3::expr get_iso_var(const Edge &e_a, const Edge &e_b);

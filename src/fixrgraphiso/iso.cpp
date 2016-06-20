@@ -10,6 +10,8 @@
 #include <cstring>
 #include <sstream>
 #include <typeinfo>
+#include <iterator>
+
 #include "fixrgraphiso/iso.h"
 
 namespace fixrgraphiso {
@@ -27,9 +29,13 @@ bool IsoSolver::is_iso()
 
   std::vector<z3::expr> nodes_iso;
   std::vector<z3::expr> edges_iso;
+  std::vector<z3::expr> unique;
+  std::vector<z3::expr> nodes_iso_vars;
+  std::vector<z3::expr> edges_iso_vars;
 
   // Get the conjuncts of the encodings
-  get_encoding(nodes_iso, edges_iso);
+  get_encoding(nodes_iso, edges_iso, unique,
+               nodes_iso_vars, edges_iso_vars);
 
   // assert the conjuncts
   for (std::vector<z3::expr>::const_iterator it = nodes_iso.begin();
@@ -63,9 +69,13 @@ bool IsoSolver::get_max_embedding()
 
   std::vector<z3::expr> nodes_iso;
   std::vector<z3::expr> edges_iso;
+  std::vector<z3::expr> unique;
+  std::vector<z3::expr> nodes_iso_vars;
+  std::vector<z3::expr> edges_iso_vars;
 
   // Get the conjuncts of the encodings
-  get_encoding(nodes_iso, edges_iso);
+  get_encoding(nodes_iso, edges_iso, unique,
+               nodes_iso_vars, edges_iso_vars);
 
   // assert the conjuncts
   for (std::vector<z3::expr>::const_iterator it = nodes_iso.begin();
@@ -98,14 +108,56 @@ Isomorphism& IsoSolver::get_last_isomorphism()
   return *last_isomorphism;
 }
 
+/*
+ * MaxSAT encoding
+ *
+ * Hard constraints:
+ *   1. Node isomorphism conditions
+ *     If v1 is isomorphic to v2 (iso_v1_v2), then label(v1) =
+ *     label(v2)
+ *     If the label contains a node, = is interpreted as
+ *     isomorphism. For example, if a node is a method call, then the
+ *     predicate = among labels hold if the arguments to the method
+ *     call (that are nodes) are isomorphic.
+ *
+ *   2. Edge isomorphism condition
+ *     If e1 is isomorphism to e2 (iso_e1_e2), then:
+ *       - iso_src(e1)_src_(e2) and iso_dst(e1)_dst_(e2)
+ *         Source and destination nodes of the edges are matched in
+ *         the isomorphism.
+ *       - label(e1) = label(e2)
+ *
+ *   3. Force the ismorphism to be a partial function:
+ *     - For nodes: iso_vi_vj => ! (/\_{z != 1} iso_vi_vz)
+ *     - For edges: iso_ei_ej => ! (/\_{z != 1} iso_ei_ez)
+ *
+ *   Injectivity of the partial function is obtained by construction
+ *     (i.e. there is a variable iso_vi_vj but no variable iso_vj_vi,
+ *     and the isomorphim relation is unique)
+ *
+ *  Soft constraints:
+ *    Isomorphism variables: iso_vi_vj and iso_el_vz for nodes and
+ *    edges
+ *
+ *  The distinction of soft and hard constraints is done when
+ *  asserting the formulas in the solver.
+ *
+ */
 void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
-                             std::vector<z3::expr>& edges_iso)
+                             std::vector<z3::expr>& edges_iso,
+                             std::vector<z3::expr>& uniqueness_constraints,
+                             std::vector<z3::expr>& nodes_iso_vars,
+                             std::vector<z3::expr>& edges_iso_vars)
 {
-  // 1. Declare encoding variables
+  // Uniqueness constraints (3) and soft constraints are encoded with
+  // the isomorphism condition
+  uniqueness_constraints.clear();
+  nodes_iso_vars.clear();
+  edges_iso_vars.clear();
 
-  // 1. Encode constraints of iso_node_v0_v1
-  /* For all pairs of nodes (that could match) iso_node_v0_v1
-   * We have a single variable for (v0,v1) and (v1,v0) under the.
+  /* 1. Node isomorphism conditions.
+   * For all pairs of nodes (that could match) iso_node_v0_v1
+   * We have a single variable for (v0,v1) and (v1,v0) under the
    * injectivity assumption
    *
    * iso_node_v0_v1 -> (label(v0) = label(v1))
@@ -115,21 +167,40 @@ void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
        it_a != acdfg_a.end_nodes(); ++it_a) {
     Node& node_a = *(*it_a);
 
-    for (nodes_t::const_iterator it_b =  acdfg_b.begin_nodes();
+    // Start from the next element
+    for (nodes_t::const_iterator it_b = acdfg_b.begin_nodes();
          it_b != acdfg_b.end_nodes(); ++it_b) {
       Node& node_b = *(*it_b);
 
-      if (may_match(node_a, node_b)) {
-        z3::expr iso_var = get_iso_var(node_a, node_b);
+      z3::expr iso_var = get_iso_var(node_a, node_b);
+      nodes_iso_vars.push_back(iso_var);
 
+      if (may_match(node_a, node_b)) {
+        nodes_t::const_iterator it_c = it_b;
         z3::expr iso_eq = get_iso_eq(node_a, node_b);
 
         nodes_iso.push_back((! iso_var) || iso_eq);
-      }
-    }
-  }
 
-  // 3. Encode the constraints of iso_edge_e0_e1
+        // Uniqueness constraint
+        // iso_var_a_b => ! iso_var_a_c, for all c > b
+        for (++it_c; it_c != acdfg_b.end_nodes(); ++it_c) {
+          Node& node_c = *(*it_c);
+          z3::expr iso_var_a_c = get_iso_var(node_a, node_c);
+          // iso_var -> ! (iso_var_a_c);
+          uniqueness_constraints.push_back( (! iso_var) || (! iso_var_a_c) );
+        } // Uniqueness loop
+      } // may match
+      else {
+        // The match is not possible (the labels are already
+        // different)
+        // This can be simplified (directly in the encoding or by
+        // inlining)
+        nodes_iso.push_back(! iso_var);
+      }
+    } // inner loop on nodes
+  } // outer loop on nodes
+
+  // 2. Encode the constraints of iso_edge_e0_e1
   /* For all pairs of edges (that could match) iso_edge_e0_e1
    * Also here is not all the pairs, but we exploit injectivity.
    *
@@ -143,19 +214,35 @@ void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
   for (edges_t::const_iterator it_a =  acdfg_a.begin_edges();
        it_a != acdfg_a.end_edges(); ++it_a) {
     Edge& edge_a = *(*it_a);
+
     for (edges_t::const_iterator it_b =  acdfg_b.begin_edges();
          it_b != acdfg_b.end_edges(); ++it_b) {
       Edge& edge_b = *(*it_b);
 
-      if (may_match(edge_a, edge_b)) {
-        z3::expr iso_var = get_iso_var(edge_a, edge_b);
+      z3::expr iso_var = get_iso_var(edge_a, edge_b);
+      edges_iso_vars.push_back(iso_var);
 
+      if (may_match(edge_a, edge_b)) {
+        edges_t::const_iterator it_c = it_b;
         z3::expr iso_eq = get_iso_eq(edge_a, edge_b);
 
         edges_iso.push_back((! iso_var) || iso_eq);
+
+        // Uniquenes
+        for (++it_c; it_c != acdfg_b.end_edges(); ++it_c) {
+          Edge& edge_c = *(*it_c);
+          z3::expr iso_var_a_c = get_iso_eq(edge_a, edge_c);
+
+          // iso_a_b => ! iso
+          uniqueness_constraints.push_back( (! iso_var) || (! iso_var_a_c) );
+        } // Loop on remaning nodes of b
       }
-    }
-  }
+      else {
+        // cannot match
+        edges_iso.push_back(! iso_var);
+      } // end of can match
+    } // loop on b edges
+  } // loop on a edges
 }
 
 void IsoSolver::set_last_iso(Isomorphism* new_iso)
