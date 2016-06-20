@@ -112,9 +112,11 @@ public:
 
   nodes_t::const_iterator begin_nodes();
   nodes_t::const_iterator end_nodes();
+  int node_count() {return nodes_.size();};
 
   edges_t::const_iterator begin_edges();
   edges_t::const_iterator end_edges();
+  int edge_count() {return edges_.size();};
 
   friend std::ostream& operator<<(std::ostream&, const Acdfg&);
 

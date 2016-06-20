@@ -21,8 +21,6 @@ Node::Node(long id)
 
 Node::Node(const Node& node)
 {
-  // DEBUG
-  std::cout << "Copy constructor for: " << node.get_id() << std::endl;
   id_ = node.id_;
 }
 

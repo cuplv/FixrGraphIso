@@ -69,7 +69,8 @@ int main (int argc, char *argv[])
 
       /* compute (precise) isomorphism */
       bool is_iso = solver.is_iso();
-      std::cout << "Is a isomorphic to b? " << is_iso;
+      std::cout << "Is a isomorphic to b? " <<
+        is_iso << std::endl;
       if (is_iso) {
         std::cout << "Isomorphism:\n" <<
           solver.get_last_isomorphism() << std::endl;
