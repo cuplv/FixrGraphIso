@@ -23,6 +23,7 @@ add_executable(fixrgraphiso
   main.cpp
   acdfg.cpp
   serialization.cpp
+  iso.cpp
   ${PROTO_SRCS}
 )
 
