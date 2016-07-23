@@ -15,17 +15,33 @@
 #include <cassert>
 #include <iostream>
 namespace fixrgraphiso {
+
+  
 using std::string;
 
+typedef enum { REGULAR_NODE, DATA_NODE, METHOD_NODE } node_type_t;
+
+typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE} edge_type_t;
+  
+  
 // Represent a node in the graph
 class Node {
 
 public:
   
-  Node() {};
+  Node():nType_(REGULAR_NODE){};
+
   Node(const Node& node);
-  Node(long id);
-  long get_id() const;
+  Node(long id, node_type_t typ);
+  
+  long get_id() const{
+    return id_;
+  }
+  
+  node_type_t get_type() const{
+    return nType_;
+  }
+
   virtual Node * clone() const;
   
   virtual void prettyPrint(std::ostream & out) const ;
@@ -34,6 +50,8 @@ public:
 
 protected:
   long id_;
+  node_type_t nType_;
+  
 };
 
 // Node that represent a data (e.g variable)
@@ -56,7 +74,7 @@ protected:
 // Base class for control nodes
 class CommandNode : public Node {
 public:
-  CommandNode(long id);
+  CommandNode(long id, node_type_t nTyp): Node(id, nTyp){};
 };
 
 
@@ -90,9 +108,12 @@ protected:
 // Represent an edge of the Acdfg
 class Edge {
 public:
-  Edge(long id, Node* src, Node* dst) {id_ = id; src_ = src; dst_ = dst;};
+
+  Edge(long id, edge_type_t typ, Node* src, Node* dst): id_(id), eType_(typ), src_(src), dst_(dst){};
+  
   Edge(const Edge& edge);
   const long get_id() const;
+  const edge_type_t get_type() const { return eType_; }
   const Node* get_src() const;
   const Node* get_dst() const;
 
@@ -100,6 +121,7 @@ public:
 
 protected:
   long id_;
+  edge_type_t eType_;
   // Src node
   Node* src_;
   // Dst node
@@ -108,11 +130,22 @@ protected:
 
 class DefEdge : public Edge {
 public:
-  DefEdge(long id, Node* src, Node* dst) : Edge(id, src, dst) {};
-  DefEdge(const DefEdge& edge);
+  DefEdge(long id, Node* src, Node* dst) : Edge(id, DEF_EDGE, src, dst) {};
+  DefEdge(const DefEdge& edge): Edge(edge.id_, DEF_EDGE, edge.src_, edge.dst_){};
 };
-class UseEdge : public Edge {};
-class ControlEdge : public Edge {};
+
+  
+class UseEdge : public Edge {
+public:
+  UseEdge(long id, Node* src, Node* dst): Edge(id, USE_EDGE, src, dst){};
+  UseEdge(const UseEdge & edge): Edge(edge.id_, USE_EDGE, edge.src_, edge.dst_){};
+};
+  
+class ControlEdge : public Edge {
+public:
+  ControlEdge(long id, Node* src, Node* dst): Edge(id, CONTROL_EDGE, src, dst){};
+  ControlEdge(const ControlEdge & edge): Edge(edge.id_, CONTROL_EDGE, edge.src_, edge.dst_){};
+};
 
 typedef std::vector<Node*> nodes_t;
 typedef std::vector<Edge*> edges_t;

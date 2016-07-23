@@ -50,7 +50,7 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
     const acdfg_protobuf::Acdfg_MiscNode& proto_node =
       proto_acdfg->misc_node(j);
     
-    Node * node = new Node(proto_node.id());
+    Node * node = new Node(proto_node.id(), REGULAR_NODE);
     Node *app_node = acdfg->add_node(node);
     idToNodeMap[app_node->get_id()] = app_node;
   }
@@ -75,9 +75,9 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
     }
     std::cout << "Method node id: " << proto_node.id() << std::endl;
     MethodNode * node = new MethodNode(proto_node.id(),
-				 proto_node.name(),
-				 receiver,
-				 arguments);
+				       proto_node.name(),
+				       receiver,
+				       arguments);
     Node *app_node = acdfg->add_node(node);
     idToNodeMap[app_node->get_id()] = app_node;
   }
@@ -142,17 +142,37 @@ Node* lookup_node(idMapType& idToNodeMap, long id)
   }
 }
 
-template <typename T> void addEdge(Acdfg* acdfg,
-                                   idMapType& idToNodeMap,
-                                   T proto_edge)
-{
-  Node* from = lookup_node(idToNodeMap, proto_edge.from());
-  Node* to = lookup_node(idToNodeMap, proto_edge.to());
-  assert(NULL != from);
-  assert(NULL != to);
 
-  DefEdge * e = new DefEdge(proto_edge.id(), from, to);
-  acdfg->add_edge(e);
-}
+  
+  template<typename T> void addEdge(Acdfg* acdfg,
+				    idMapType& idToNodeMap,
+				    T proto_edge)
+  {
+    Node* from = lookup_node(idToNodeMap, proto_edge.from());
+    Node* to = lookup_node(idToNodeMap, proto_edge.to());
+    
+    assert(NULL != from);
+    assert(NULL != to);
+    
+    if (typeid(T) == typeid(acdfg_protobuf::Acdfg_ControlEdge)){
+      ControlEdge * e = new ControlEdge(proto_edge.id(), from, to);
+      acdfg->add_edge(e);
+    } else if (typeid(T) == typeid(acdfg_protobuf::Acdfg_UseEdge)){
+      UseEdge * e = new UseEdge(proto_edge.id(), from, to);
+      acdfg->add_edge(e);
+    } else if (typeid(T) == typeid(acdfg_protobuf::Acdfg_DefEdge)){
+      DefEdge * e = new DefEdge(proto_edge.id(), from, to);
+      acdfg->add_edge(e);
+    } else {
+      assert(false); // This should not happen
+    }
+
+  
+
+  
+
+  }
+
+  
 
 } // namespace fixrgraphiso
