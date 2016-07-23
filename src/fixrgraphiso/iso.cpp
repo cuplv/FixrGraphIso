@@ -30,13 +30,15 @@ IsoSolver::~IsoSolver()
 
 bool IsoSolver::is_iso()
 {
-  z3::solver solver(z3_context);
-
-  std::vector<z3::expr> nodes_iso;
-  std::vector<z3::expr> edges_iso;
-  std::vector<z3::expr> unique;
-  std::vector<z3::expr> nodes_iso_vars;
-  std::vector<z3::expr> edges_iso_vars;
+  // Check if precisely isomorphic using SAT?
+  
+  z3::solver solver(z3_context); // Initialize Z3 context
+ 
+  std::vector<z3::expr> nodes_iso; // Expressions corresponding to isomorphic node pairs
+  std::vector<z3::expr> edges_iso; // Corresponding to isomorphic edge pairs
+  std::vector<z3::expr> unique; // Express uniqueness of the isomorphism
+  std::vector<z3::expr> nodes_iso_vars; // variables for node pairs
+  std::vector<z3::expr> edges_iso_vars; // variables for edge pairs
 
   // Cannot be iso if it does not have the same number of nodes and
   // edges
@@ -222,16 +224,20 @@ void IsoSolver::get_encoding(std::vector<z3::expr>& nodes_iso,
    * iso_node_v0_v1 -> (label(v0) = label(v1))
    */
   nodes_iso.clear();
+
+  // Iterate through all the nodes in acdfg_a
+  
   for (nodes_t::const_iterator it_a =  acdfg_a.begin_nodes();
        it_a != acdfg_a.end_nodes(); ++it_a) {
-    Node& node_a = *(*it_a);
+    Node& node_a = *(*it_a); // For each node 
 
     // Start from the next element
+    // Iterate through all nodes in acdfg_b
     for (nodes_t::const_iterator it_b = acdfg_b.begin_nodes();
          it_b != acdfg_b.end_nodes(); ++it_b) {
       Node& node_b = *(*it_b);
 
-      z3::expr iso_var = get_iso_var(node_a, node_b);
+      z3::expr iso_var = get_iso_var(node_a, node_b); // Get the iso_var corresponding to the pair node_a, node_b
       nodes_iso_vars.push_back(iso_var);
 
       if (may_match(node_a, node_b)) {
@@ -551,7 +557,15 @@ std::ostream& operator<<(std::ostream& stream, const Isomorphism& iso)
   for(std::map<long,long>::const_iterator it = iso.node_mapping.begin();
       it != iso.node_mapping.end(); it++) {
     if (it != iso.node_mapping.begin()) stream << ", ";
-    stream << "(" << it->first << "," << it->second << ")";
+    Node * a = iso.acdfg_a.getNodeFromID(it -> first);
+    Node * b = iso.acdfg_b.getNodeFromID(it -> second);
+    assert( a != NULL && b != NULL);
+    stream << "{" ;
+    a -> prettyPrint(stream);
+    stream << " and " ;
+    b -> prettyPrint(stream);
+    stream << "};" ;
+    
   }
 
   stream << "\nEdges embeddings: ";
@@ -561,6 +575,10 @@ std::ostream& operator<<(std::ostream& stream, const Isomorphism& iso)
     stream << "(" << it->first << "," << it->second << ")";
   }
   stream << std::endl;
+
+  
+  
+  
 
   return stream;
 }

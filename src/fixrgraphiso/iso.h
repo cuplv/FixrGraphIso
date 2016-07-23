@@ -52,6 +52,7 @@ public:
   friend std::ostream& operator<<(std::ostream&, const Isomorphism&);
 
 private:
+  
   Acdfg& acdfg_a;
   Acdfg& acdfg_b;
 

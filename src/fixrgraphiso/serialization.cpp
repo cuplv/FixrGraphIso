@@ -38,10 +38,10 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
     const acdfg_protobuf::Acdfg_DataNode& proto_node =
       proto_acdfg->data_node(j);
 
-    Node node = DataNode(proto_node.id(),
+    DataNode * node = new DataNode(proto_node.id(),
                          proto_node.name(),
                          proto_node.type());
-    Node *app_node = acdfg->add_node(node);
+    Node * app_node = acdfg->add_node(node);
     idToNodeMap[app_node->get_id()] = app_node;
   }
 
@@ -49,8 +49,8 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
   for (int j = 0; j < proto_acdfg->misc_node_size(); j++) {
     const acdfg_protobuf::Acdfg_MiscNode& proto_node =
       proto_acdfg->misc_node(j);
-
-    Node node = Node(proto_node.id());
+    
+    Node * node = new Node(proto_node.id());
     Node *app_node = acdfg->add_node(node);
     idToNodeMap[app_node->get_id()] = app_node;
   }
@@ -73,11 +73,11 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
                                             argument_id);
       arguments.push_back(n);
     }
-
-    Node node = MethodNode(proto_node.id(),
-                           proto_node.name(),
-                           receiver,
-                           arguments);
+    std::cout << "Method node id: " << proto_node.id() << std::endl;
+    MethodNode * node = new MethodNode(proto_node.id(),
+				 proto_node.name(),
+				 receiver,
+				 arguments);
     Node *app_node = acdfg->add_node(node);
     idToNodeMap[app_node->get_id()] = app_node;
   }
@@ -151,7 +151,7 @@ template <typename T> void addEdge(Acdfg* acdfg,
   assert(NULL != from);
   assert(NULL != to);
 
-  DefEdge e = DefEdge(proto_edge.id(), from, to);
+  DefEdge * e = new DefEdge(proto_edge.id(), from, to);
   acdfg->add_edge(e);
 }
 

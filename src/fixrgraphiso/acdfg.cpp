@@ -29,11 +29,21 @@ long Node::get_id() const
   return id_;
 }
 
+void Node::prettyPrint(std::ostream & stream) const {
+  stream << "Node id: " << id_ << "\n";
+}
+
+Node * Node::clone() const {
+  return new Node(*this);
+}
+
+  
 std::ostream& operator<<(std::ostream& stream, const Node& node)
 {
-  stream << "Node id: " << node.id_ << "\n";
+  node.prettyPrint(stream);
   return stream;
 }
+  
 
 DataNode::DataNode(long id, const string& name,
                    const string& data_type) : Node(id)
@@ -49,6 +59,12 @@ DataNode::DataNode(const DataNode& node)
   data_type_ =  node.data_type_;
 }
 
+Node * DataNode::clone() const{
+  DataNode * n_node = new DataNode(*this);
+  return (Node*) n_node;
+ }
+
+  
 const string& DataNode::get_name() const
 {
   return name_;
@@ -59,23 +75,29 @@ const string& DataNode::get_data_type() const
   return data_type_;
 }
 
+void DataNode::prettyPrint(std::ostream & stream) const {
+
+  stream << "Node id: " << (get_id()) <<
+    "\nname: " << get_name() <<
+    "\ntype: " << get_data_type() << std::endl;
+
+}
+  
 std::ostream& operator<<(std::ostream& stream, const DataNode& node)
 {
-  stream << "Node id: " << (node.get_id()) <<
-    "\nname: " << node.get_name() <<
-    "\ntype: " << node.get_data_type() << std::endl;
-
+ 
+  node.prettyPrint(stream);
   return stream;
 }
 
 CommandNode::CommandNode(long id) : Node(id) {};
 
 MethodNode::MethodNode(long id, const string& name,
-                       const DataNode* receiver,
+                       DataNode* receiver,
                        std::vector<DataNode*> arguments) : CommandNode(id)
 {
   name_ = name;
-  receiver_ = receiver_;
+  receiver_ = receiver;
   arguments_ = arguments;
 }
 
@@ -83,8 +105,24 @@ MethodNode::MethodNode(const MethodNode& node) : CommandNode(node.get_id())
 {
   id_ = node.id_;
   name_ = node.name_;
-  receiver_ = node.receiver_;
-  arguments_ = node.arguments_;
+  if (node.receiver_ != NULL){
+    receiver_ = new DataNode(*(node.receiver_));
+  } else {
+    receiver_ = NULL;
+  }
+  for (std::vector<DataNode*>::const_iterator it = node.arguments_.begin();
+       it != node.arguments_.end();
+       ++it){
+    DataNode * n_node = new DataNode (*(*it));
+    arguments_.push_back(n_node);
+  }
+  
+  
+}
+
+Node * MethodNode::clone() const{
+  MethodNode * n_node = new MethodNode(*this);
+  return (Node*) n_node;
 }
 
 const string& MethodNode::get_name() const
@@ -102,21 +140,28 @@ const std::vector<DataNode*> MethodNode::get_arguments() const
   return arguments_;
 }
 
-std::ostream& operator<<(std::ostream& stream, const MethodNode& node)
-{
-  stream << "Node id: " << node.get_id() << "\n";
-  if (NULL != node.get_receiver()) {
-    stream << node.get_receiver()->get_id() << ".";
+  
+void MethodNode::prettyPrint(std::ostream & stream) const {
+
+  stream << "Node id: " << get_id() << "\n";
+  if (NULL != get_receiver()) {
+    stream << get_receiver()->get_id() << ".";
   }
 
-  stream << node.get_name() << "(";
-  for (std::vector<DataNode*>::const_iterator it =  node.arguments_.begin();
-       it != node.arguments_.end();
+  stream << get_name() << "(";
+  for (std::vector<DataNode*>::const_iterator it =  arguments_.begin();
+       it != arguments_.end();
        ++it) {
-    if (it != node.arguments_.begin()) stream << ",";
+    if (it != arguments_.begin()) stream << ",";
     stream << (*it)->get_name() << ":" << (*it)->get_id();
   }
   stream << ")" << std::endl;
+
+}
+  
+std::ostream& operator<<(std::ostream& stream, const MethodNode& node)
+{
+  node.prettyPrint(stream);
   return stream;
 }
 
@@ -160,17 +205,20 @@ Acdfg::~Acdfg()
        it != edges_.end(); ++it) delete *(it);
 }
 
-Node* Acdfg::add_node(const Node& node)
+  
+Node* Acdfg::add_node(Node * node)
 {
-  Node* new_node = new Node(node);
-  nodes_.push_back(new_node);
-  return new_node;
+  
+  nodes_.push_back(node);
+  nMap_[node->get_id()] = node;
+  return node;
 }
 
-Edge* Acdfg::add_edge(const Edge& edge)
+Edge* Acdfg::add_edge(Edge * edge)
 {
-  Edge* new_edge = new Edge(edge);
+  Edge* new_edge = edge;
   edges_.push_back(new_edge);
+  eMap_[new_edge -> get_id()] = new_edge;
   return new_edge;
 }
 
@@ -194,13 +242,55 @@ edges_t::const_iterator Acdfg::end_edges()
   return edges_.end();
 }
 
+Node* Acdfg::getNodeFromID( long id){
+  node_id_to_ptr_map_t::iterator it = nMap_.find(id);
+  if (nMap_.end() == it){
+    assert(false); // No such id exists
+    return NULL; // DEAD CODE
+  } 
+
+  return it -> second;
+  
+}
+
+
+Edge* Acdfg::getEdgeFromID( long id){
+  edge_id_to_ptr_map_t::iterator it = eMap_.find(id);
+  if (eMap_.end() == it){
+    assert(false); // No such id exists
+    return NULL; // DEAD CODE
+  } 
+
+  return it -> second;
+  
+}
+
+
+void printNode(Node * node, std::ostream & stream){
+  DataNode * dNode = dynamic_cast<DataNode*> (node);
+  if (dNode != NULL){
+    dNode -> prettyPrint(stream);
+  } else {
+    
+    MethodNode * mNode= dynamic_cast<MethodNode*> (node);
+    if (mNode != NULL){
+      mNode -> prettyPrint(stream);
+    }
+  }
+
+  node -> prettyPrint(stream);
+  return;
+}
+
+  
 std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
 {
   stream << "Acdfg\n" << "List of nodes: ";
   for (nodes_t::const_iterator it =  acdfg.nodes_.begin();
        it != acdfg.nodes_.end(); ++it) {
-    if (it != acdfg.nodes_.begin()) stream << ",";
-    stream << (*it)->get_id();
+    if (it != acdfg.nodes_.begin())
+      printNode((*it),stream);
+    stream << std::endl;
   }
   stream << "\nEdges:\n";
   for (edges_t::const_iterator it =  acdfg.edges_.begin();

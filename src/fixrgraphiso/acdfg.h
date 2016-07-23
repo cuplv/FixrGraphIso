@@ -9,20 +9,27 @@
 #define ACDFG_H_INCLUDED
 
 #include <vector>
+#include <map>
 #include <string>
 #include <ostream>
-
+#include <cassert>
+#include <iostream>
 namespace fixrgraphiso {
 using std::string;
 
 // Represent a node in the graph
 class Node {
+
 public:
+  
   Node() {};
   Node(const Node& node);
   Node(long id);
   long get_id() const;
-
+  virtual Node * clone() const;
+  
+  virtual void prettyPrint(std::ostream & out) const ;
+  
   friend std::ostream& operator<<(std::ostream&, const Node&);
 
 protected:
@@ -36,7 +43,9 @@ public:
   DataNode(const DataNode& node);
   const string& get_name() const;
   const string& get_data_type() const;
-
+  
+  void prettyPrint(std::ostream & out) const;
+  Node * clone() const;
   friend std::ostream& operator<<(std::ostream&, const DataNode&);
 
 protected:
@@ -55,14 +64,18 @@ public:
 class MethodNode : public CommandNode {
 public:
   MethodNode(long id, const string& name,
-             const DataNode* receiver,
+             DataNode* receiver,
              std::vector<DataNode*> arguments);
   MethodNode(const MethodNode& node);
 
   const string& get_name() const;
   const DataNode* get_receiver() const;
   const std::vector<DataNode*> get_arguments() const;
+  Node * clone() const;
+  
+  void prettyPrint(std::ostream & out) const;
 
+  
   friend std::ostream& operator<<(std::ostream&, const MethodNode&);
 
 protected:
@@ -103,12 +116,14 @@ class ControlEdge : public Edge {};
 
 typedef std::vector<Node*> nodes_t;
 typedef std::vector<Edge*> edges_t;
-
+typedef std::map<long, Node*> node_id_to_ptr_map_t;
+typedef std::map<long, Edge*> edge_id_to_ptr_map_t;
+  
 class Acdfg {
 public:
   ~Acdfg();
-  Node* add_node(const Node& node);
-  Edge* add_edge(const Edge& edge);
+  Node* add_node(Node *  node);
+  Edge* add_edge(Edge *  edge);
 
   nodes_t::const_iterator begin_nodes();
   nodes_t::const_iterator end_nodes();
@@ -118,11 +133,19 @@ public:
   edges_t::const_iterator end_edges();
   int edge_count() {return edges_.size();};
 
+  Node* getNodeFromID(long id);
+  Edge* getEdgeFromID(long id);
+
+  
+  
   friend std::ostream& operator<<(std::ostream&, const Acdfg&);
 
+  
 private:
   nodes_t nodes_;
   edges_t edges_;
+  node_id_to_ptr_map_t nMap_;
+  edge_id_to_ptr_map_t eMap_;
 };
 
 
