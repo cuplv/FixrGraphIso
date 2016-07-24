@@ -47,6 +47,9 @@ namespace fixrgraphiso {
     return (Node*) n_node;
   }
 
+  bool DataNode::isCompatible(DataNode const * n) const {
+    return (n -> data_type_ == this-> data_type_);
+  }
   
   const string& DataNode::get_name() const
   {
@@ -98,6 +101,10 @@ namespace fixrgraphiso {
     }
   }
 
+  bool MethodNode::isCompatible(const MethodNode * node) const {
+    return (this -> name_ == node -> name_);
+  }
+  
   Node * MethodNode::clone() const{
     MethodNode * n_node = new MethodNode(*this);
     return (Node*) n_node;
@@ -195,7 +202,24 @@ Edge* Acdfg::add_edge(Edge * edge)
 {
   Edge* new_edge = edge;
   edges_.push_back(new_edge);
-  eMap_[new_edge -> get_id()] = new_edge;
+  long eID = new_edge -> get_id();
+  eMap_[eID] = new_edge;
+
+  
+  // Add the edge ID to the source node's list of outgoing edges
+  const Node * n = new_edge -> get_src();
+  long src_id = n -> get_id();
+  node_id_to_outgoing_edges_map_t::iterator it = outgoingMap_.find(src_id);
+  if (it == outgoingMap_.end()){
+    vector<long> tmp;
+    tmp.push_back(eID);
+    outgoingMap_[src_id] = tmp;
+  } else {
+    vector<long> & v = it -> second;
+    v.push_back(eID);
+  }
+
+  // Return the edge pointer
   return new_edge;
 }
 
