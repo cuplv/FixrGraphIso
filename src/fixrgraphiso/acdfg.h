@@ -22,7 +22,8 @@ namespace fixrgraphiso {
   typedef enum { REGULAR_NODE, DATA_NODE, METHOD_NODE } node_type_t;
 
   typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE} edge_type_t;
-  
+  typedef long node_id_t;
+  typedef long edge_id_t;
   
   // Represent a node in the graph
   class Node {
@@ -89,14 +90,14 @@ namespace fixrgraphiso {
 
     const string& get_name() const;
     const DataNode* get_receiver() const;
-    const std::vector<DataNode*> get_arguments() const;
+    const std::vector<DataNode*> &  get_arguments() const;
     Node * clone() const;
   
     void prettyPrint(std::ostream & out) const;
     bool isCompatible(MethodNode const * n) const;
-  
-    friend std::ostream& operator<<(std::ostream&, const MethodNode&);
 
+    friend std::ostream& operator<<(std::ostream&, const MethodNode&);
+    
   protected:
     // Name of the method
     string name_;
@@ -105,6 +106,10 @@ namespace fixrgraphiso {
     // Parameters passed to the method invocation
     std::vector<DataNode*> arguments_;
   };
+
+  // General Conversion functions that will be useful for us.
+  MethodNode * toMethodNode(Node* n);
+  DataNode * toDataNode(Node* n);
 
   // Represent an edge of the Acdfg
   class Edge {
@@ -117,7 +122,14 @@ namespace fixrgraphiso {
     const edge_type_t get_type() const { return eType_; }
     const Node* get_src() const;
     const Node* get_dst() const;
-
+    long get_src_id() const{
+      const Node * n = get_src();
+      return n -> get_id();
+    }
+    long get_dst_id() const {
+      const Node * n = get_dst();
+      return n -> get_id();
+    }
     friend std::ostream& operator<<(std::ostream&, const Edge&);
 
   protected:
@@ -167,11 +179,12 @@ namespace fixrgraphiso {
     edges_t::const_iterator end_edges();
     int edge_count() {return edges_.size();};
 
-    Node* getNodeFromID(long id);
-    Edge* getEdgeFromID(long id);
-
+    const Node* getNodeFromID(long id) const;
+    const Edge* getEdgeFromID(long id) const;
+    Node * getNodeFromID(long id);
+    Edge * getEdgeFromID(long id);
     
-    vector<long> getOutgoingEdgeIDs(long nodeID) const{
+    std::vector<long> getOutgoingEdgeIDs(long nodeID) const{
       node_id_to_outgoing_edges_map_t::const_iterator it = outgoingMap_.find(nodeID);
       if (it == outgoingMap_.end()){
 	vector<long> tmp;// return a dummy empty vector
@@ -200,6 +213,8 @@ namespace fixrgraphiso {
   };
 
 
+  
+  
 } // namespace fixrgraphiso
 
 #endif // ACDFG_H_INCLUDED

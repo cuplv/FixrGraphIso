@@ -33,7 +33,7 @@ include_directories(${Z3_INCLUDEDIR})
 
 # protobuf from https://github.com/cuplv/FixrGraphExtractor
 if (NOT FIXR_GRAPH_EXTRACTOR_DIRECTORY)
-  message(FATAL_ERROR "Please specify -DFIXR_GRAPH_EXTRACTOR_DIRECTORY=<path to the FixrGraphExtractor project>")
+     message(FATAL_ERROR "Please specify -DFIXR_GRAPH_EXTRACTOR_DIRECTORY=<path to the FixrGraphExtractor project>")
 endif()
 set(FIXR_GRAPH_EXTRACTOR_DIRECTORY_PROTOBUF "${FIXR_GRAPH_EXTRACTOR_DIRECTORY}/src/main/protobuf")
 

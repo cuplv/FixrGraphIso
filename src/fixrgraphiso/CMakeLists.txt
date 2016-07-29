@@ -24,6 +24,8 @@ add_executable(fixrgraphiso
   acdfg.cpp
   serialization.cpp
   iso.cpp
+  ilpApproxIsomorphismEncoder.cpp
+  milpProblem.cpp
   ${PROTO_SRCS}
 )
 

@@ -10,6 +10,7 @@
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/iso.h"
+#include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 
 using namespace fixrgraphiso;
 
@@ -63,27 +64,32 @@ int main (int argc, char *argv[])
     std::cout << "Acdfg a\n" << (*acdfg_a);
     std::cout << "\nAcdfg b\n" << (*acdfg_b);
 
-    /* Compute the isomorphism */
-    {
-      IsoSolver solver(*acdfg_a, *acdfg_b);
+    // /* Compute the isomorphism */
+    // {
+    //   IsoSolver solver(*acdfg_a, *acdfg_b);
 
-      /* compute (precise) isomorphism */
-      bool is_iso = solver.is_iso();
-      std::cout << "Is a isomorphic to b? " <<
-        is_iso << std::endl;
-      if (is_iso) {
-        std::cout << "Isomorphism:\n" <<
-          solver.get_last_isomorphism() << std::endl;
-      }
+    //   /* compute (precise) isomorphism */
+    //   bool is_iso = solver.is_iso();
+    //   std::cout << "Is a isomorphic to b? " <<
+    //     is_iso << std::endl;
+    //   if (is_iso) {
+    //     std::cout << "Isomorphism:\n" <<
+    //       solver.get_last_isomorphism() << std::endl;
+    //   }
 
-      bool is_approx_iso = solver.get_max_embedding();
-      std::cout << "Is a approximate isomorphic to b? "
-                << is_approx_iso << std::endl;
-      if (is_approx_iso) {
-        std::cout << "Approximate isomorphism:\n" <<
-          solver.get_last_isomorphism() << std::endl;
-      }
-    }
+    //   bool is_approx_iso = solver.get_max_embedding();
+    //   std::cout << "Is a approximate isomorphic to b? "
+    //             << is_approx_iso << std::endl;
+    //   if (is_approx_iso) {
+    //     std::cout << "Approximate isomorphism:\n" <<
+    //       solver.get_last_isomorphism() << std::endl;
+    //   }
+    // }
+
+    IlpApproxIsomorphism ilp(acdfg_a, acdfg_b);
+    ilp.computeILPEncoding();
+    
+    
 
     clean(proto_acdfg_a, proto_acdfg_b, acdfg_a, acdfg_b);
   }

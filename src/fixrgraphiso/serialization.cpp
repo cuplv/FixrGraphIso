@@ -73,7 +73,7 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
                                             argument_id);
       arguments.push_back(n);
     }
-    std::cout << "Method node id: " << proto_node.id() << std::endl;
+    
     MethodNode * node = new MethodNode(proto_node.id(),
 				       proto_node.name(),
 				       receiver,

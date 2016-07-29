@@ -557,8 +557,8 @@ std::ostream& operator<<(std::ostream& stream, const Isomorphism& iso)
   for(std::map<long,long>::const_iterator it = iso.node_mapping.begin();
       it != iso.node_mapping.end(); it++) {
     if (it != iso.node_mapping.begin()) stream << ", ";
-    Node * a = iso.acdfg_a.getNodeFromID(it -> first);
-    Node * b = iso.acdfg_b.getNodeFromID(it -> second);
+    const Node * a = iso.acdfg_a.getNodeFromID(it -> first);
+    const Node * b = iso.acdfg_b.getNodeFromID(it -> second);
     assert( a != NULL && b != NULL);
     stream << "{" ;
     a -> prettyPrint(stream);

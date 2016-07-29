@@ -63,9 +63,9 @@ namespace fixrgraphiso {
   
   void DataNode::prettyPrint(std::ostream & stream) const {
     
-    stream << "Node id: " << (get_id()) <<
-      "\nname: " << get_name() <<
-      "\ntype: " << get_data_type() << std::endl;
+    stream << "Data node id: " << (get_id()) <<
+      "\n\t\tname: " << get_name() <<
+      "\n\t\ttype: " << get_data_type() << std::endl;
     
   }
   
@@ -120,7 +120,7 @@ namespace fixrgraphiso {
     return receiver_;
   }
   
-  const std::vector<DataNode*> MethodNode::get_arguments() const
+  const std::vector<DataNode*> & MethodNode::get_arguments() const
   {
     return arguments_;
   }
@@ -130,10 +130,10 @@ namespace fixrgraphiso {
     
     stream << "Method Node id: " << get_id() << "\n";
     if (NULL != get_receiver()) {
-      stream << get_receiver()->get_id() << ".";
+      stream << "\t\t" << get_receiver()->get_id() << ".";
     }
     
-    stream << get_name() << "(";
+    stream << "\t\t " << get_name() << "(";
     for (std::vector<DataNode*>::const_iterator it =  arguments_.begin();
 	 it != arguments_.end();
 	 ++it) {
@@ -148,6 +148,21 @@ namespace fixrgraphiso {
   {
     node.prettyPrint(stream);
     return stream;
+  }
+
+  
+  MethodNode * toMethodNode(Node * n){
+    assert (n -> get_type() == METHOD_NODE);
+    MethodNode* m = dynamic_cast<MethodNode*> (n);
+    assert( m != NULL);
+    return m;
+  }
+
+  DataNode * toDataNode(Node * n){
+    assert (n -> get_type() == DATA_NODE);
+    DataNode* d = dynamic_cast<DataNode*> (n);
+    assert( d!= NULL);
+    return d;
   }
   
   //------------------------------------------------------------------------------
@@ -168,7 +183,7 @@ namespace fixrgraphiso {
   
   std::ostream& operator<<(std::ostream& stream, const Edge& edge)
   {
-    stream << "Id: Src -> Dst := : " << edge.get_id() << ":" <<
+    stream << "Id: (" << edge.get_id() << ") Src -> Dst := " << 
       edge.get_src()->get_id() << " -> " <<
       edge.get_dst()->get_id() << std::endl;
     return stream;
@@ -243,8 +258,19 @@ edges_t::const_iterator Acdfg::end_edges()
   return edges_.end();
 }
 
-Node* Acdfg::getNodeFromID( long id){
-  node_id_to_ptr_map_t::iterator it = nMap_.find(id);
+  Node * Acdfg::getNodeFromID(long id){
+    node_id_to_ptr_map_t::iterator it = nMap_.find(id);
+    if (nMap_.end() == it){
+      assert(false); // No such id exists
+      return NULL; // DEAD CODE
+    } 
+
+    return it -> second;
+  }
+  
+  
+  const Node* Acdfg::getNodeFromID( long id) const {
+  node_id_to_ptr_map_t::const_iterator it = nMap_.find(id);
   if (nMap_.end() == it){
     assert(false); // No such id exists
     return NULL; // DEAD CODE
@@ -255,8 +281,8 @@ Node* Acdfg::getNodeFromID( long id){
 }
 
 
-Edge* Acdfg::getEdgeFromID( long id){
-  edge_id_to_ptr_map_t::iterator it = eMap_.find(id);
+const Edge* Acdfg::getEdgeFromID( long id) const{
+  edge_id_to_ptr_map_t::const_iterator it = eMap_.find(id);
   if (eMap_.end() == it){
     assert(false); // No such id exists
     return NULL; // DEAD CODE
@@ -266,31 +292,70 @@ Edge* Acdfg::getEdgeFromID( long id){
   
 }
 
+  Edge * Acdfg::getEdgeFromID( long id) {
+    edge_id_to_ptr_map_t::iterator it = eMap_.find(id);
+    if (eMap_.end() == it){
+      assert(false); // No such id exists
+      return NULL; // DEAD CODE
+    } 
 
-void printNode(Node * node, std::ostream & stream){
-  DataNode * dNode = dynamic_cast<DataNode*> (node);
-  if (dNode != NULL){
-    dNode -> prettyPrint(stream);
-  } else {
-    
-    MethodNode * mNode= dynamic_cast<MethodNode*> (node);
-    if (mNode != NULL){
-      mNode -> prettyPrint(stream);
-    }
+    return it -> second;
   }
 
-  node -> prettyPrint(stream);
+
+void printNode(Node * node, std::ostream & stream){
+
+  switch (node -> get_type()){
+  case REGULAR_NODE:
+    node -> prettyPrint(stream);
+    break;
+
+  case DATA_NODE:
+    {
+      DataNode * dNode = dynamic_cast<DataNode*> (node);
+      assert(dNode != NULL);
+      dNode -> prettyPrint(stream);
+    }
+    break;
+
+  case METHOD_NODE:
+    {
+      MethodNode * mNode= dynamic_cast<MethodNode*> (node);
+      assert(mNode != NULL);
+      mNode -> prettyPrint(stream);
+    }
+    break;
+  default:
+    stream << "Fatal: unhandled node type in acdfg.cpp printNode function" << std::endl;
+    assert(false);
+    break;
+  }
+
+
   return;
 }
 
   
 std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
 {
-  stream << "Acdfg\n" << "List of nodes: ";
+  stream << "Acdfg\n" << "List of nodes: " << std::endl;
   for (nodes_t::const_iterator it =  acdfg.nodes_.begin();
        it != acdfg.nodes_.end(); ++it) {
-    if (it != acdfg.nodes_.begin())
-      printNode((*it),stream);
+    printNode((*it),stream);
+    stream << std::endl;
+    std::vector<long> oEdges = acdfg.getOutgoingEdgeIDs((*it) -> get_id());
+    // Print outgoing edges
+    stream << "\t Successor nodes: \t";
+    std::string sep="";
+    for (std::vector<long>::const_iterator jt = oEdges.begin();
+	 jt != oEdges.end();
+	 jt ++){
+      const Edge * e = acdfg.getEdgeFromID(*jt);
+      assert(e != NULL);
+      assert(e -> get_src() -> get_id() == (*it) -> get_id());
+      stream << sep << e -> get_dst() -> get_id() ;
+      sep=", ";
+    }
     stream << std::endl;
   }
   stream << "\nEdges:\n";
@@ -303,4 +368,6 @@ std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
 }
 
 
+  
 } // namespace fixrgraphiso
+
