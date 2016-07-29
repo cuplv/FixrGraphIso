@@ -58,7 +58,11 @@ namespace fixrgraphiso {
     }
 
     void prettyPrintAMPLFormat(std::ostream & out);
-   
+    MILPVariable getVariableFromID(int i){
+      std::map<int, MILPVariable>::iterator it =  id2Variable.find(i);
+      assert(it != id2Variable.end());
+      return it -> second;
+    }
   private:
     int numVariables;
     std::map<int, MILPVariable> id2Variable;
@@ -71,7 +75,12 @@ namespace fixrgraphiso {
     expr_t obj;
     int lookupIsoVariableInMap( std::map<node_pair_t, MILPVariable> const & mp, node_id_t i, node_id_t j);
     MILPVariable createVariable(ilp_variable_t typ, long i, long j);
+    void prettyPrintVariable(std::ostream & out, MILPVariable & var);
+    void prettyPrintExpr(std::ostream & out,  expr_t e);
+    
   };
+
+  
  
 }
 

@@ -523,6 +523,9 @@ namespace fixrgraphiso {
     computeCompatibleEdges();
     // 3. Create variables for the encoding
     initializeMILP();
+    // 4. Print AMPL
+
+    milp.prettyPrintAMPLFormat(std::cout);
   }
 
 
