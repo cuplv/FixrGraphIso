@@ -1,11 +1,13 @@
+#include <ostream>
 #include <iostream>
+
 #include <fstream>
 #include <map>
 #include <algorithm>
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/milpProblem.h"
 namespace fixrgraphiso {
-
+  using std::ostream;
   
   
   /*
@@ -35,7 +37,7 @@ namespace fixrgraphiso {
     
     ~IlpApproxIsomorphism(){};
     
-    
+    void prettyPrintEncodingResultInDot(ostream & out);
     void computeILPEncoding();
 
   private:
@@ -62,6 +64,8 @@ namespace fixrgraphiso {
     void addDataNodeMustNotBeIsolated();
     void createObjectiveFunction();
     void addUniqueMatchingConstraint(char a_or_b);
+
+    
   };
   
 

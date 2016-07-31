@@ -6,7 +6,7 @@
 //
 
 #include <iostream>
-
+#include <fstream>
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfg.h"
 //#include "fixrgraphiso/iso.h"
@@ -88,9 +88,10 @@ int main (int argc, char *argv[])
 
     IlpApproxIsomorphism ilp(acdfg_a, acdfg_b);
     ilp.computeILPEncoding();
-    
-    
 
+    std::ofstream file("outputIso.dot");
+    ilp.prettyPrintEncodingResultInDot(file);
+    file.close();
     clean(proto_acdfg_a, proto_acdfg_b, acdfg_a, acdfg_b);
   }
 

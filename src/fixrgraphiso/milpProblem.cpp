@@ -324,7 +324,7 @@ namespace fixrgraphiso{
 	}
       } // switch
     } // for it = ..
-    
+    solvedSuccessfully=true;
     delete[] (ind);
     delete[] (val);
     glp_delete_prob(lp);

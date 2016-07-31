@@ -1,10 +1,12 @@
 #include <iostream>
+#include <sstream>
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 
 namespace fixrgraphiso {
   bool debug = true;
   bool encodeRegularNodes = true;
-
+  using std::ostringstream;
+  
   void IlpApproxIsomorphism::addCompatibleNodes(Node * na, Node * nb){
     node_id_t id_a = na -> get_id();
     node_id_t id_b = nb -> get_id();
@@ -529,6 +531,94 @@ namespace fixrgraphiso {
 
     // 5. Solve
     milp.solveUsingGLPKLibrary();
+  }
+
+  void IlpApproxIsomorphism::prettyPrintEncodingResultInDot(ostream & out){
+    // This can only be called after the milp is successfully solved and solution extracted.
+
+    // Iterate through all nodes of graph A.
+    compatible_node_map_t::const_iterator it;
+    vector<node_id_t>::const_iterator jt;
+    vector<string> graphADot;
+    vector<string> graphBDot;
+    vector<string> graphEdges;
+    for (it = node_map_a_to_b.begin();
+	 it != node_map_a_to_b.end();
+	 ++it){ // Iterate through all nodes
+      node_id_t i = it -> first;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt != compats.end(); ++jt){
+	node_id_t j = *jt;
+	int vid = milp.lookupIsoNodeVariable(i,j);
+	// Now get the corresponding variable
+	MILPVariable var = milp.getVariableFromID(vid);
+	if (var.binVal == 1){
+	  // These two nodes are labeled as compatible.
+	  // Let us dot print them
+	  const Node * na = acdfg_a -> getNodeFromID(i);
+	  const Node * nb = acdfg_b -> getNodeFromID(j);
+	  string strA = na -> getDotLabel();
+	  string strB = nb -> getDotLabel();
+	  ostringstream sA, sB,sC;
+	  sA << "\"a_"<<na -> get_id() <<"\" [" << strA << "];"<<std::endl;
+	  sB << "\"b_"<<nb -> get_id() <<"\" [" << strB << "];"<<std::endl;
+	  graphADot.push_back(sA.str());
+	  graphBDot.push_back(sB.str());
+	  sC << "\"a_"<<na -> get_id()<<"\" -> \"b_"<<nb-> get_id()<<"\"[color=green,Damping=0.7,style=dashed]; "<< std::endl;
+	  graphEdges.push_back(sC.str());
+	}	
+      }  
+    }
+
+    // Now iterate throught he compatible edge pairs.
+    
+    std::vector<edge_pair_t>::const_iterator mt;	   
+    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+      edge_id_t eAID = mt -> first;
+      edge_id_t eBID = mt -> second;
+      Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+      Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+      MILPVariable var = milp.getVariableFromID(vid);
+      if (var.binVal == 1){
+	// Bingo.. print the two edges
+	ostringstream ssA,ssB;
+	ssA << "\"a_"<< eA -> get_src_id()<<"\" -> \"a_"<<eA -> get_dst_id()<<"\";"<<std::endl;
+	ssB << "\"b_"<< eB -> get_src_id()<<"\" -> \"b_"<<eB -> get_dst_id()<<"\";"<<std::endl;
+	graphEdges.push_back(ssA.str());
+	graphEdges.push_back(ssB.str());
+      }
+      
+    }
+
+    // Now we can dump this to the file
+
+    out << "digraph isoAB { " << std::endl;
+    // Print the stuff for graph A
+    out << "rankdir=LR;\n\
+ node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n\
+ edge[ arrowhead=onormal,penwidth=1.0,]; \n" <<std::endl;
+
+    std::vector<string>::const_iterator kt;
+     
+    out << "subgraph cluster_A { " << std::endl;
+    out << "rank=same;\n color=gray;\n style=\"filled,rounded\"\n label=\"ACDFG A\"" << std::endl;
+    for(kt = graphADot.begin(); kt != graphADot.end(); ++kt){
+      out << *kt << std::endl;
+    }
+    out << "} /* Cluster A */"<<std::endl;
+    out << "subgraph cluster_B { " << std::endl;
+    out << "rank=same;\n color=gray;\n style=\"filled,rounded\"\n label=\"ACDFG B\"" << std::endl;
+    for(kt = graphBDot.begin(); kt != graphBDot.end(); ++kt){
+      out << *kt << std::endl;
+    }
+    out << "} /* Cluster B */"<<std::endl;
+    // Now for the edges
+    for (kt = graphEdges.begin(); kt != graphEdges.end(); ++kt){
+      out << *kt << std::endl;
+    }
+    out << " } " << std::endl;
+    
   }
 
 

@@ -43,6 +43,8 @@ namespace fixrgraphiso {
       return nType_;
     }
 
+    virtual string getDotLabel() const;
+
     virtual Node * clone() const;
   
     virtual void prettyPrint(std::ostream & out) const ;
@@ -63,7 +65,9 @@ namespace fixrgraphiso {
     const string& get_name() const;
     const string& get_data_type() const;
     bool isCompatible(DataNode const * n) const;
-  
+
+    virtual string getDotLabel() const;
+    
     void prettyPrint(std::ostream & out) const;
     Node * clone() const;
     friend std::ostream& operator<<(std::ostream&, const DataNode&);
@@ -92,10 +96,9 @@ namespace fixrgraphiso {
     const DataNode* get_receiver() const;
     const std::vector<DataNode*> &  get_arguments() const;
     Node * clone() const;
-  
+    virtual string getDotLabel() const;
     void prettyPrint(std::ostream & out) const;
     bool isCompatible(MethodNode const * n) const;
-
     friend std::ostream& operator<<(std::ostream&, const MethodNode&);
     
   protected:

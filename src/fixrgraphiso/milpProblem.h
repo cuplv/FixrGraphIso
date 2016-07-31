@@ -11,6 +11,7 @@
 namespace fixrgraphiso {
 
   typedef enum { ISO_NODE, ISO_WT, ISO_EDGE } ilp_variable_t;
+  
   extern int numVariables;
 
   typedef std::map<int, float> expr_t;
@@ -30,8 +31,10 @@ namespace fixrgraphiso {
   
   class MILProblem {
   public:
-   
-  MILProblem():numVariables(0) {}; // Constructor
+
+  MILProblem():numVariables(0), solvedSuccessfully(false)
+      {}; // Constructor
+    
     MILPVariable createIsoNodeVariable(node_id_t i, node_id_t j);
     MILPVariable createIsoWtVariable(node_id_t i, node_id_t j);
     MILPVariable createIsoEdgeVariable(edge_id_t i, edge_id_t j);
@@ -70,12 +73,15 @@ namespace fixrgraphiso {
       assert(it != id2Variable.end());
       return it -> second;
     }
+
+    bool hasBeenSolvedSuccessfully() const { return solvedSuccessfully; }
+    
   private:
     int numVariables;
+    bool solvedSuccessfully;
     std::map<int, MILPVariable> id2Variable;
     std::vector<constr_t > ineqs;// lhs <= rhs
     std::vector<constr_t> eqs;
-
     std::map<node_pair_t, MILPVariable> isoNodes;
     std::map<node_pair_t, MILPVariable> isoWts;
     std::map<edge_pair_t, MILPVariable> isoEdges;

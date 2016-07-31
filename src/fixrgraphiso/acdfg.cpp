@@ -7,9 +7,10 @@
 
 #include <iostream> // DEBUG
 #include "fixrgraphiso/acdfg.h"
-
+#include <sstream>
 namespace fixrgraphiso {
-
+  using std::ostringstream;
+  
 //------------------------------------------------------------------------------
 // Implementation of the nodes
 //------------------------------------------------------------------------------
@@ -24,6 +25,13 @@ namespace fixrgraphiso {
     stream << "Node id: " << id_ << "\n";
   }
 
+  string Node::getDotLabel() const {
+    assert(get_type() == REGULAR_NODE);
+    ostringstream ss;
+    ss << "label=\"#"<<get_id()<<"\"";
+    return ss.str();
+  }
+  
   Node * Node::clone() const {
     return new Node(*this);
   }
@@ -55,6 +63,7 @@ namespace fixrgraphiso {
   {
     return name_;
   }
+
   
   const string& DataNode::get_data_type() const
   {
@@ -68,6 +77,14 @@ namespace fixrgraphiso {
       "\n\t\ttype: " << get_data_type() << std::endl;
     
   }
+
+  string DataNode::getDotLabel() const {
+    ostringstream ss;
+    assert(get_type() == DATA_NODE);
+    ss << "style=dashed,shape=ellipse,label=\"#"<<get_id()<<": " << get_data_type() << "  " << get_name()<<"\"" ;
+    return ss.str();
+  }
+
   
   std::ostream& operator<<(std::ostream& stream, const DataNode& node)
   {
@@ -142,6 +159,26 @@ namespace fixrgraphiso {
     }
     stream << ")" << std::endl;
     
+  }
+
+  string MethodNode::getDotLabel() const {
+    ostringstream ss;
+    assert(get_type() == METHOD_NODE);
+    ss << " label=\" #" <<get_id()<< ": " << get_name() << "[";
+    const DataNode* r = get_receiver();
+    if (r != NULL){
+      ss << "#"<< r-> get_id();
+    }
+    ss << "](";
+    string sep="";
+    for (std::vector<DataNode*>::const_iterator it =  arguments_.begin();
+	 it != arguments_.end();
+	 ++it) {
+      ss << sep << "#"<< (*it) -> get_id() ;
+      sep = ", ";
+    }
+    ss << ")\"";
+    return ss.str();
   }
   
   std::ostream& operator<<(std::ostream& stream, const MethodNode& node)
