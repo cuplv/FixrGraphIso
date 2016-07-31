@@ -23,7 +23,6 @@ add_executable(fixrgraphiso
   main.cpp
   acdfg.cpp
   serialization.cpp
-  iso.cpp
   ilpApproxIsomorphismEncoder.cpp
   milpProblem.cpp
   ${PROTO_SRCS}
@@ -32,5 +31,5 @@ add_executable(fixrgraphiso
 target_link_libraries(fixrgraphiso
   ${FIXR_GRAPH_ISO_LINK_LIBS}
   ${PROTOBUF_LIBRARY}
-  ${Z3_LIBRARIES}
+  ${GLPK_LIBRARY}
 )

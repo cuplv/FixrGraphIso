@@ -1,5 +1,7 @@
 #include "fixrgraphiso/milpProblem.h"
 #include <sstream>
+#include <glpk.h>
+
 namespace fixrgraphiso{
   
   MILPVariable MILProblem::createVariable(ilp_variable_t typ, node_id_t i, node_id_t j){
@@ -22,6 +24,8 @@ namespace fixrgraphiso{
     ret.typ = typ;
     ret.id = numVariables;
     ret.name = st;
+    ret.binVal =0;
+    ret.floatVal = -112989189391.0;
     id2Variable[numVariables] = ret;
     numVariables++;
     return ret;
@@ -143,6 +147,188 @@ namespace fixrgraphiso{
     out << "end; " <<std::endl;
   }
   
-  
+
+  int MILProblem::createRowFromExpr(expr_t const & e, int * ind, double* val){
+    int len  = 0;
+    expr_t::const_iterator it;
+    for (it = e.begin(); it != e.end(); ++it){
+      int id = it -> first;
+      float c  = it -> second;
+      len = len +1;
+      ind[len] = 1 + id;
+      val[len] = c;
+    }
+    // Clear the rest of the entries
+    for (int i = len+1; i < numVariables; ++i){
+      ind[i] = 0;
+      val[i] = 0.0;
+    }
+    
+    return len;
+  }
+  void MILProblem::solveUsingGLPKLibrary(){
+    glp_prob * lp;
+    lp = glp_create_prob();
+    int nRows = (int) (this -> ineqs.size() + this -> eqs.size());
+    int nCols = this -> numVariables;
+    glp_add_rows(lp, nRows);
+    glp_add_cols(lp, nCols);
+    
+    // Declare the variable types.
+    std::map<int, MILPVariable>::iterator it;
+    for (it = id2Variable.begin(); it != id2Variable.end(); ++it){
+
+      // Iterate through all variables
+      MILPVariable var = it -> second;
+      
+      glp_set_col_name(lp, 1+ var.id, var.name.c_str()); // set the column name
+      
+      switch( var.typ ){
+      case ISO_NODE:
+      case ISO_EDGE:{
+	// set it to a binary variable
+	glp_set_col_kind(lp,1 + var.id, GLP_BV);
+	break;
+      }
+      case ISO_WT: {
+	// set it to a continuous variable with limits between 0 and 1
+	glp_set_col_kind(lp,1 + var.id, GLP_CV);
+	glp_set_col_bnds(lp, 1+ var.id, GLP_DB, 0.0, 1.0);
+	break;
+      }
+      default: {
+	  // We have a unhandled type -- this should never happen!
+	  assert(false);
+	  break;
+	}
+      } // switch
+    } // for it = ..
+    int * ind = new int[nCols+1];
+    double * val = new double[nCols + 1];
+    
+    int i = 0;
+    std::vector<constr_t>::iterator jt;
+    // Add equalities
+    for (jt = eqs.begin(); jt != eqs.end(); ++jt){
+      i = i +1; // increment the row count
+      expr_t e = jt -> first;
+      float f = jt -> second;
+      // e == f
+      int len = createRowFromExpr(e, ind, val);
+      glp_set_mat_row(lp, i, len, ind, val);
+      glp_set_row_bnds(lp, i, GLP_FX, f, f);
+    }
+    // Add the inequalities
+    for (jt = ineqs.begin(); jt != ineqs.end(); ++jt){
+      i = i +1; // increment the row count
+      expr_t e = jt -> first;
+      float f = jt -> second;
+      // e <= f
+      int len = createRowFromExpr(e, ind, val);
+      glp_set_mat_row(lp, i, len, ind, val);
+      glp_set_row_bnds(lp, i, GLP_UP, 0.0, f);
+    }
+    // Set the objective.
+    expr_t::const_iterator kt;
+    for (kt = obj.begin(); kt != obj.end(); ++kt){
+      int id = kt -> first;
+      float val = kt -> second;
+      glp_set_obj_coef(lp, 1 + id, val);
+    }
+
+    glp_set_obj_dir(lp, GLP_MAX); // set it to a maximization problem
+
+    // Now let's solve the problem.
+    glp_iocp params;
+    glp_init_iocp(&params);
+    params.presolve = GLP_ON;
+    int rVal = glp_intopt(lp, &params);
+    if (rVal == 0){
+      std::cout << "Problem sucessfully solved ! " << std::endl;
+    } else {
+      std::cout << " GLPK bailed with error code " << std::endl;
+      assert(false);
+    }
+
+    int stat = glp_mip_status(lp);
+    switch (stat){
+    case GLP_OPT:
+      {
+	std::cout << "Optimal solution found " << std::endl;
+	
+      }
+      break;
+    case GLP_FEAS:
+      {
+	std::cout << "Solver could not find optimal integer solution due to premature termination, perhaps " << std::endl;
+	assert(false);
+      }
+      break;
+
+    case GLP_NOFEAS:
+      {
+	std::cout << " Problem is primal infeasible " << std::endl;
+	assert(false);
+      }
+      break;
+
+    case GLP_UNDEF:
+      {
+	std::cout << "Solver bailed out with undefined message " << std::endl;
+	assert(false);
+      }
+      break;
+
+    }
+    
+    
+    // Extract the solution from the result, if feasible.
+
+    double objValue =  glp_mip_obj_val(lp);
+    std:: cout << " \t Objective Value : " << objValue << std::endl;
+    
+    for (it = id2Variable.begin(); it != id2Variable.end(); ++it){
+
+      // Iterate through all variables
+      MILPVariable & var = it -> second;
+      std::cout << " \t " << var.name << " := " ;
+      
+      switch( var.typ ){
+      case ISO_NODE:
+      case ISO_EDGE:{
+	// set it to a binary variable
+	double v = glp_mip_col_val(lp, 1 + var.id);
+	int val;
+	assert( (v >= -1e-06 && v <= 1e-06) || (v >= 1.0-1e-06 && v <= 1.0+1e-06));
+	if (v <= 1e-06){
+	  val = 0;
+	} else {
+	  val = 1;
+	}
+	var.binVal = val;
+	std::cout << var.binVal << std::endl;
+	break;
+      }
+      case ISO_WT: {
+	// set it to a continuous variable with limits between 0 and 1
+	double v = glp_mip_col_val(lp, 1 + var.id);
+	assert( v >= -1e-06 && v<= 1.0 + 1e-06);
+	var.floatVal = v;
+	std::cout << v << std::endl;
+	break;
+      }
+      default: {
+	  // We have a unhandled type -- this should never happen!
+	  assert(false);
+	  break;
+	}
+      } // switch
+    } // for it = ..
+    
+    delete[] (ind);
+    delete[] (val);
+    glp_delete_prob(lp);
+    
+  }
 
 }

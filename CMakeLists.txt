@@ -20,12 +20,12 @@ endif(NOT PROTOBUF_FOUND)
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
 
-# check for Z3
-include(FindZ3)
-if (NOT Z3_FOUND)
-  message(FATAL_ERROR "ERROR: z3 not found")
-endif(NOT Z3_FOUND)
-include_directories(${Z3_INCLUDEDIR})
+# check for GLPK
+include(FindGLPK)
+if (NOT GLPK_FOUND)
+  message(FATAL_ERROR "ERROR: glpk not found")
+endif(NOT GLPK_FOUND)
+include_directories(${GLPK_INCLUDEDIR})
 
 
 #############################################################################

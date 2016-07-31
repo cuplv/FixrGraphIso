@@ -526,6 +526,9 @@ namespace fixrgraphiso {
     // 4. Print AMPL
 
     milp.prettyPrintAMPLFormat(std::cout);
+
+    // 5. Solve
+    milp.solveUsingGLPKLibrary();
   }
 
 

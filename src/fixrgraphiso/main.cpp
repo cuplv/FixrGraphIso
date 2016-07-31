@@ -9,7 +9,7 @@
 
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfg.h"
-#include "fixrgraphiso/iso.h"
+//#include "fixrgraphiso/iso.h"
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 
 using namespace fixrgraphiso;
