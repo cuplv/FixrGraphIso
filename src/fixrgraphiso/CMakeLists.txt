@@ -21,6 +21,7 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${PROTOBUF_IMPORT_DIRS}/proto_acdfg.
 
 add_executable(fixrgraphiso
   main.cpp
+  explicitTests.cpp
   acdfg.cpp
   serialization.cpp
   ilpApproxIsomorphismEncoder.cpp

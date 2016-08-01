@@ -14,14 +14,57 @@
 
 using namespace fixrgraphiso;
 
+extern Acdfg * createGraphA();
+extern Acdfg * createGraphB();
+
+
 void clean(acdfg_protobuf::Acdfg* proto_acdfg_a,
            acdfg_protobuf::Acdfg* proto_acdfg_b,
            Acdfg* acdfg_a, Acdfg* acdfg_b);
 
+void process(Acdfg* acdfg_a, Acdfg* acdfg_b){
+
+
+    std::cout << "Acdfg a\n" << (*acdfg_a);
+    std::cout << "\nAcdfg b\n" << (*acdfg_b);
+
+    // /* Compute the isomorphism */
+    // {
+    //   IsoSolver solver(*acdfg_a, *acdfg_b);
+
+    //   /* compute (precise) isomorphism */
+    //   bool is_iso = solver.is_iso();
+    //   std::cout << "Is a isomorphic to b? " <<
+    //     is_iso << std::endl;
+    //   if (is_iso) {
+    //     std::cout << "Isomorphism:\n" <<
+    //       solver.get_last_isomorphism() << std::endl;
+    //   }
+
+    //   bool is_approx_iso = solver.get_max_embedding();
+    //   std::cout << "Is a approximate isomorphic to b? "
+    //             << is_approx_iso << std::endl;
+    //   if (is_approx_iso) {
+    //     std::cout << "Approximate isomorphism:\n" <<
+    //       solver.get_last_isomorphism() << std::endl;
+    //   }
+    // }
+
+    IlpApproxIsomorphism ilp(acdfg_a, acdfg_b);
+    ilp.computeILPEncoding();
+
+    std::ofstream file("outputIso.dot");
+    ilp.prettyPrintEncodingResultInDot(file);
+    file.close();
+}
+
 int main (int argc, char *argv[])
 {
   if (3 != argc) {
-    std::cerr << "usage: fixrgraphiso <proto-graph> <proto-graph>\n";
+    Acdfg * acdfg_a = createGraphA();
+    Acdfg * acdfg_b = createGraphB();
+    process(acdfg_a, acdfg_b);
+ 
     return 1;
   }
   else {
@@ -61,37 +104,7 @@ int main (int argc, char *argv[])
       return 1;
     }
 
-    std::cout << "Acdfg a\n" << (*acdfg_a);
-    std::cout << "\nAcdfg b\n" << (*acdfg_b);
-
-    // /* Compute the isomorphism */
-    // {
-    //   IsoSolver solver(*acdfg_a, *acdfg_b);
-
-    //   /* compute (precise) isomorphism */
-    //   bool is_iso = solver.is_iso();
-    //   std::cout << "Is a isomorphic to b? " <<
-    //     is_iso << std::endl;
-    //   if (is_iso) {
-    //     std::cout << "Isomorphism:\n" <<
-    //       solver.get_last_isomorphism() << std::endl;
-    //   }
-
-    //   bool is_approx_iso = solver.get_max_embedding();
-    //   std::cout << "Is a approximate isomorphic to b? "
-    //             << is_approx_iso << std::endl;
-    //   if (is_approx_iso) {
-    //     std::cout << "Approximate isomorphism:\n" <<
-    //       solver.get_last_isomorphism() << std::endl;
-    //   }
-    // }
-
-    IlpApproxIsomorphism ilp(acdfg_a, acdfg_b);
-    ilp.computeILPEncoding();
-
-    std::ofstream file("outputIso.dot");
-    ilp.prettyPrintEncodingResultInDot(file);
-    file.close();
+    process(acdfg_a, acdfg_b);
     clean(proto_acdfg_a, proto_acdfg_b, acdfg_a, acdfg_b);
   }
 
