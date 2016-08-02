@@ -542,6 +542,23 @@ namespace fixrgraphiso {
     vector<string> graphADot;
     vector<string> graphBDot;
     vector<string> graphEdges;
+
+    nodes_t::const_iterator pt;
+    for (pt = acdfg_a -> begin_nodes(); pt != acdfg_a -> end_nodes(); ++pt){
+      const Node * na = *pt;
+      string strA = na -> getDotLabel();
+      ostringstream sA;
+      sA << "\"a_"<<na -> get_id() <<"\" [ color=gray, " << strA << "];"<<std::endl;
+      graphADot.push_back(sA.str());
+    }
+
+    for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
+      const Node * nb = *pt;
+      string strB = nb -> getDotLabel();
+      ostringstream sB;
+      sB << "\"b_"<<nb -> get_id() <<"\" [color=gray," << strB << "];"<<std::endl;
+    }
+    
     for (it = node_map_a_to_b.begin();
 	 it != node_map_a_to_b.end();
 	 ++it){ // Iterate through all nodes
@@ -560,11 +577,11 @@ namespace fixrgraphiso {
 	  string strA = na -> getDotLabel();
 	  string strB = nb -> getDotLabel();
 	  ostringstream sA, sB,sC;
-	  sA << "\"a_"<<na -> get_id() <<"\" [" << strA << "];"<<std::endl;
-	  sB << "\"b_"<<nb -> get_id() <<"\" [" << strB << "];"<<std::endl;
+	  sA << "\"a_"<<na -> get_id() <<"\" [ color=blue," << strA << "];"<<std::endl;
+	  sB << "\"b_"<<nb -> get_id() <<"\" [ color=blue," << strB << "];"<<std::endl;
 	  graphADot.push_back(sA.str());
 	  graphBDot.push_back(sB.str());
-	  sC << "\"a_"<<na -> get_id()<<"\" -> \"b_"<<nb-> get_id()<<"\"[color=green,Damping=0.7,style=dashed]; "<< std::endl;
+	  sC << "\"a_"<<na -> get_id()<<"\" -> \"b_"<<nb-> get_id()<<"\"[color=red,Damping=0.7,style=dashed]; "<< std::endl;
 	  graphEdges.push_back(sC.str());
 	}	
       }  
@@ -602,13 +619,13 @@ namespace fixrgraphiso {
     std::vector<string>::const_iterator kt;
      
     out << "subgraph cluster_A { " << std::endl;
-    out << "rank=same;\n color=gray;\n style=\"filled,rounded\"\n label=\"ACDFG A\"" << std::endl;
+    out << "rank=same;\n \n style=\"rounded\"\n label=\"ACDFG A\"" << std::endl;
     for(kt = graphADot.begin(); kt != graphADot.end(); ++kt){
       out << *kt << std::endl;
     }
     out << "} /* Cluster A */"<<std::endl;
     out << "subgraph cluster_B { " << std::endl;
-    out << "rank=same;\n color=gray;\n style=\"filled,rounded\"\n label=\"ACDFG B\"" << std::endl;
+    out << "rank=same;\n color=gray;\n style=\"rounded\"\n label=\"ACDFG B\"" << std::endl;
     for(kt = graphBDot.begin(); kt != graphBDot.end(); ++kt){
       out << *kt << std::endl;
     }
