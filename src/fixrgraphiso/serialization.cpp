@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <typeinfo>
 #include "fixrgraphiso/serialization.h"
 
 namespace fixrgraphiso {
