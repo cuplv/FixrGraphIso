@@ -6,6 +6,8 @@
 #include <algorithm>
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/milpProblem.h"
+#include "fixrgraphiso/isomorphismResults.h"
+
 namespace fixrgraphiso {
   using std::ostream;
   
@@ -39,6 +41,7 @@ namespace fixrgraphiso {
     
     void prettyPrintEncodingResultInDot(ostream & out);
     void computeILPEncoding();
+    void populateResults(IsomorphismResults & res);
 
   private:
 

@@ -11,6 +11,7 @@
 #include "fixrgraphiso/acdfg.h"
 //#include "fixrgraphiso/iso.h"
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
+#include "fixrgraphiso/isomorphismResults.h"
 
 using namespace fixrgraphiso;
 
@@ -22,7 +23,7 @@ void clean(acdfg_protobuf::Acdfg* proto_acdfg_a,
            acdfg_protobuf::Acdfg* proto_acdfg_b,
            Acdfg* acdfg_a, Acdfg* acdfg_b);
 
-void process(Acdfg* acdfg_a, Acdfg* acdfg_b){
+void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_b){
 
 
     std::cout << "Acdfg a\n" << (*acdfg_a);
@@ -56,6 +57,9 @@ void process(Acdfg* acdfg_a, Acdfg* acdfg_b){
     std::ofstream file("outputIso.dot");
     ilp.prettyPrintEncodingResultInDot(file);
     file.close();
+
+    IsomorphismResults isoResults(aName,bName);
+    ilp.populateResults(isoResults);
 }
 
 int main (int argc, char *argv[])
@@ -63,7 +67,7 @@ int main (int argc, char *argv[])
   if (3 != argc) {
     Acdfg * acdfg_a = createGraphA();
     Acdfg * acdfg_b = createGraphB();
-    process(acdfg_a, acdfg_b);
+    process("a", acdfg_a,"b", acdfg_b);
  
     return 1;
   }
@@ -73,7 +77,9 @@ int main (int argc, char *argv[])
     acdfg_protobuf::Acdfg* proto_acdfg_b = NULL;
     Acdfg* acdfg_a = NULL;
     Acdfg* acdfg_b = NULL;
-
+    string graphAName (argv[1]);
+    string graphBName (argv[2]);
+    
     proto_acdfg_a = serializer.read_protobuf_acdfg(argv[1]);
     if (NULL == proto_acdfg_a) {
       std::cerr << "Error reading file " << argv[1] << "\n";
@@ -104,7 +110,7 @@ int main (int argc, char *argv[])
       return 1;
     }
 
-    process(acdfg_a, acdfg_b);
+    process(graphAName, acdfg_a, graphBName, acdfg_b);
     clean(proto_acdfg_a, proto_acdfg_b, acdfg_a, acdfg_b);
   }
 
