@@ -51,7 +51,7 @@ namespace fixrgraphiso {
       std::vector<iso>::iterator it;
 
       // add node maps
-      for (it = isoNodes.begin(); it < isoNodes.end(); ++it) {
+      for (it = isoNodes.begin(); it != isoNodes.end(); ++it) {
 	iso_protobuf::Iso_MapNode * map_node = proto->add_map_node();
 	map_node->set_id_1(it->a_id);
 	map_node->set_id_2(it->b_id);
@@ -59,7 +59,7 @@ namespace fixrgraphiso {
       }
 
       // add edge maps
-      for (it = isoEdges.begin(); it < isoEdges.end(); ++it) {
+      for (it = isoEdges.begin(); it != isoEdges.end(); ++it) {
 	iso_protobuf::Iso_MapEdge * map_edge = proto->add_map_edge();
 	map_edge->set_id_1(it->a_id);
 	map_edge->set_id_2(it->b_id);
@@ -92,9 +92,7 @@ namespace fixrgraphiso {
       return condition;
     }
 
-    // Sriram: I'll leave the defaults to you.
-    //   --Rhys
-    void dumpProtobuf();
+    
   };
 }
 

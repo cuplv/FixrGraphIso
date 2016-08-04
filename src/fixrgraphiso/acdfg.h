@@ -211,6 +211,13 @@ namespace fixrgraphiso {
   
     friend std::ostream& operator<<(std::ostream&, const Acdfg&);
 
+    void setName(std::string const & name){
+      this -> name_ = name;
+    }
+
+    std::string getName() const {
+      return this -> name_;
+    }
   
   private:
     nodes_t nodes_;
@@ -218,7 +225,7 @@ namespace fixrgraphiso {
     node_id_to_ptr_map_t nMap_;
     edge_id_to_ptr_map_t eMap_;
     node_id_to_outgoing_edges_map_t outgoingMap_;
-  
+    std::string name_;
   };
 
 
