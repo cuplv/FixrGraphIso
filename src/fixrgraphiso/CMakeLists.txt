@@ -11,7 +11,8 @@ include_directories(.)
 #############################################################################
 # process the protobuf file
 #############################################################################
-PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${PROTOBUF_IMPORT_DIRS}/proto_acdfg.proto)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFG PROTO_HDRS_ACDFG ${PROTOBUF_IMPORT_DIRS}/proto_acdfg.proto)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS_ISO PROTO_HDRS_ISO ${PROTOBUF_IMPORT_DIRS}/proto_iso.proto)
 
 #MESSAGE("PROTO SOURCES: ${PROTO_SRCS}")
 #MESSAGE("PROTO HDRS: ${PROTO_HDRS}")
@@ -26,7 +27,8 @@ add_executable(fixrgraphiso
   serialization.cpp
   ilpApproxIsomorphismEncoder.cpp
   milpProblem.cpp
-  ${PROTO_SRCS}
+  ${PROTO_SRCS_ACDFG}
+  ${PROTO_SRCS_ISO}
 )
 
 target_link_libraries(fixrgraphiso

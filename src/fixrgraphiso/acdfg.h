@@ -21,7 +21,7 @@ namespace fixrgraphiso {
 
   typedef enum { REGULAR_NODE, DATA_NODE, METHOD_NODE } node_type_t;
 
-  typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE} edge_type_t;
+  typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE, TRANSITIVE_EDGE} edge_type_t;
   typedef long node_id_t;
   typedef long edge_id_t;
   
@@ -161,6 +161,12 @@ namespace fixrgraphiso {
   public:
     ControlEdge(long id, Node* src, Node* dst): Edge(id, CONTROL_EDGE, src, dst){};
     ControlEdge(const ControlEdge & edge): Edge(edge.id_, CONTROL_EDGE, edge.src_, edge.dst_){};
+  };
+
+  class TransitiveEdge: public Edge {
+  public:
+    TransitiveEdge(long id, Node * src, Node * dst): Edge(id, TRANSITIVE_EDGE, src, dst){};
+    TransitiveEdge(const TransitiveEdge & edge): Edge(edge.id_, TRANSITIVE_EDGE, edge.src_, edge.dst_){};
   };
 
   typedef std::vector<Node*> nodes_t;

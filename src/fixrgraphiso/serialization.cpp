@@ -106,6 +106,13 @@ Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
     addEdge(acdfg, idToNodeMap,proto_edge);
   }
 
+  for (int j = 0; j < proto_acdfg->trans_edge_size(); j++) {
+    const acdfg_protobuf::Acdfg_TransEdge& proto_edge =
+      proto_acdfg->trans_edge(j);
+    addEdge(acdfg, idToNodeMap,proto_edge);
+  }
+  
+  
   return acdfg;
 }
 
@@ -163,6 +170,9 @@ Node* lookup_node(idMapType& idToNodeMap, long id)
       acdfg->add_edge(e);
     } else if (typeid(T) == typeid(acdfg_protobuf::Acdfg_DefEdge)){
       DefEdge * e = new DefEdge(proto_edge.id(), from, to);
+      acdfg->add_edge(e);
+    } else if (typeid(T) == typeid(acdfg_protobuf::Acdfg_TransEdge)) {
+      TransitiveEdge * e = new TransitiveEdge(proto_edge.id(), from, to);
       acdfg->add_edge(e);
     } else {
       assert(false); // This should not happen

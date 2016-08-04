@@ -10,7 +10,7 @@
 #include <sstream>
 namespace fixrgraphiso {
   using std::ostringstream;
-  
+  bool typeMatchDataNode = false;
 //------------------------------------------------------------------------------
 // Implementation of the nodes
 //------------------------------------------------------------------------------
@@ -56,7 +56,11 @@ namespace fixrgraphiso {
   }
 
   bool DataNode::isCompatible(DataNode const * n) const {
-    return (n -> data_type_ == this-> data_type_);
+    if (typeMatchDataNode){
+      return (n -> data_type_ == this-> data_type_);
+    } else {
+      return true;
+    }
   }
   
   const string& DataNode::get_name() const

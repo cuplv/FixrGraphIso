@@ -4,7 +4,8 @@
 
 namespace fixrgraphiso {
   bool debug = true;
-  bool encodeRegularNodes = true;
+  bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
+ 
   using std::ostringstream;
   
   void IlpApproxIsomorphism::addCompatibleNodes(Node * na, Node * nb){
