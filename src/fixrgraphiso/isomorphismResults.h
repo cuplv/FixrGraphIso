@@ -1,9 +1,11 @@
 #ifndef D__ISORESULTS__HH__
 #define D__ISORESULTS__HH__
 
+#include <fstream>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
+
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/proto_iso.pb.h"
 
@@ -59,8 +61,8 @@ namespace fixrgraphiso {
       // add edge maps
       for (it = isoEdges.begin(); it < isoEdges.end(); ++it) {
 	iso_protobuf::Iso_MapEdge * map_edge = proto->add_map_edge();
-	map_node->set_id_1(it->a_id);
-	map_node->set_id_2(it->b_id);
+	map_edge->set_id_1(it->a_id);
+	map_edge->set_id_2(it->b_id);
       }
       
       proto->set_graph_1_id(graphA);
@@ -69,6 +71,29 @@ namespace fixrgraphiso {
       return proto;
     }
 
+    int dumpProtobuf(std::string output_dir) {
+      // ensure we're using a compatible version of Protobuf
+      GOOGLE_PROTOBUF_VERIFY_VERSION;
+      
+      int condition = 0;
+      iso_protobuf::Iso * proto = toProtobuf();
+
+      std::fstream output(output_dir.c_str(),
+        std::ios::out | std::ios::trunc | std::ios::binary);
+
+      if (!proto->SerializeToOstream(&output)) {
+	std::cerr << "Failed to write isomorphism protobuf." << std::endl;
+	condition = -1;
+      }
+      
+      // clean up our garbage
+      delete proto;
+      google::protobuf::ShutdownProtobufLibrary();
+      return condition;
+    }
+
+    // Sriram: I'll leave the defaults to you.
+    //   --Rhys
     void dumpProtobuf();
   };
 }
