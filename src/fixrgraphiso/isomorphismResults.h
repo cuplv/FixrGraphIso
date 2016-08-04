@@ -58,10 +58,9 @@ namespace fixrgraphiso {
 
       // add edge maps
       for (it = isoEdges.begin(); it < isoEdges.end(); ++it) {
-	iso_protobuf::Iso_MapNode * map_node = proto->add_map_node();
+	iso_protobuf::Iso_MapEdge * map_edge = proto->add_map_edge();
 	map_node->set_id_1(it->a_id);
 	map_node->set_id_2(it->b_id);
-	map_node->set_weight(it->wt);
       }
       
       proto->set_graph_1_id(graphA);
@@ -71,7 +70,6 @@ namespace fixrgraphiso {
     }
 
     void dumpProtobuf();
-  
   };
 }
 
