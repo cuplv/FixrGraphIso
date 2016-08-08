@@ -56,7 +56,7 @@ void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_
   ilp.computeILPEncoding();
   
   
-  std::ofstream file(fStem+".dot");
+  std::ofstream file((fStem+".dot").c_str());
   ilp.prettyPrintEncodingResultInDot(file);
   file.close();
 
