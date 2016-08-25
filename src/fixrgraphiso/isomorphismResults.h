@@ -25,8 +25,9 @@ namespace fixrgraphiso {
     std::vector<iso> isoEdges; // Information about edges
     std::string graphA;
     std::string graphB;
+    double totalWeight;
     
-  IsomorphismResults(std::string aName, std::string bName):graphA(aName), graphB(bName)
+  IsomorphismResults(std::string aName, std::string bName):graphA(aName), graphB(bName),totalWeight(0.0)
     {};
     
     void addIsoNodePair(long node_a_id, long node_b_id, double weight){
@@ -35,6 +36,7 @@ namespace fixrgraphiso {
       istr.b_id = node_b_id;
       istr.wt = weight;
       isoNodes.push_back(istr);
+      totalWeight += weight;
     }
 
     void addIsoEdgePair(long edge_a_id, long edge_b_id){
@@ -47,7 +49,7 @@ namespace fixrgraphiso {
 
     iso_protobuf::Iso * toProtobuf() {
       iso_protobuf::Iso * proto = new iso_protobuf::Iso();
-
+      
       std::vector<iso>::iterator it;
 
       // add node maps

@@ -85,7 +85,7 @@ namespace fixrgraphiso {
   string DataNode::getDotLabel() const {
     ostringstream ss;
     assert(get_type() == DATA_NODE);
-    ss << "style=dashed,shape=ellipse,label=\"#"<<get_id()<<": " << get_data_type() << "  " << get_name()<<"\"" ;
+    ss << "style=dashed,shape=ellipse,label=\"DataNode #"<<get_id()<<": " << get_data_type() << "  " << get_name()<<"\"" ;
     return ss.str();
   }
 
@@ -168,7 +168,7 @@ namespace fixrgraphiso {
   string MethodNode::getDotLabel() const {
     ostringstream ss;
     assert(get_type() == METHOD_NODE);
-    ss << " label=\" #" <<get_id()<< ": " << get_name() << "[";
+    ss << " label=\" MethodNode #" <<get_id()<< ": " << get_name() << "[";
     const DataNode* r = get_receiver();
     if (r != NULL){
       ss << "#"<< r-> get_id();
