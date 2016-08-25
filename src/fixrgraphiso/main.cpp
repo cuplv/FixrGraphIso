@@ -23,9 +23,8 @@ void clean(acdfg_protobuf::Acdfg* proto_acdfg_a,
            acdfg_protobuf::Acdfg* proto_acdfg_b,
            Acdfg* acdfg_a, Acdfg* acdfg_b);
 
-void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_b,string outputDir){
+void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_b, std::string fStem) {
 
-  std::string fStem = outputDir+"/"+aName+"__"+bName;
   
   // std::cout << "Acdfg a\n" << (*acdfg_a);
   //std::cout << "\nAcdfg b\n" << (*acdfg_b);
@@ -67,12 +66,12 @@ void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_
 
 int main (int argc, char *argv[])
 {
-  if (4 != argc) {
-    
-    // Acdfg * acdfg_a = createGraphA();
-    // Acdfg * acdfg_b = createGraphB();
-    // process("a", acdfg_a,"b", acdfg_b,".");
-    std::cerr << "Warning: expecting three arguments rather than " << argc << std::endl;
+  if (argc < 3) {
+    Acdfg * acdfg_a = createGraphA();
+    Acdfg * acdfg_b = createGraphB();
+    std::string fStem = "a__b";
+    process("a", acdfg_a,"b", acdfg_b, fStem);
+
     return 1;
   }
   else {
@@ -83,7 +82,17 @@ int main (int argc, char *argv[])
     Acdfg* acdfg_b = NULL;
     string graphAName (argv[1]);
     string graphBName (argv[2]);
-    string outputDir (argv[3]);
+
+    std::string fStem = "";
+    if (3 == argc) {
+      std::string a = argv[1];
+      std::string b = argv[2];
+      fStem = a + "__" + b;
+    }
+    else {
+      fStem = argv[3];
+    }
+
     proto_acdfg_a = serializer.read_protobuf_acdfg(argv[1]);
     if (NULL == proto_acdfg_a) {
       std::cerr << "Error reading file " << argv[1] << "\n";
@@ -114,7 +123,7 @@ int main (int argc, char *argv[])
       return 1;
     }
 
-    process(graphAName, acdfg_a, graphBName, acdfg_b,outputDir);
+    process(graphAName, acdfg_a, graphBName, acdfg_b, fStem);
     clean(proto_acdfg_a, proto_acdfg_b, acdfg_a, acdfg_b);
   }
 
