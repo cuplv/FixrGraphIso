@@ -1,18 +1,20 @@
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 
 namespace fixrgraphiso {
   bool debug = true;
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
- 
+  bool addCompatibleDataNodes = true; // This turns on additional checks for data node compatibility
+  bool printEverything=false;
   using std::ostringstream;
   
-  void IlpApproxIsomorphism::addCompatibleNodes(Node * na, Node * nb){
+  void IlpApproxIsomorphism::addCompatibleNodes(Node const * na, Node const * nb){
     node_id_t id_a = na -> get_id();
     node_id_t id_b = nb -> get_id();
 
-    std::cout <<" Compatible nodes: " << id_a <<" , " << id_b << std::endl;
+    //std::cout <<" Compatible nodes: " << id_a <<" , " << id_b << std::endl;
     
     assert(na -> get_type() == nb -> get_type());
     if (node_map_a_to_b.find(id_a) == node_map_a_to_b.end()){
@@ -21,20 +23,45 @@ namespace fixrgraphiso {
       node_map_a_to_b[id_a] = vA; // Add map from a -> b
     } else {
       std::vector<long> & vA = node_map_a_to_b[id_a];
-      vA.push_back(id_b); // Map from a -> b
+      std::vector<long>::const_iterator it_a = std::find(vA.begin(), vA.end(), id_b);
+      if (it_a == vA.end()){
+	vA.push_back(id_b); // Map from a -> b
+      }
     }
 
-     if (node_map_b_to_a.find(id_b) == node_map_b_to_a.end()){
+    if (node_map_b_to_a.find(id_b) == node_map_b_to_a.end()){
       std::vector<long> vB;
       vB.push_back(id_a);
       node_map_b_to_a[id_b] = vB; // Add map from b -> a
     } else {
       std::vector<long> & vB = node_map_b_to_a[id_b];
-      vB.push_back(id_a); // Map from b -> a
+      std::vector<long>::const_iterator it_b = std::find(vB.begin(), vB.end(), id_a);
+      if (it_b == vB.end()){
+	vB.push_back(id_a); // Map from b -> a
+      }
     }
     
-
     return;
+  }
+
+  void IlpApproxIsomorphism::addAdditionalCompatibleDataNodes(MethodNode * ma, MethodNode * mb){
+    const DataNode * receiverA = ma -> get_receiver();
+    const DataNode * receiverB = mb -> get_receiver();
+    if (receiverA != NULL && receiverB != NULL){
+      this -> addCompatibleNodes(receiverA, receiverB);
+    }
+
+    std::vector<DataNode*> const & argsA = ma -> get_arguments();
+    std::vector<DataNode*> const & argsB = mb -> get_arguments();
+    std::vector<DataNode*>::const_iterator kt,lt;
+    for (kt = argsA.begin(), lt = argsB.begin();
+	 kt != argsA.end() && lt != argsB.end();
+	 ++kt, ++lt){
+	DataNode  * arg_a = *kt;
+	DataNode * arg_b = *lt;
+	this -> addCompatibleNodes(arg_a, arg_b);
+    }
+    
   }
   
   void IlpApproxIsomorphism::computeCompatibleNodes(){
@@ -78,6 +105,10 @@ namespace fixrgraphiso {
 	      MethodNode* mb = toMethodNode(nb);
 	      if (ma -> isCompatible(mb)){
 		this -> addCompatibleNodes(na,nb);
+		if (addCompatibleDataNodes){
+		  this -> addAdditionalCompatibleDataNodes(ma,mb);
+		}
+		
 	      }
 	      
 

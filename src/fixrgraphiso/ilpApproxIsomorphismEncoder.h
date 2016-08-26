@@ -52,7 +52,7 @@ namespace fixrgraphiso {
     std::vector< edge_pair_t > compat_edges_a_to_b; // Let's just make a list of compatible edges from a to b
     MILProblem milp;
     
-    void addCompatibleNodes(Node * a, Node* b); // Mark nodes from graph a and graph b as compatible
+    void addCompatibleNodes(Node const * a, Node const* b); // Mark nodes from graph a and graph b as compatible
     void computeCompatibleNodes();
     void computeCompatibleEdges();
     void addAllCompatibleEdges(std::vector<edge_id_t> const & vA, std::vector<edge_id_t> const & vB);
@@ -67,6 +67,7 @@ namespace fixrgraphiso {
     void addDataNodeMustNotBeIsolated();
     void createObjectiveFunction();
     void addUniqueMatchingConstraint(char a_or_b);
+    void addAdditionalCompatibleDataNodes(MethodNode * ma, MethodNode * mb);
 
     
   };

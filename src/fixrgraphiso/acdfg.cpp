@@ -10,7 +10,8 @@
 #include <sstream>
 namespace fixrgraphiso {
   using std::ostringstream;
-  bool typeMatchDataNode = false;
+  // Match the types of data nodes to be compatible
+  bool typeMatchDataNode = true;
 //------------------------------------------------------------------------------
 // Implementation of the nodes
 //------------------------------------------------------------------------------
