@@ -4,7 +4,7 @@
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 
 namespace fixrgraphiso {
-  bool debug = true;
+  bool debug = false;
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
   bool addCompatibleDataNodes = true; // This turns on additional checks for data node compatibility
   bool printEverything=false;
@@ -558,8 +558,9 @@ namespace fixrgraphiso {
     // 3. Create variables for the encoding
     initializeMILP();
     // 4. Print AMPL
-
-    milp.prettyPrintAMPLFormat(std::cout);
+    if (debug) {
+      milp.prettyPrintAMPLFormat(std::cout);
+    }
 
     // 5. Solve
     milp.solveUsingGLPKLibrary();
