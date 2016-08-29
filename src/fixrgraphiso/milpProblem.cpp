@@ -3,7 +3,7 @@
 #include <glpk.h>
 
 namespace fixrgraphiso{
-  
+
   MILPVariable MILProblem::createVariable(ilp_variable_t typ, node_id_t i, node_id_t j){
     std::ostringstream ss;
     std::string pref="NONE";
@@ -54,7 +54,7 @@ namespace fixrgraphiso{
 
   int MILProblem::lookupIsoVariableInMap( std::map<node_pair_t, MILPVariable> const & mp, node_id_t i, node_id_t j){
     node_pair_t ij(i,j);
-    
+
     std::map<node_pair_t, MILPVariable>::const_iterator it = mp.find(ij);
     assert(it != isoNodes.end());
     MILPVariable v = it -> second;
@@ -71,11 +71,11 @@ namespace fixrgraphiso{
       float c= it -> second;
 
       if (c < 0.0){
-	out << c << " * " << var.name;
-	printed = true;
+        out << c << " * " << var.name;
+        printed = true;
       } else if (c > 0.0){
-	out << sep << c << " * " << var.name;
-	printed = true;
+        out << sep << c << " * " << var.name;
+        printed = true;
       }
       sep = "+";
     }
@@ -100,7 +100,7 @@ namespace fixrgraphiso{
     }
     return;
   }
-  
+
   void MILProblem::prettyPrintAMPLFormat(std::ostream & out){
     // 1. Print variables
     std::map<int, MILPVariable>::iterator it;
@@ -108,7 +108,7 @@ namespace fixrgraphiso{
       MILPVariable var = it -> second;
       prettyPrintVariable(out, var);
     }
-      
+
     // 2. Print Objective
     out << " maximize obj: " ;
     prettyPrintExpr(out, this -> obj);
@@ -120,12 +120,12 @@ namespace fixrgraphiso{
     for (jt = eqs.begin(); jt != eqs.end(); ++jt){
       out << " C__"<< exprCount<<":";
       exprCount ++;
-      
+
       expr_t e = jt -> first;
       prettyPrintExpr(out, e);
       out << " = " << jt -> second << ";" << std::endl;
     }
-    
+
     // 4. Print Inequality Constraints
     for (jt = ineqs.begin(); jt != ineqs.end(); ++jt){
       out << " C__"<< exprCount<<":";
@@ -142,11 +142,11 @@ namespace fixrgraphiso{
     // 6. Display
     for (it = id2Variable.begin(); it != id2Variable.end(); ++it){
       MILPVariable var = it -> second;
-      out << "display \'"<< var.name <<" = \', " << var.name <<";" << std::endl; 
+      out << "display \'"<< var.name <<" = \', " << var.name <<";" << std::endl;
     }
     out << "end; " <<std::endl;
   }
-  
+
 
   int MILProblem::createRowFromExpr(expr_t const & e, int * ind, double* val){
     int len  = 0;
@@ -163,7 +163,7 @@ namespace fixrgraphiso{
       ind[i] = 0;
       val[i] = 0.0;
     }
-    
+
     return len;
   }
   void MILProblem::solveUsingGLPKLibrary(){
@@ -173,39 +173,39 @@ namespace fixrgraphiso{
     int nCols = this -> numVariables;
     glp_add_rows(lp, nRows);
     glp_add_cols(lp, nCols);
-    
+
     // Declare the variable types.
     std::map<int, MILPVariable>::iterator it;
     for (it = id2Variable.begin(); it != id2Variable.end(); ++it){
 
       // Iterate through all variables
       MILPVariable var = it -> second;
-      
+
       glp_set_col_name(lp, 1+ var.id, var.name.c_str()); // set the column name
-      
+
       switch( var.typ ){
       case ISO_NODE:
       case ISO_EDGE:{
-	// set it to a binary variable
-	glp_set_col_kind(lp,1 + var.id, GLP_BV);
-	break;
+        // set it to a binary variable
+        glp_set_col_kind(lp,1 + var.id, GLP_BV);
+        break;
       }
       case ISO_WT: {
-	// set it to a continuous variable with limits between 0 and 1
-	glp_set_col_kind(lp,1 + var.id, GLP_CV);
-	glp_set_col_bnds(lp, 1+ var.id, GLP_DB, 0.0, 1.0);
-	break;
+        // set it to a continuous variable with limits between 0 and 1
+        glp_set_col_kind(lp,1 + var.id, GLP_CV);
+        glp_set_col_bnds(lp, 1+ var.id, GLP_DB, 0.0, 1.0);
+        break;
       }
       default: {
-	  // We have a unhandled type -- this should never happen!
-	  assert(false);
-	  break;
-	}
+        // We have a unhandled type -- this should never happen!
+        assert(false);
+        break;
+      }
       } // switch
     } // for it = ..
     int * ind = new int[nCols+1];
     double * val = new double[nCols + 1];
-    
+
     int i = 0;
     std::vector<constr_t>::iterator jt;
     // Add equalities
@@ -254,81 +254,80 @@ namespace fixrgraphiso{
     switch (stat){
     case GLP_OPT:
       {
-	std::cout << "Optimal solution found " << std::endl;
-	
+        std::cout << "Optimal solution found " << std::endl;
+
       }
       break;
     case GLP_FEAS:
       {
-	std::cout << "Solver could not find optimal integer solution due to premature termination, perhaps " << std::endl;
-	assert(false);
+        std::cout << "Solver could not find optimal integer solution due to premature termination, perhaps " << std::endl;
+        assert(false);
       }
       break;
 
     case GLP_NOFEAS:
       {
-	std::cout << " Problem is primal infeasible " << std::endl;
-	assert(false);
+        std::cout << " Problem is primal infeasible " << std::endl;
+        assert(false);
       }
       break;
 
     case GLP_UNDEF:
       {
-	std::cout << "Solver bailed out with undefined message " << std::endl;
-	assert(false);
+        std::cout << "Solver bailed out with undefined message " << std::endl;
+        assert(false);
       }
       break;
 
     }
-    
-    
-    // Extract the solution from the result, if feasible.
 
-    double objValue =  glp_mip_obj_val(lp);
+
+    // Extract the solution from the result, if feasible.
+    objValue =  glp_mip_obj_val(lp);
     std:: cout << " \t Objective Value : " << objValue << std::endl;
-    
+
     for (it = id2Variable.begin(); it != id2Variable.end(); ++it){
 
       // Iterate through all variables
       MILPVariable & var = it -> second;
       std::cout << " \t " << var.name << " := " ;
-      
+
       switch( var.typ ){
       case ISO_NODE:
       case ISO_EDGE:{
-	// set it to a binary variable
-	double v = glp_mip_col_val(lp, 1 + var.id);
-	int val;
-	assert( (v >= -1e-06 && v <= 1e-06) || (v >= 1.0-1e-06 && v <= 1.0+1e-06));
-	if (v <= 1e-06){
-	  val = 0;
-	} else {
-	  val = 1;
-	}
-	var.binVal = val;
-	std::cout << var.binVal << std::endl;
-	break;
+        // set it to a binary variable
+        double v = glp_mip_col_val(lp, 1 + var.id);
+        int val;
+        assert( (v >= -1e-06 && v <= 1e-06) || (v >= 1.0-1e-06 && v <= 1.0+1e-06));
+        if (v <= 1e-06){
+          val = 0;
+        } else {
+          val = 1;
+        }
+        var.binVal = val;
+        std::cout << var.binVal << std::endl;
+        break;
       }
       case ISO_WT: {
-	// set it to a continuous variable with limits between 0 and 1
-	double v = glp_mip_col_val(lp, 1 + var.id);
-	assert( v >= -1e-06 && v<= 1.0 + 1e-06);
-	var.floatVal = v;
-	std::cout << v << std::endl;
-	break;
+        // set it to a continuous variable with limits between 0 and 1
+        double v = glp_mip_col_val(lp, 1 + var.id);
+        assert( v >= -1e-06 && v<= 1.0 + 1e-06);
+        var.floatVal = v;
+        std::cout << v << std::endl;
+        break;
       }
       default: {
-	  // We have a unhandled type -- this should never happen!
-	  assert(false);
-	  break;
-	}
+        // We have a unhandled type -- this should never happen!
+        assert(false);
+        break;
+      }
       } // switch
     } // for it = ..
     solvedSuccessfully=true;
     delete[] (ind);
     delete[] (val);
     glp_delete_prob(lp);
-    
+
   }
 
 }

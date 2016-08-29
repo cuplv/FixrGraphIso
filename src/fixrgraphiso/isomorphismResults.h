@@ -26,10 +26,11 @@ namespace fixrgraphiso {
     std::string graphA;
     std::string graphB;
     double totalWeight;
-    
+    double objValue;
+
   IsomorphismResults(std::string aName, std::string bName):graphA(aName), graphB(bName),totalWeight(0.0)
     {};
-    
+
     void addIsoNodePair(long node_a_id, long node_b_id, double weight){
       iso istr;
       istr.a_id = node_a_id;
@@ -49,24 +50,27 @@ namespace fixrgraphiso {
 
     iso_protobuf::Iso * toProtobuf() {
       iso_protobuf::Iso * proto = new iso_protobuf::Iso();
-      
+
       std::vector<iso>::iterator it;
 
       // add node maps
       for (it = isoNodes.begin(); it != isoNodes.end(); ++it) {
-	iso_protobuf::Iso_MapNode * map_node = proto->add_map_node();
-	map_node->set_id_1(it->a_id);
-	map_node->set_id_2(it->b_id);
-	map_node->set_weight(it->wt);
+        iso_protobuf::Iso_MapNode * map_node = proto->add_map_node();
+        map_node->set_id_1(it->a_id);
+        map_node->set_id_2(it->b_id);
+        map_node->set_weight(it->wt);
       }
 
       // add edge maps
       for (it = isoEdges.begin(); it != isoEdges.end(); ++it) {
-	iso_protobuf::Iso_MapEdge * map_edge = proto->add_map_edge();
-	map_edge->set_id_1(it->a_id);
-	map_edge->set_id_2(it->b_id);
+        iso_protobuf::Iso_MapEdge * map_edge = proto->add_map_edge();
+        map_edge->set_id_1(it->a_id);
+        map_edge->set_id_2(it->b_id);
+        map_edge->set_weight(it->wt);
       }
-      
+
+      proto->set_weight(totalWeight);
+      proto->set_obj_value(objValue);
       proto->set_graph_1_id(graphA);
       proto->set_graph_2_id(graphB);
 
@@ -76,25 +80,25 @@ namespace fixrgraphiso {
     int dumpProtobuf(std::string output_dir) {
       // ensure we're using a compatible version of Protobuf
       GOOGLE_PROTOBUF_VERIFY_VERSION;
-      
+
       int condition = 0;
       iso_protobuf::Iso * proto = toProtobuf();
 
       std::fstream output(output_dir.c_str(),
         std::ios::out | std::ios::trunc | std::ios::binary);
 
-      if (!proto->SerializeToOstream(&output)) {
-	std::cerr << "Failed to write isomorphism protobuf." << std::endl;
-	condition = -1;
+      if (! proto->SerializeToOstream(&output)) {
+        std::cerr << "Failed to write isomorphism protobuf." << std::endl;
+        condition = -1;
       }
-      
+
       // clean up our garbage
       delete proto;
       google::protobuf::ShutdownProtobufLibrary();
       return condition;
     }
 
-    
+
   };
 }
 
