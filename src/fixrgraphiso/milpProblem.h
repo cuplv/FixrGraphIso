@@ -8,6 +8,10 @@
 #include <iostream>
 #include "fixrgraphiso/acdfg.h"
 
+#ifdef USE_GUROBI_SOLVER
+#include "gurobi_c++.h"
+#endif
+
 namespace fixrgraphiso {
 
   typedef enum { ISO_NODE, ISO_WT, ISO_EDGE } ilp_variable_t;
@@ -67,6 +71,9 @@ namespace fixrgraphiso {
 
     void solveUsingGLPKLibrary();
 
+    #ifdef USE_GUROBI_SOLVER
+    void solveUsingGurobiLibrary();
+    #endif
 
     MILPVariable getVariableFromID(int i){
       std::map<int, MILPVariable>::iterator it =  id2Variable.find(i);

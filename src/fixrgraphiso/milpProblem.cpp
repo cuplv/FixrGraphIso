@@ -2,6 +2,7 @@
 #include <sstream>
 #include <glpk.h>
 
+using namespace std;
 namespace fixrgraphiso{
 
   MILPVariable MILProblem::createVariable(ilp_variable_t typ, node_id_t i, node_id_t j){
@@ -200,6 +201,7 @@ namespace fixrgraphiso{
         // We have a unhandled type -- this should never happen!
         assert(false);
         break;
+	
       }
       } // switch
     } // for it = ..
@@ -242,6 +244,9 @@ namespace fixrgraphiso{
     glp_iocp params;
     glp_init_iocp(&params);
     params.presolve = GLP_ON;
+    params.gmi_cuts=GLP_ON;
+    params.mir_cuts=GLP_ON;
+    params.cov_cuts=GLP_ON;
     int rVal = glp_intopt(lp, &params);
     if (rVal == 0){
       std::cout << "Problem sucessfully solved ! " << std::endl;
@@ -329,5 +334,152 @@ namespace fixrgraphiso{
     glp_delete_prob(lp);
 
   }
+
+
+
+
+#ifdef USE_GUROBI_SOLVER
+
+
+GRBLinExpr createGRBLinExprFromExpr(expr_t const & e, std::map<int, GRBVar> id2VarMap){
+  expr_t ::const_iterator it;
+  GRBLinExpr retExpr = 0.0;
+  for (it = e.begin(); it != e.end(); ++ it){
+    std::map<int,GRBVar>::const_iterator jt = id2VarMap.find(it -> first);
+    assert(jt != id2VarMap.end());
+    retExpr += (it -> second) * (jt -> second);
+  }
+  return retExpr;
+}
+
+void MILProblem::solveUsingGurobiLibrary(){
+
+  try {
+    GRBEnv env = GRBEnv();
+    GRBModel m = GRBModel(env);
+    std::map<int, GRBVar> id2VarMap;
+    // Now declare the variables
+    std::map<int, MILPVariable>::iterator it;
+    for (it = id2Variable.begin(); it != id2Variable.end(); ++it){
+      MILPVariable var = it -> second;
+      switch (var.typ){
+      case ISO_NODE:
+      case ISO_EDGE:{
+        // set it to a binary variable
+	GRBVar v = m.addVar(0.0, 1.0, 0.0, GRB_BINARY, var.name.c_str());
+	id2VarMap[var.id] = v;
+        break;
+      }
+
+      case ISO_WT: {
+	GRBVar v = m.addVar(0.0, 1.0, 0.0, GRB_CONTINUOUS, var.name.c_str());
+	id2VarMap[var.id] = v;
+	break;
+      }
+      default: {
+	   // We have a unhandled type -- this should never happen!
+        assert(false);
+        break;
+      }
+      }// switch
+    }// for (it = ..
+    m.update();
+    // Now let us add the constraints
+    std::vector<constr_t>::iterator jt;
+    for (jt = eqs.begin(); jt != eqs.end(); ++jt){
+      expr_t e = jt -> first;
+      float f = jt -> second;
+      GRBLinExpr lC = createGRBLinExprFromExpr(e,id2VarMap);
+      m.addConstr(lC == f);
+    }
+
+    for (jt = ineqs.begin(); jt != ineqs.end(); ++jt){
+      expr_t e = jt -> first;
+      float f = jt -> second;
+      GRBLinExpr lC = createGRBLinExprFromExpr(e,id2VarMap);
+      m.addConstr(lC <= f);
+    }
+    // Set the objective
+    GRBLinExpr objExpr = createGRBLinExprFromExpr(obj,id2VarMap);
+    m.setObjective(objExpr, GRB_MAXIMIZE);
+    //Solve the thing
+    m.optimize();
+    int optimstatus = m.get(GRB_IntAttr_Status);
+    // Retrieve the solution
+    if (optimstatus == GRB_OPTIMAL){
+      std::cout << "Gurobi successfully optimized " << std::endl;
+      float objValue = m.get(GRB_DoubleAttr_ObjVal);
+      std:: cout << " \t Objective Value : " << objValue << std::endl;
+      
+      for (it = id2Variable.begin(); it != id2Variable.end(); ++it){
+
+	// Iterate through all variables
+	MILPVariable & var = it -> second;
+	std::cout << " \t " << var.name << " := " ;
+	map<int, GRBVar>::iterator vt = id2VarMap.find(var.id);
+	assert(vt != id2VarMap.end());
+	GRBVar gVar = vt -> second;
+	double v = gVar.get(GRB_DoubleAttr_X);
+	
+	switch( var.typ ){
+	case ISO_NODE:
+	case ISO_EDGE:{
+	  // set it to a binary variable
+	  int val;
+	  assert( (v >= -1e-06 && v <= 1e-06) || (v >= 1.0-1e-06 && v <= 1.0+1e-06));
+	  if (v <= 1e-06){
+	    val = 0;
+	  } else {
+	    val = 1;
+	  }
+	  var.binVal = val;
+	  std::cout << var.binVal << std::endl;
+	  break;
+	}
+	case ISO_WT: {
+	  // set it to a continuous variable with limits between 0 and 1
+	  assert( v >= -1e-06 && v<= 1.0 + 1e-06);
+	  var.floatVal = v;
+	  std::cout << v << std::endl;
+	  break;
+	}
+	default: {
+	  // We have a unhandled type -- this should never happen!
+	  assert(false);
+	  break;
+	}
+	} // switch
+      } // for it = ..
+      solvedSuccessfully=true;
+    } else {
+      switch (optimstatus) {
+      case GRB_INF_OR_UNBD:
+	std::cout << "Model is either infeasible or unbounded but not sure which! " << std::endl;
+	break;
+      case GRB_INFEASIBLE:
+	std::cout << "Model is infeasible " << std::endl;
+	break;
+
+      case GRB_UNBOUNDED:
+	std::cout << "Model is unbounded " << std::endl;
+	break;
+
+      default:
+	std::cout << "Optimization was stopped with status = "
+		  << optimstatus << std::endl;
+	break;
+      }
+      assert(false); // Cannot proceed further here.
+
+    }
+
+  }  catch (GRBException e){
+    std::cerr << "Exit with error code " << e.getErrorCode() << std::endl;
+    std::cerr << e.getMessage() << std::endl;
+  }
+
+}
+
+#endif
 
 }

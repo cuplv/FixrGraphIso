@@ -6,7 +6,7 @@
 namespace fixrgraphiso {
   bool debug = false;
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
-  bool addCompatibleDataNodes = true; // This turns on additional checks for data node compatibility
+  bool addCompatibleDataNodes = false; // This turns on additional checks for data node compatibility
   bool printEverything=false;
   using std::ostringstream;
 
@@ -563,7 +563,11 @@ namespace fixrgraphiso {
     }
 
     // 5. Solve
+    #ifdef USE_GUROBI_SOLVER
+    milp.solveUsingGurobiLibrary();
+    #else 
     milp.solveUsingGLPKLibrary();
+    #endif
   }
 
   void IlpApproxIsomorphism::prettyPrintEncodingResultInDot(ostream & out){

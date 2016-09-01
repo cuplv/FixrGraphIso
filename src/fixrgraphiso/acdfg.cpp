@@ -11,7 +11,7 @@
 namespace fixrgraphiso {
   using std::ostringstream;
   // Match the types of data nodes to be compatible
-  bool typeMatchDataNode = true;
+  bool typeMatchDataNode = false;
 //------------------------------------------------------------------------------
 // Implementation of the nodes
 //------------------------------------------------------------------------------
