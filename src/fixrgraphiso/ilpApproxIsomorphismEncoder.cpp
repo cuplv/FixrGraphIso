@@ -711,8 +711,143 @@ namespace fixrgraphiso {
     }
 
     res.objValue = milp.getObjValue();
-
+    computeIsomorphismFeatures(res);
     return;
+  }
+
+  void IlpApproxIsomorphism::computeIsomorphismFeatures(IsomorphismResults & res){
+    // Compute the number of nodes and various types of edges matched.
+    int dataNodeMatchCount = 0;
+    int methodNodeMatchCount =0;
+    int dataEdgeMatchCount =0;
+    int controlEdgeMatchCount = 0;
+    std::map<int, int> inDegreesA;
+    std::map<int, int> outDegreesA;
+    double avgMatchWeight = 0.0;
+    
+    compatible_node_map_t::const_iterator it;
+    vector<node_id_t>::const_iterator jt;
+    for (it = node_map_a_to_b.begin();
+         it != node_map_a_to_b.end();
+         ++it){ // Iterate through all nodes
+      node_id_t i = it -> first;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt != compats.end(); ++jt){
+        node_id_t j = *jt;
+        int vid = milp.lookupIsoNodeVariable(i,j);
+        // Now get the corresponding variable
+        MILPVariable var = milp.getVariableFromID(vid);
+        int wid = milp.lookupIsoWtVariable(i,j);
+        MILPVariable wtVar = milp.getVariableFromID(wid);
+        double wt = wtVar.floatVal;
+        if (var.binVal == 1){
+	  const Node * na = acdfg_a -> getNodeFromID(i);
+          const Node * nb = acdfg_b -> getNodeFromID(j);
+	  assert(na -> get_type() == nb -> get_type());
+	  if (na -> get_type() == METHOD_NODE){
+	    methodNodeMatchCount = methodNodeMatchCount+1;
+	    avgMatchWeight = avgMatchWeight + wt;
+	  }
+	  if (na -> get_type() == DATA_NODE){
+	    dataNodeMatchCount = dataNodeMatchCount+1;
+	  }
+	  
+	}
+      }
+    }
+
+    if (methodNodeMatchCount > 0){
+      avgMatchWeight = avgMatchWeight/(double) methodNodeMatchCount;
+    }
+    double avgDataNodeOutDegree =0.0;
+    double avgDataNodeInDegree =0.0;
+    double avgMethodNodeOutDegree = 0.0;
+    double avgMethodNodeInDegree = 0.0;
+
+    
+
+    std::vector<edge_pair_t>::const_iterator mt;
+    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+      edge_id_t eAID = mt -> first;
+      edge_id_t eBID = mt -> second;
+      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+      MILPVariable var = milp.getVariableFromID(vid);
+      if (var.binVal == 1){
+	const Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+	const Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+	int src_id = eA -> get_src_id();
+	int dst_id = eA -> get_dst_id();
+	const Node * srcA = acdfg_a -> getNodeFromID(src_id);
+	const Node * srcB = acdfg_a -> getNodeFromID(dst_id);
+
+	switch (srcA-> get_type()){
+	case DATA_NODE:
+	  {
+	    avgDataNodeOutDegree = avgDataNodeOutDegree+1.0;
+	    break;
+	  }
+	case METHOD_NODE:{
+	  avgMethodNodeOutDegree =avgMethodNodeOutDegree+1.0;
+	  break;
+	}
+	default:
+	  break;
+	}
+
+	
+	switch (srcB-> get_type()){
+	case DATA_NODE:
+	  {
+	    avgDataNodeInDegree = avgDataNodeInDegree+1.0;
+	    break;
+	  }
+	case METHOD_NODE:{
+	  avgMethodNodeInDegree =avgMethodNodeInDegree+1.0;
+	  break;
+	}
+	default:
+	  break;
+	}
+
+	
+	assert(eA -> get_type() == eB -> get_type());
+	if (eA -> get_type() == DEF_EDGE || eA -> get_type() == USE_EDGE){
+	  dataEdgeMatchCount++;
+	}
+
+	if (eA -> get_type() == CONTROL_EDGE || eA -> get_type() == TRANSITIVE_EDGE){
+	  controlEdgeMatchCount++;
+	}
+      }
+    }
+
+    if (methodNodeMatchCount > 0){
+      avgMethodNodeInDegree = avgMethodNodeInDegree/ (double) methodNodeMatchCount;
+      avgMethodNodeOutDegree = avgMethodNodeOutDegree/ (double) methodNodeMatchCount;
+    } else{
+      avgMethodNodeOutDegree = avgMethodNodeInDegree = 0.0;
+    }
+
+    if (dataNodeMatchCount > 0){
+      avgDataNodeInDegree = avgDataNodeInDegree / (double) dataNodeMatchCount;
+      avgDataNodeOutDegree = avgDataNodeOutDegree / (double) dataNodeMatchCount;
+    } else {
+      avgDataNodeOutDegree = avgDataNodeInDegree = 0.0;
+    }
+    
+   
+    res.dataNodeMatchCount = dataNodeMatchCount;
+    res.methodNodeMatchCount = methodNodeMatchCount;
+    res.dataEdgeMatchCount = dataEdgeMatchCount;
+    res.controlEdgeMatchCount = controlEdgeMatchCount;
+    res.avgDataNodeInDegree = avgDataNodeInDegree;
+    res.avgMethodNodeInDegree = avgMethodNodeInDegree;
+    res.avgDataNodeOutDegree = avgDataNodeOutDegree;
+    res.avgMethodNodeOutDegree = avgMethodNodeOutDegree;
+    res.avgMatchWeight = avgMatchWeight;
+    return;
+    
+    
   }
 
 

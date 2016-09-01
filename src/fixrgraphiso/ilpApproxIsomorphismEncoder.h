@@ -68,7 +68,7 @@ namespace fixrgraphiso {
     void createObjectiveFunction();
     void addUniqueMatchingConstraint(char a_or_b);
     void addAdditionalCompatibleDataNodes(MethodNode * ma, MethodNode * mb);
-
+    void computeIsomorphismFeatures(IsomorphismResults & res);
     
   };
   

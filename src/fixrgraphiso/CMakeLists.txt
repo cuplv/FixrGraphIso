@@ -31,8 +31,20 @@ add_executable(fixrgraphiso
   ${PROTO_SRCS_ISO}
 )
 
-target_link_libraries(fixrgraphiso
-  ${FIXR_GRAPH_ISO_LINK_LIBS}
-  ${PROTOBUF_LIBRARY}
-  ${GLPK_LIBRARY}
-)
+if (NOT GUROBI_FOUND)
+   target_link_libraries(fixrgraphiso
+    ${FIXR_GRAPH_ISO_LINK_LIBS}
+    ${PROTOBUF_LIBRARY}
+    ${GLPK_LIBRARY}
+    )
+endif(NOT GUROBI_FOUND)
+
+if (GUROBI_FOUND)
+   target_link_libraries(fixrgraphiso
+   ${FIXR_GRAPH_ISO_LINK_LIBS}
+   ${PROTOBUF_LIBRARY}
+   ${GLPK_LIBRARY}
+   ${GUROBI_CPP_LIBRARY}
+   ${GUROBI_C_LIBRARY}
+   )
+endif(GUROBI_FOUND)

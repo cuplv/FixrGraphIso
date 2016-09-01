@@ -27,7 +27,16 @@ namespace fixrgraphiso {
     std::string graphB;
     double totalWeight;
     double objValue;
-
+    int dataNodeMatchCount;
+    int methodNodeMatchCount;
+    int dataEdgeMatchCount;
+    int controlEdgeMatchCount;
+    double avgMatchWeight;
+    double avgDataNodeInDegree;
+    double avgDataNodeOutDegree;
+    double avgMethodNodeInDegree;
+    double avgMethodNodeOutDegree;
+    
   IsomorphismResults(std::string aName, std::string bName):graphA(aName), graphB(bName),totalWeight(0.0)
     {};
 
@@ -73,7 +82,17 @@ namespace fixrgraphiso {
       proto->set_obj_value(objValue);
       proto->set_graph_1_id(graphA);
       proto->set_graph_2_id(graphB);
-
+      proto->set_datanodematchcount(dataNodeMatchCount);
+      proto->set_methodnodematchcount(methodNodeMatchCount);
+      proto->set_dataedgematchcount(dataEdgeMatchCount);
+      proto->set_controledgematchcount(controlEdgeMatchCount);
+      proto -> set_averagematchweight(avgMatchWeight);
+      proto -> set_averagedatanodeindegree(avgDataNodeInDegree);
+      proto -> set_averagemethodnodeindegree(avgMethodNodeInDegree);
+      proto -> set_averagedatanodeoutdegree(avgDataNodeOutDegree);
+      proto -> set_averagemethodnodeoutdegree(avgMethodNodeOutDegree);
+      
+      
       return proto;
     }
 

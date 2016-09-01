@@ -27,7 +27,12 @@ if (NOT GLPK_FOUND)
 endif(NOT GLPK_FOUND)
 include_directories(${GLPK_INCLUDEDIR})
 
-
+# check for Gurobi
+include(FindGurobi)
+if (GUROBI_FOUND)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_GUROBI_SOLVER")
+   include_directories(${GUROBI_INCLUDEDIR})
+endif(GUROBI_FOUND)
 #############################################################################
 # external dependencies
 
