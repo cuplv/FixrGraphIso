@@ -810,7 +810,6 @@ namespace fixrgraphiso {
 	}
 
 	
-	assert(eA -> get_type() == eB -> get_type());
 	if (eA -> get_type() == DEF_EDGE || eA -> get_type() == USE_EDGE){
 	  dataEdgeMatchCount++;
 	}
