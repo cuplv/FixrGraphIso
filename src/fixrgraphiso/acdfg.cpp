@@ -45,11 +45,19 @@ namespace fixrgraphiso {
   }
   
 
-  DataNode::DataNode(long id, const string& name, const string& data_type) : Node(id, DATA_NODE), name_(name), data_type_(data_type){
+  DataNode::DataNode(long id, const string& name, const string& data_type, data_node_type_t dtype):
+    Node(id, DATA_NODE),
+    name_(name),
+    data_type_(data_type),
+    data_node_type_(dtype) {
   }
 
   
-  DataNode::DataNode(const DataNode& node): Node(node.id_, DATA_NODE), name_(node.name_), data_type_(node.data_type_){}
+  DataNode::DataNode(const DataNode& node): Node(node.id_, DATA_NODE),
+					    name_(node.name_),
+					    data_type_(node.data_type_),
+					    data_node_type_(node.data_node_type_){
+  }
 
   Node * DataNode::clone() const{
     DataNode * n_node = new DataNode(*this);
@@ -73,6 +81,10 @@ namespace fixrgraphiso {
   const string& DataNode::get_data_type() const
   {
     return data_type_;
+  }
+
+  const data_node_type_t DataNode::get_data_node_type() const{
+    return data_node_type_;
   }
   
   void DataNode::prettyPrint(std::ostream & stream) const {
@@ -102,13 +114,16 @@ namespace fixrgraphiso {
   
   MethodNode::MethodNode(long id, const string& name,
 			 DataNode* receiver,
-			 std::vector<DataNode*> arguments) : CommandNode(id,METHOD_NODE),
-							     name_(name),
-							     receiver_(receiver),
-							     arguments_(arguments){}
+			 std::vector<DataNode*> arguments,
+			 DataNode* assignee): CommandNode(id,METHOD_NODE),
+					      name_(name),
+					      receiver_(receiver),
+					      arguments_(arguments),
+					      assignee_(assignee)
+  {}
 
   MethodNode::MethodNode(const MethodNode& node) : CommandNode(node.id_, METHOD_NODE),
-						   name_(node.name_)
+						   name_(node.name_), assignee_(NULL)
   {
     if (node.receiver_ != NULL){
       receiver_ = new DataNode(*(node.receiver_));
@@ -121,8 +136,12 @@ namespace fixrgraphiso {
       DataNode * n_node = new DataNode (*(*it));
       arguments_.push_back(n_node);
     }
+    if (node.assignee_ != NULL){
+      this -> assignee_ = new DataNode(*(node.assignee_));
+    }
   }
 
+  
   bool MethodNode::isCompatible(const MethodNode * node) const {
     return (this -> name_ == node -> name_);
   }
@@ -145,6 +164,10 @@ namespace fixrgraphiso {
   const std::vector<DataNode*> & MethodNode::get_arguments() const
   {
     return arguments_;
+  }
+
+  const DataNode * MethodNode::get_assignee() const {
+    return assignee_;
   }
 
   

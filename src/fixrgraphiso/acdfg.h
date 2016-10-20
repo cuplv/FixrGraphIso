@@ -20,8 +20,10 @@ namespace fixrgraphiso {
   using std::string;
 
   typedef enum { REGULAR_NODE, DATA_NODE, METHOD_NODE } node_type_t;
-
-  typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE, TRANSITIVE_EDGE} edge_type_t;
+  typedef enum { DATA_NODE_CONST, DATA_NODE_VAR } data_node_type_t;
+  
+  typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE, TRANSITIVE_EDGE, EXCEPTIONAL_EDGE} edge_type_t;
+  typedef enum {  DOMINATE, POST_DOMINATED } edge_label_t;
   typedef long node_id_t;
   typedef long edge_id_t;
   
@@ -60,21 +62,23 @@ namespace fixrgraphiso {
   // Node that represent a data (e.g variable)
   class DataNode : public Node {
   public:
-    DataNode(long id, const string& name, const string& data_type);
+    DataNode(long id, const string& name, const string& data_type, data_node_type_t dtype);
     DataNode(const DataNode& node);
     const string& get_name() const;
     const string& get_data_type() const;
+    const data_node_type_t get_data_node_type() const;
+    bool isConstNode() const;
+    bool isVarNode() const;
     bool isCompatible(DataNode const * n) const;
-
     virtual string getDotLabel() const;
-    
     void prettyPrint(std::ostream & out) const;
     Node * clone() const;
     friend std::ostream& operator<<(std::ostream&, const DataNode&);
-
+    
   protected:
     string name_;
     string data_type_;
+    data_node_type_t data_node_type_;
   };
 
   // Base class for control nodes
@@ -89,11 +93,13 @@ namespace fixrgraphiso {
   public:
     MethodNode(long id, const string& name,
 	       DataNode* receiver,
-	       std::vector<DataNode*> arguments);
+	       std::vector<DataNode*> arguments,
+	       DataNode * assignee);
     MethodNode(const MethodNode& node);
 
     const string& get_name() const;
     const DataNode* get_receiver() const;
+    const DataNode * get_assignee() const;
     const std::vector<DataNode*> &  get_arguments() const;
     Node * clone() const;
     virtual string getDotLabel() const;
@@ -108,6 +114,8 @@ namespace fixrgraphiso {
     DataNode* receiver_;
     // Parameters passed to the method invocation
     std::vector<DataNode*> arguments_;
+    // Assignee information
+    DataNode* assignee_; // Could be a null pointer if no assignee -- be careful
   };
 
   // General Conversion functions that will be useful for us.
@@ -118,11 +126,23 @@ namespace fixrgraphiso {
   class Edge {
   public:
 
-    Edge(long id, edge_type_t typ, Node* src, Node* dst): id_(id), eType_(typ), src_(src), dst_(dst){};
+    Edge(long id, edge_type_t typ, Node* src, Node* dst): id_(id),
+							  eType_(typ),
+							  src_(src),
+							  dst_(dst)
+    {};
   
     Edge(const Edge& edge);
     const long get_id() const;
-    const edge_type_t get_type() const { return eType_; }
+    const edge_type_t get_type() const
+    { return eType_; };
+
+    const std::vector<edge_label_t> & get_labels() const
+    { return eLabels_; };
+    
+    void set_label( edge_label_t eNew)
+    { eLabels_.push_back(eNew); };
+    
     const Node* get_src() const;
     const Node* get_dst() const;
     long get_src_id() const{
@@ -142,6 +162,8 @@ namespace fixrgraphiso {
     Node* src_;
     // Dst node
     Node* dst_;
+    // edge label
+    std::vector<edge_label_t> eLabels_;
   };
 
   class DefEdge : public Edge {
@@ -167,6 +189,17 @@ namespace fixrgraphiso {
   public:
     TransitiveEdge(long id, Node * src, Node * dst): Edge(id, TRANSITIVE_EDGE, src, dst){};
     TransitiveEdge(const TransitiveEdge & edge): Edge(edge.id_, TRANSITIVE_EDGE, edge.src_, edge.dst_){};
+  };
+
+  class ExceptionalEdge: public Edge{
+  protected:
+    std::vector<std::string> exceptList_;
+  public:
+    ExceptionalEdge(long id, Node* src, Node * dst): Edge(id, EXCEPTIONAL_EDGE, src, dst){};
+    ExceptionalEdge(const ExceptionalEdge & edge): Edge(edge.id_, EXCEPTIONAL_EDGE, edge.src_, edge.dst_){};
+    void addException(std::string const & what){
+      exceptList_.push_back(what);
+    }
   };
 
   typedef std::vector<Node*> nodes_t;

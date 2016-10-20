@@ -27,7 +27,7 @@ UseEdge* addUseEdge(Acdfg * G, DataNode * d1, MethodNode * n2){
 
 DataNode* addDataNode(Acdfg * G, string name, string type){
   int nodeID = G -> node_count();
-  DataNode * d = new DataNode(nodeID, name, type);
+  DataNode * d = new DataNode(nodeID, name, type, DATA_NODE_VAR);
   G -> add_node(d);
   return d;
 }
@@ -35,7 +35,7 @@ DataNode* addDataNode(Acdfg * G, string name, string type){
 
 MethodNode * addMethodNode(Acdfg* G, string methName, DataNode* rcv, std::vector<DataNode*>  & args){
   int nodeID = G -> node_count();
-  MethodNode * n = new MethodNode(nodeID, methName, rcv, args);
+  MethodNode * n = new MethodNode(nodeID, methName, rcv, args, NULL);
   G -> add_node(n);
   return n;
 }
@@ -52,20 +52,20 @@ Acdfg * createGraphA() {
     y4 = y3.build4();
     y5 = y4.buildFinal();
     --*/
-  DataNode * d0 = new DataNode(0, "a", "type1");
-  DataNode * d1 = new DataNode(1, "y0", "type1");
-  DataNode * d2 = new DataNode(2, "y1", "type1");
-  DataNode * d3 = new DataNode(3, "y2", "type1");
-  DataNode * d4 = new DataNode(4, "y3", "type1");
-  DataNode * d5 = new DataNode(5, "y4", "type1");
-  DataNode * d6 = new DataNode(6, "y5", "type1");
+  DataNode * d0 = new DataNode(0, "a", "type1", DATA_NODE_VAR);
+  DataNode * d1 = new DataNode(1, "y0", "type1", DATA_NODE_VAR);
+  DataNode * d2 = new DataNode(2, "y1", "type1", DATA_NODE_VAR);
+  DataNode * d3 = new DataNode(3, "y2", "type1", DATA_NODE_VAR);
+  DataNode * d4 = new DataNode(4, "y3", "type1", DATA_NODE_VAR);
+  DataNode * d5 = new DataNode(5, "y4", "type1", DATA_NODE_VAR);
+  DataNode * d6 = new DataNode(6, "y5", "type1", DATA_NODE_VAR);
   std::vector<DataNode*> args;
-  MethodNode *  n0 = new MethodNode(7, "build0", d0, args);
-  MethodNode *  n1 = new MethodNode(8, "build1", d1, args);
-  MethodNode *  n2 = new MethodNode(9, "build2", d2, args);
-  MethodNode *  n3 = new MethodNode(10, "build3", d3, args);
-  MethodNode *  n4 = new MethodNode(11, "build4", d4, args);
-  MethodNode *  n5 = new MethodNode(12, "buildFinal", d5, args);
+  MethodNode *  n0 = new MethodNode(7, "build0", d0, args, NULL);
+  MethodNode *  n1 = new MethodNode(8, "build1", d1, args, NULL);
+  MethodNode *  n2 = new MethodNode(9, "build2", d2, args, NULL);
+  MethodNode *  n3 = new MethodNode(10, "build3", d3, args, NULL);
+  MethodNode *  n4 = new MethodNode(11, "build4", d4, args, NULL);
+  MethodNode *  n5 = new MethodNode(12, "buildFinal", d5, args, NULL);
 
   acdfg_a-> add_node(d0);
   acdfg_a-> add_node(d1);
