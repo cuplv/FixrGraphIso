@@ -694,8 +694,8 @@ namespace fixrgraphiso {
       if (var.binVal == 1){
         // Bingo.. print the two edges
         ostringstream ssA,ssB;
-        ssA << "\"a_"<< eA -> get_src_id()<<"\" -> \"a_"<<eA -> get_dst_id()<<"\";"<<std::endl;
-        ssB << "\"b_"<< eB -> get_src_id()<<"\" -> \"b_"<<eB -> get_dst_id()<<"\";"<<std::endl;
+        ssA << "\"a_"<< eA -> get_src_id()<<"\" -> \"a_"<<eA -> get_dst_id()<<"\""<<eA -> get_edge_dot_style() <<";" << std::endl;
+        ssB << "\"b_"<< eB -> get_src_id()<<"\" -> \"b_"<<eB -> get_dst_id()<<"\""<<eB -> get_edge_dot_style() <<";" << std::endl;
         graphEdges.push_back(ssA.str());
         graphEdges.push_back(ssB.str());
       }
@@ -708,7 +708,7 @@ namespace fixrgraphiso {
     // Print the stuff for graph A
     out << "rankdir=LR;\n\
  node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n\
- edge[ arrowhead=onormal,penwidth=1.0,]; \n" <<std::endl;
+ edge[ arrowhead=onormal,penwidth=2.0,]; \n" <<std::endl;
 
     std::vector<string>::const_iterator kt;
 

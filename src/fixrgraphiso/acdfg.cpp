@@ -119,7 +119,7 @@ namespace fixrgraphiso {
   string DataNode::getDotLabel() const {
     ostringstream ss;
     assert(get_type() == DATA_NODE);
-    ss << "style=dashed,shape=ellipse,label=\"DataNode #"<<get_id()<<": " << get_data_type() << "  " << get_name()<<"\"" ;
+    ss << "shape=ellipse,label=\"DataNode #"<<get_id()<<": " << get_data_type() << "  " << get_name()<<"\"" ;
     return ss.str();
   }
 
@@ -304,6 +304,25 @@ namespace fixrgraphiso {
     return stream;
   }
 
+  
+  std::string Edge::get_edge_dot_style(){
+    switch (this -> get_type()){
+    case USE_EDGE:
+    case DEF_EDGE:
+      return string("[color=blue, penwidth=3]");
+    case EXCEPTIONAL_EDGE:
+      return string("[color=red, penwidth=3]");
+    case CONTROL_EDGE:
+      return string("[color=black, penwidth=3]");
+    case TRANSITIVE_EDGE:
+      return string("[color=black, penwidth=0.5]");
+    default:
+      return string("");
+
+    }
+    
+  }
+  
   double Edge::compatibilityWeight(Edge * eB) const {
     double w =0.0;
     switch (this -> get_type()){
@@ -313,6 +332,7 @@ namespace fixrgraphiso {
     case EXCEPTIONAL_EDGE:
       if (eB -> get_type() == this -> get_type()){
 	// Calculate how many exceptions are in common
+	w = 1.0;
 	std::vector<std::string> :: const_iterator it_a;
 	std::vector<std::string> :: const_iterator it_b;
 	for (it_a = this -> exceptList_.begin(); it_a != this -> exceptList_.end(); ++it_a){
@@ -492,8 +512,7 @@ void printNode(Node * node, std::ostream & stream){
   return;
 }
 
-  
-std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
+  std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
 {
   stream << "Acdfg\n" << "List of nodes: " << std::endl;
   for (nodes_t::const_iterator it =  acdfg.nodes_.begin();
