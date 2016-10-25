@@ -167,6 +167,7 @@ namespace fixrgraphiso {
     edge_type_t typeB = eB -> get_type();
     switch (typeA){
     case CONTROL_EDGE:
+      return (typeB == CONTROL_EDGE) || (typeB == TRANSITIVE_EDGE);
     case TRANSITIVE_EDGE:
       return (typeB == CONTROL_EDGE) || (typeB == TRANSITIVE_EDGE);
     default:

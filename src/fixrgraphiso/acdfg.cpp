@@ -329,6 +329,7 @@ namespace fixrgraphiso {
     case TRANSITIVE_EDGE:
       if (eB -> get_type() == CONTROL_EDGE || eB -> get_type() == TRANSITIVE_EDGE){
 	// Calculate how many edge labels are in common
+	w = 1.0;
 	std::vector<edge_label_t> :: const_iterator jt_a, jt_b;
 	for (jt_a = this -> eLabels_.begin(); jt_a != this -> eLabels_.end(); ++jt_a){
 	  for (jt_b = eB -> eLabels_.begin(); jt_b != eB -> eLabels_.end(); ++jt_b){
@@ -340,6 +341,7 @@ namespace fixrgraphiso {
 	}	
       
       }
+      break;
       
     }
     
