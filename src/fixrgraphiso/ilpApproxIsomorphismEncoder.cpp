@@ -14,8 +14,6 @@ namespace fixrgraphiso {
     node_id_t id_a = na -> get_id();
     node_id_t id_b = nb -> get_id();
 
-    //std::cout <<" Compatible nodes: " << id_a <<" , " << id_b << std::endl;
-
     assert(na -> get_type() == nb -> get_type());
     if (node_map_a_to_b.find(id_a) == node_map_a_to_b.end()){
       std::vector<long> vA;
@@ -23,6 +21,7 @@ namespace fixrgraphiso {
       node_map_a_to_b[id_a] = vA; // Add map from a -> b
     } else {
       std::vector<long> & vA = node_map_a_to_b[id_a];
+      // does id_b already exist?
       std::vector<long>::const_iterator it_a = std::find(vA.begin(), vA.end(), id_b);
       if (it_a == vA.end()){
         vA.push_back(id_b); // Map from a -> b
@@ -62,20 +61,31 @@ namespace fixrgraphiso {
       this -> addCompatibleNodes(arg_a, arg_b);
     }
 
+    const DataNode * assigneeA = ma -> get_assignee();
+    const DataNode * assigneeB = mb -> get_assignee();
+    if (assigneeA != NULL && assigneeB != NULL){
+      this -> addCompatibleNodes(assigneeA, assigneeB);
+    }
+
   }
 
+  /*--
+    Function: computeCompatibleNodes
+    Compute a data structure that stores nodes in graph A with possible nodes in B that are 
+    compatible.
+    --*/
   void IlpApproxIsomorphism::computeCompatibleNodes(){
 
     nodes_t::const_iterator it, jt;
-    for (it = acdfg_a -> begin_nodes();
-         it != acdfg_a -> end_nodes();
+
+    // Iterate through all nodes of graph a
+    for (it = acdfg_a -> begin_nodes();		\
+         it != acdfg_a -> end_nodes();		\
          ++it){
-      // Iterate through all nodes of graph a
+   
       Node * na = (*it);
-
-
-      for (jt = acdfg_b -> begin_nodes();
-           jt != acdfg_b -> end_nodes();
+      for (jt = acdfg_b -> begin_nodes();	\
+           jt != acdfg_b -> end_nodes();	\
            ++jt){
         // Iterate through nodes of graph b
         Node * nb = (*jt);
@@ -103,6 +113,10 @@ namespace fixrgraphiso {
               // cast to method nodes
               MethodNode* ma = toMethodNode(na);
               MethodNode* mb = toMethodNode(nb);
+	      // This function isCompatible(..) for method nodes
+	      // is implemented in acdfg.cpp
+	      // Currently two nodes are compatible if the function names are the same.
+	      // 
               if (ma -> isCompatible(mb)){
                 this -> addCompatibleNodes(na,nb);
                 if (addCompatibleDataNodes){
@@ -148,6 +162,19 @@ namespace fixrgraphiso {
 
   }
 
+  bool IlpApproxIsomorphism::areCompatibleEdgeTypes(Edge const * eA, Edge const * eB){
+    edge_type_t typeA = eA -> get_type();
+    edge_type_t typeB = eB -> get_type();
+    switch (typeA){
+    case CONTROL_EDGE:
+    case TRANSITIVE_EDGE:
+      return (typeB == CONTROL_EDGE) || (typeB == TRANSITIVE_EDGE);
+    default:
+      return (typeA == typeB);
+    }
+    return false;
+  }
+  
   void IlpApproxIsomorphism::addAllCompatibleEdges(std::vector<edge_id_t> const & vA, std::vector<edge_id_t> const & vB){
     std::vector<edge_id_t>::const_iterator it, jt;
     for (it = vA. begin(); it != vA.end(); ++it){
@@ -162,7 +189,9 @@ namespace fixrgraphiso {
         const Node * tB = eB-> get_dst();
         assert( areCompatibleNodes(sA -> get_id(), sB -> get_id()));
         if (areCompatibleNodes(tA -> get_id(), tB -> get_id())){
-          insertCompatibleEdges(*it, *jt);
+	  if (areCompatibleEdgeTypes(eA, eB)){
+	    insertCompatibleEdges(*it, *jt);
+	  }
         }
       }
     }
@@ -250,34 +279,41 @@ namespace fixrgraphiso {
   void IlpApproxIsomorphism::addUniqueMatchingConstraint(char a_or_b){
     compatible_node_map_t::const_iterator it;
     vector<node_id_t>::const_iterator jt;
-
+    compatible_node_map_t const * nmap;
     if (a_or_b == 'a'){
-      for (it = node_map_a_to_b.begin();
-           it != node_map_a_to_b.end();
-           ++it){
-        expr_t eqExpr;
-        node_id_t srcNodeID = it -> first;
-        vector<node_id_t> const & compats = it -> second;
-        for (jt = compats.begin(); jt!= compats.end(); ++jt){
-          int vid = milp.lookupIsoNodeVariable(srcNodeID,*jt);
-          eqExpr[vid] = 1.0;
-        }
-        milp.addLeq(eqExpr,1.0);
-      }
-    } else {
-      for (it = node_map_b_to_a.begin();
-           it != node_map_b_to_a.end();
-           ++it){
-        expr_t eqExpr;
-        node_id_t srcNodeID = it -> first;
-        vector<node_id_t> const & compats = it -> second;
-        for (jt = compats.begin(); jt!= compats.end(); ++jt){
-          int vid = milp.lookupIsoNodeVariable(*jt,srcNodeID); //Crucial reverse the order of variables a first b second.
-          eqExpr[vid] = 1.0;
-        }
-        milp.addLeq(eqExpr,1.0);
-      }
+      nmap = &node_map_a_to_b;
+    } else{
+      nmap = &node_map_b_to_a;
     }
+
+    for (it = nmap -> begin();
+	 it != nmap -> end();
+	 ++it){
+      expr_t eqExpr;
+      node_id_t srcNodeID = it -> first;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt!= compats.end(); ++jt){
+	int vid = (a_or_b == 'a')? milp.lookupIsoNodeVariable(srcNodeID, *jt) :\
+	                           milp.lookupIsoNodeVariable(*jt, srcNodeID);
+	eqExpr[vid] = 1.0;
+      }
+      milp.addLeq(eqExpr,1.0);
+    }
+    
+    // } else {
+    //   for (it = node_map_b_to_a.begin();
+    //        it != node_map_b_to_a.end();
+    //        ++it){
+    //     expr_t eqExpr;
+    //     node_id_t srcNodeID = it -> first;
+    //     vector<node_id_t> const & compats = it -> second;
+    //     for (jt = compats.begin(); jt!= compats.end(); ++jt){
+    //       int vid = milp.lookupIsoNodeVariable(*jt,srcNodeID); //Crucial reverse the order of variables a first b second.
+    //       eqExpr[vid] = 1.0;
+    //     }
+    //     milp.addLeq(eqExpr,1.0);
+    //   }
+    // }
   }
 
   void IlpApproxIsomorphism::addWeightOfCompatibleNodesEquation(){
@@ -497,20 +533,38 @@ namespace fixrgraphiso {
         for (jt = compats.begin(); jt!= compats.end(); ++jt){
           // i, j are the two nodes we are now working with
           node_id_t j = *jt;
+	  Node * nb = acdfg_b -> getNodeFromID(j);
           int xij = milp.lookupIsoNodeVariable(i,j);
           int wij = milp.lookupIsoWtVariable(i,j);
-          objExpr[xij] = 1.0;
-          objExpr[wij] = 1.0;
+	  double obj_w = 0.0;
+	  if (na -> get_type () == DATA_NODE){
+	    assert(nb -> get_type () == DATA_NODE);
+	    DataNode* da = toDataNode(na);
+	    DataNode* db = toDataNode(nb);
+	    obj_w = da -> compatibilityWeight(db);
+	  } else if (na -> get_type() == METHOD_NODE){
+	    assert(nb -> get_type () == METHOD_NODE);
+	    MethodNode* ma = toMethodNode(na);
+	    MethodNode* mb = toMethodNode(nb);
+	    obj_w = ma -> compatibilityWeight(mb);
+	  }
+          objExpr[xij] = obj_w; // Use the compatibility weight in the objective function.
+	  if (obj_w > 0.0)
+	    objExpr[wij] = 1.0;
         }
       }
     }
 
     std::vector<edge_pair_t>::const_iterator mt;
     for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
-      edge_id_t eA = mt -> first;
-      edge_id_t eB = mt -> second;
-      int eij = milp.lookupIsoEdgeVariable(eA,eB);
-      objExpr[eij] = 1.0;
+      edge_id_t id_a = mt -> first;
+      edge_id_t id_b = mt -> second;
+      int eij = milp.lookupIsoEdgeVariable(id_a, id_b);
+      Edge * eA = acdfg_a -> getEdgeFromID(id_a);
+      Edge * eB = acdfg_b -> getEdgeFromID(id_b);
+      double obj_w = eA -> compatibilityWeight(eB);
+      
+      objExpr[eij] = obj_w;
     }
 
     milp.setObjective(objExpr);
@@ -852,3 +906,4 @@ namespace fixrgraphiso {
 
 
 } // namespace
+  

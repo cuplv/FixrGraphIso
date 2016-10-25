@@ -12,6 +12,7 @@ namespace fixrgraphiso {
   using std::ostringstream;
   // Match the types of data nodes to be compatible
   bool typeMatchDataNode = false;
+  bool varConstMatchDataNode = true;
 //------------------------------------------------------------------------------
 // Implementation of the nodes
 //------------------------------------------------------------------------------
@@ -64,12 +65,32 @@ namespace fixrgraphiso {
     return (Node*) n_node;
   }
 
-  bool DataNode::isCompatible(DataNode const * n) const {
-    if (typeMatchDataNode){
-      return (n -> data_type_ == this-> data_type_);
-    } else {
-      return true;
+  double DataNode::compatibilityWeight(DataNode const * n) const {
+    double w = 0.0;
+    // Type matches = 0.5
+    // varConstMatches = 0.5
+    if (n -> data_type_ == this -> data_type_){
+      w += 0.5;
     }
+    if (n -> data_node_type_ == this -> data_node_type_){
+      w += 0.5;
+    }
+    return w;
+  }
+
+  
+  
+  bool DataNode::isCompatible(DataNode const * n) const {
+    bool typeMatches = true;
+    if (typeMatchDataNode){
+      typeMatches = (n -> data_type_ == this-> data_type_);
+    }
+    bool varConstMatches = true;
+    if (varConstMatchDataNode){
+      varConstMatches = (n -> data_node_type_ == this -> data_node_type_);
+    }
+
+    return (typeMatches && varConstMatches);
   }
   
   const string& DataNode::get_name() const
@@ -141,6 +162,35 @@ namespace fixrgraphiso {
     }
   }
 
+  double MethodNode::compatibilityWeight(MethodNode const * node) const{
+    double w = 0.0;
+    // The weight is going to be the sum of the compatibility weights
+    // of the receivers, the assignees and corresponding arguments.
+    const DataNode * a;
+    const DataNode * b;
+    if (this -> isCompatible(node)){
+      a = this -> get_receiver();
+      b = node -> get_receiver();
+      if (a != NULL && b != NULL){
+	w += a -> compatibilityWeight(b);
+      }
+      a = this -> get_assignee();
+      b = node -> get_assignee();
+      if (a != NULL && b != NULL){
+	w += a -> compatibilityWeight(b);
+      }
+      std::vector<DataNode*> const & myArgs = this -> get_arguments();
+      std::vector<DataNode*> const & nodeArgs = node -> get_arguments();
+      if (myArgs.size() == nodeArgs.size()){
+	w += 1.0; /*-- for the two nodes agreeing in the number of arguments --*/
+	std::vector<DataNode*>::const_iterator it_a = myArgs.begin(), it_b = nodeArgs.begin();
+	for (; it_a != myArgs.end(); ++it_a, ++it_b){
+	  w += (*it_a) -> compatibilityWeight((*it_b));
+	}
+      }
+    }
+    return w;
+  }
   
   bool MethodNode::isCompatible(const MethodNode * node) const {
     return (this -> name_ == node -> name_);
@@ -254,7 +304,47 @@ namespace fixrgraphiso {
     return stream;
   }
 
- 
+  double Edge::compatibilityWeight(Edge * eB) const {
+    double w =0.0;
+    switch (this -> get_type()){
+    case USE_EDGE:
+    case DEF_EDGE:
+      return (eB -> get_type() == this->get_type())? 1.0 : 0.0;
+    case EXCEPTIONAL_EDGE:
+      if (eB -> get_type() == this -> get_type()){
+	// Calculate how many exceptions are in common
+	std::vector<std::string> :: const_iterator it_a;
+	std::vector<std::string> :: const_iterator it_b;
+	for (it_a = this -> exceptList_.begin(); it_a != this -> exceptList_.end(); ++it_a){
+	  for (it_b = eB -> exceptList_.begin(); it_b != eB -> exceptList_.end(); ++it_b){
+	    if ((*it_a) == (*it_b)) {
+	      w = w + 1.0;
+	      break;
+	    }
+	  }
+	}	
+      }
+      break;
+    case CONTROL_EDGE:
+    case TRANSITIVE_EDGE:
+      if (eB -> get_type() == CONTROL_EDGE || eB -> get_type() == TRANSITIVE_EDGE){
+	// Calculate how many edge labels are in common
+	std::vector<edge_label_t> :: const_iterator jt_a, jt_b;
+	for (jt_a = this -> eLabels_.begin(); jt_a != this -> eLabels_.end(); ++jt_a){
+	  for (jt_b = eB -> eLabels_.begin(); jt_b != eB -> eLabels_.end(); ++jt_b){
+	    if ((*jt_a) == (*jt_b)) {
+	      w = w + 1.0;
+	      break;
+	    }
+	  }
+	}	
+      
+      }
+      
+    }
+    
+    return w;
+  }
   
 //------------------------------------------------------------------------------
 // Implementation of the graph

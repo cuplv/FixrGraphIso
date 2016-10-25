@@ -70,6 +70,7 @@ namespace fixrgraphiso {
     bool isConstNode() const;
     bool isVarNode() const;
     bool isCompatible(DataNode const * n) const;
+    double compatibilityWeight(DataNode const * n) const;
     virtual string getDotLabel() const;
     void prettyPrint(std::ostream & out) const;
     Node * clone() const;
@@ -105,6 +106,7 @@ namespace fixrgraphiso {
     virtual string getDotLabel() const;
     void prettyPrint(std::ostream & out) const;
     bool isCompatible(MethodNode const * n) const;
+    double compatibilityWeight(MethodNode const * n) const;
     friend std::ostream& operator<<(std::ostream&, const MethodNode&);
     
   protected:
@@ -155,6 +157,9 @@ namespace fixrgraphiso {
     }
     friend std::ostream& operator<<(std::ostream&, const Edge&);
 
+    double compatibilityWeight(Edge * eB) const;
+    
+    
   protected:
     long id_;
     edge_type_t eType_;
@@ -164,6 +169,8 @@ namespace fixrgraphiso {
     Node* dst_;
     // edge label
     std::vector<edge_label_t> eLabels_;
+    // Only used in exception edges.
+    std::vector<std::string> exceptList_;
   };
 
   class DefEdge : public Edge {
@@ -192,14 +199,14 @@ namespace fixrgraphiso {
   };
 
   class ExceptionalEdge: public Edge{
-  protected:
-    std::vector<std::string> exceptList_;
+  
   public:
     ExceptionalEdge(long id, Node* src, Node * dst): Edge(id, EXCEPTIONAL_EDGE, src, dst){};
     ExceptionalEdge(const ExceptionalEdge & edge): Edge(edge.id_, EXCEPTIONAL_EDGE, edge.src_, edge.dst_){};
     void addException(std::string const & what){
       exceptList_.push_back(what);
     }
+    
   };
 
   typedef std::vector<Node*> nodes_t;
