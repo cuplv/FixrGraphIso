@@ -19,7 +19,8 @@ namespace fixrgraphiso {
 
   Node* lookup_node(idMapType& idToNodeMap, long id);
 
-
+  
+  
   /*--
     Function: addEdge
 
@@ -48,11 +49,16 @@ namespace fixrgraphiso {
     } else if (typeid(T) == typeid(acdfg_protobuf::Acdfg_DefEdge)){
       DefEdge * e = new DefEdge(proto_edge.id(), from, to);
       acdfg->add_edge(e);
-    } else  {
+    } else if (typeid(T) == typeid(acdfg_protobuf::Acdfg_TransEdge)){
+      TransitiveEdge * e = new TransitiveEdge(proto_edge.id(), from, to);
+      acdfg -> add_edge(e);
+    } else {
+      std::cerr << typeid(T).name() << std::endl;
       assert(false); // This should not happen
     }
   }
 
+  
   /*--
     Function: addEdge
 

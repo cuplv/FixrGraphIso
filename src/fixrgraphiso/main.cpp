@@ -25,7 +25,9 @@ void clean(acdfg_protobuf::Acdfg* proto_acdfg_a,
 
 void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_b, std::string fStem) {
 
-  
+  std::cout << " A: " << aName;
+  std::cout << " B: " << bName;
+  std::cout << " R: " << fStem;
   // std::cout << "Acdfg a\n" << (*acdfg_a);
   //std::cout << "\nAcdfg b\n" << (*acdfg_b);
   
