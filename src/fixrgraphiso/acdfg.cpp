@@ -179,18 +179,18 @@ namespace fixrgraphiso {
     double w = 0.0;
     // The weight is going to be the sum of the compatibility weights
     // of the receivers, the assignees and corresponding arguments.
-    const DataNode * a;
-    const DataNode * b;
+    const DataNode * a = NULL;
+    const DataNode * b = NULL;
     if (this -> isCompatible(node)){
       a = this -> get_receiver();
       b = node -> get_receiver();
       if (a != NULL && b != NULL){
-    w += a -> compatibilityWeight(b);
+        w += a -> compatibilityWeight(b);
       }
       a = this -> get_assignee();
       b = node -> get_assignee();
       if (a != NULL && b != NULL){
-    w += a -> compatibilityWeight(b);
+        w += a -> compatibilityWeight(b);
       }
       std::vector<DataNode*> const & myArgs = this -> get_arguments();
       std::vector<DataNode*> const & nodeArgs = node -> get_arguments();
@@ -221,6 +221,7 @@ namespace fixrgraphiso {
 
   const DataNode* MethodNode::get_receiver() const
   {
+    assert(NULL == receiver_ || receiver_->get_type() == DATA_NODE);
     return receiver_;
   }
 

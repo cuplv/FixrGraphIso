@@ -21,26 +21,26 @@ namespace fixrgraphiso {
 
   typedef enum { REGULAR_NODE, DATA_NODE, METHOD_NODE } node_type_t;
   typedef enum { DATA_NODE_CONST, DATA_NODE_VAR } data_node_type_t;
-  
+
   typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE, TRANSITIVE_EDGE, EXCEPTIONAL_EDGE} edge_type_t;
   typedef enum {  DOMINATE, POST_DOMINATED } edge_label_t;
   typedef long node_id_t;
   typedef long edge_id_t;
-  
+
   // Represent a node in the graph
   class Node {
 
   public:
-  
+
     Node():nType_(REGULAR_NODE){};
 
     Node(const Node& node);
     Node(long id, node_type_t typ);
-  
+
     long get_id() const{
       return id_;
     }
-  
+
     node_type_t get_type() const{
       return nType_;
     }
@@ -48,15 +48,15 @@ namespace fixrgraphiso {
     virtual string getDotLabel() const;
 
     virtual Node * clone() const;
-  
+
     virtual void prettyPrint(std::ostream & out) const ;
-  
+
     friend std::ostream& operator<<(std::ostream&, const Node&);
 
   protected:
     long id_;
     node_type_t nType_;
-  
+
   };
 
   // Node that represent a data (e.g variable)
@@ -75,7 +75,7 @@ namespace fixrgraphiso {
     void prettyPrint(std::ostream & out) const;
     Node * clone() const;
     friend std::ostream& operator<<(std::ostream&, const DataNode&);
-    
+
   protected:
     string name_;
     string data_type_;
@@ -93,9 +93,9 @@ namespace fixrgraphiso {
   class MethodNode : public CommandNode {
   public:
     MethodNode(long id, const string& name,
-	       DataNode* receiver,
-	       std::vector<DataNode*> arguments,
-	       DataNode * assignee);
+           DataNode* receiver,
+           std::vector<DataNode*> arguments,
+           DataNode * assignee);
     MethodNode(const MethodNode& node);
 
     const string& get_name() const;
@@ -108,7 +108,7 @@ namespace fixrgraphiso {
     bool isCompatible(MethodNode const * n) const;
     double compatibilityWeight(MethodNode const * n) const;
     friend std::ostream& operator<<(std::ostream&, const MethodNode&);
-    
+
   protected:
     // Name of the method
     string name_;
@@ -129,11 +129,11 @@ namespace fixrgraphiso {
   public:
 
     Edge(long id, edge_type_t typ, Node* src, Node* dst): id_(id),
-							  eType_(typ),
-							  src_(src),
-							  dst_(dst)
+                              eType_(typ),
+                              src_(src),
+                              dst_(dst)
     {};
-  
+
     Edge(const Edge& edge);
     const long get_id() const;
     const edge_type_t get_type() const
@@ -141,10 +141,10 @@ namespace fixrgraphiso {
 
     const std::vector<edge_label_t> & get_labels() const
     { return eLabels_; };
-    
+
     void set_label( edge_label_t eNew)
     { eLabels_.push_back(eNew); };
-    
+
     const Node* get_src() const;
     const Node* get_dst() const;
     long get_src_id() const{
@@ -159,7 +159,7 @@ namespace fixrgraphiso {
 
     double compatibilityWeight(Edge * eB) const;
     std::string get_edge_dot_style();
-    
+
   protected:
     long id_;
     edge_type_t eType_;
@@ -179,13 +179,13 @@ namespace fixrgraphiso {
     DefEdge(const DefEdge& edge): Edge(edge.id_, DEF_EDGE, edge.src_, edge.dst_){};
   };
 
-  
+
   class UseEdge : public Edge {
   public:
     UseEdge(long id, Node* src, Node* dst): Edge(id, USE_EDGE, src, dst){};
     UseEdge(const UseEdge & edge): Edge(edge.id_, USE_EDGE, edge.src_, edge.dst_){};
   };
-  
+
   class ControlEdge : public Edge {
   public:
     ControlEdge(long id, Node* src, Node* dst): Edge(id, CONTROL_EDGE, src, dst){};
@@ -199,14 +199,14 @@ namespace fixrgraphiso {
   };
 
   class ExceptionalEdge: public Edge{
-  
+
   public:
     ExceptionalEdge(long id, Node* src, Node * dst): Edge(id, EXCEPTIONAL_EDGE, src, dst){};
     ExceptionalEdge(const ExceptionalEdge & edge): Edge(edge.id_, EXCEPTIONAL_EDGE, edge.src_, edge.dst_){};
     void addException(std::string const & what){
       exceptList_.push_back(what);
     }
-    
+
   };
 
   typedef std::vector<Node*> nodes_t;
@@ -232,23 +232,23 @@ namespace fixrgraphiso {
     const Edge* getEdgeFromID(long id) const;
     Node * getNodeFromID(long id);
     Edge * getEdgeFromID(long id);
-    
+
     std::vector<long> getOutgoingEdgeIDs(long nodeID) const{
       node_id_to_outgoing_edges_map_t::const_iterator it = outgoingMap_.find(nodeID);
       if (it == outgoingMap_.end()){
-	vector<long> tmp;// return a dummy empty vector
-	return tmp; 
+    vector<long> tmp;// return a dummy empty vector
+    return tmp;
       } else {
-	return (it -> second);
+    return (it -> second);
       }
     }
 
-    
+
     vector<long> getOutgoingEdgeIDs(Node * n) const {
       return getOutgoingEdgeIDs(n -> get_id() );
     }
-    
-  
+
+
     friend std::ostream& operator<<(std::ostream&, const Acdfg&);
 
     void setName(std::string const & name){
@@ -258,7 +258,7 @@ namespace fixrgraphiso {
     std::string getName() const {
       return this -> name_;
     }
-  
+
   private:
     nodes_t nodes_;
     edges_t edges_;
@@ -269,8 +269,8 @@ namespace fixrgraphiso {
   };
 
 
-  
-  
+
+
 } // namespace fixrgraphiso
 
 #endif // ACDFG_H_INCLUDED

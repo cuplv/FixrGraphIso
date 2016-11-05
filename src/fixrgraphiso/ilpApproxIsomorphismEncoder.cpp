@@ -1,4 +1,4 @@
-#include <iostream>
+ #include <iostream>
 #include <sstream>
 #include <algorithm>
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
@@ -71,7 +71,7 @@ namespace fixrgraphiso {
 
   /*--
     Function: computeCompatibleNodes
-    Compute a data structure that stores nodes in graph A with possible nodes in B that are 
+    Compute a data structure that stores nodes in graph A with possible nodes in B that are
     compatible.
     --*/
   void IlpApproxIsomorphism::computeCompatibleNodes(){
@@ -79,13 +79,13 @@ namespace fixrgraphiso {
     nodes_t::const_iterator it, jt;
 
     // Iterate through all nodes of graph a
-    for (it = acdfg_a -> begin_nodes();		\
-         it != acdfg_a -> end_nodes();		\
+    for (it = acdfg_a -> begin_nodes();     \
+         it != acdfg_a -> end_nodes();      \
          ++it){
-   
+
       Node * na = (*it);
-      for (jt = acdfg_b -> begin_nodes();	\
-           jt != acdfg_b -> end_nodes();	\
+      for (jt = acdfg_b -> begin_nodes();   \
+           jt != acdfg_b -> end_nodes();    \
            ++jt){
         // Iterate through nodes of graph b
         Node * nb = (*jt);
@@ -113,10 +113,10 @@ namespace fixrgraphiso {
               // cast to method nodes
               MethodNode* ma = toMethodNode(na);
               MethodNode* mb = toMethodNode(nb);
-	      // This function isCompatible(..) for method nodes
-	      // is implemented in acdfg.cpp
-	      // Currently two nodes are compatible if the function names are the same.
-	      // 
+          // This function isCompatible(..) for method nodes
+          // is implemented in acdfg.cpp
+          // Currently two nodes are compatible if the function names are the same.
+          //
               if (ma -> isCompatible(mb)){
                 this -> addCompatibleNodes(na,nb);
                 if (addCompatibleDataNodes){
@@ -175,7 +175,7 @@ namespace fixrgraphiso {
     }
     return false;
   }
-  
+
   void IlpApproxIsomorphism::addAllCompatibleEdges(std::vector<edge_id_t> const & vA, std::vector<edge_id_t> const & vB){
     std::vector<edge_id_t>::const_iterator it, jt;
     for (it = vA. begin(); it != vA.end(); ++it){
@@ -190,9 +190,9 @@ namespace fixrgraphiso {
         const Node * tB = eB-> get_dst();
         assert( areCompatibleNodes(sA -> get_id(), sB -> get_id()));
         if (areCompatibleNodes(tA -> get_id(), tB -> get_id())){
-	  if (areCompatibleEdgeTypes(eA, eB)){
-	    insertCompatibleEdges(*it, *jt);
-	  }
+      if (areCompatibleEdgeTypes(eA, eB)){
+        insertCompatibleEdges(*it, *jt);
+      }
         }
       }
     }
@@ -288,19 +288,19 @@ namespace fixrgraphiso {
     }
 
     for (it = nmap -> begin();
-	 it != nmap -> end();
-	 ++it){
+     it != nmap -> end();
+     ++it){
       expr_t eqExpr;
       node_id_t srcNodeID = it -> first;
       vector<node_id_t> const & compats = it -> second;
       for (jt = compats.begin(); jt!= compats.end(); ++jt){
-	int vid = (a_or_b == 'a')? milp.lookupIsoNodeVariable(srcNodeID, *jt) :\
-	                           milp.lookupIsoNodeVariable(*jt, srcNodeID);
-	eqExpr[vid] = 1.0;
+    int vid = (a_or_b == 'a')? milp.lookupIsoNodeVariable(srcNodeID, *jt) :\
+                               milp.lookupIsoNodeVariable(*jt, srcNodeID);
+    eqExpr[vid] = 1.0;
       }
       milp.addLeq(eqExpr,1.0);
     }
-    
+
     // } else {
     //   for (it = node_map_b_to_a.begin();
     //        it != node_map_b_to_a.end();
@@ -534,24 +534,24 @@ namespace fixrgraphiso {
         for (jt = compats.begin(); jt!= compats.end(); ++jt){
           // i, j are the two nodes we are now working with
           node_id_t j = *jt;
-	  Node * nb = acdfg_b -> getNodeFromID(j);
+          Node * nb = acdfg_b -> getNodeFromID(j);
           int xij = milp.lookupIsoNodeVariable(i,j);
           int wij = milp.lookupIsoWtVariable(i,j);
-	  double obj_w = 0.0;
-	  if (na -> get_type () == DATA_NODE){
-	    assert(nb -> get_type () == DATA_NODE);
-	    DataNode* da = toDataNode(na);
-	    DataNode* db = toDataNode(nb);
-	    obj_w = da -> compatibilityWeight(db);
-	  } else if (na -> get_type() == METHOD_NODE){
-	    assert(nb -> get_type () == METHOD_NODE);
-	    MethodNode* ma = toMethodNode(na);
-	    MethodNode* mb = toMethodNode(nb);
-	    obj_w = ma -> compatibilityWeight(mb);
-	  }
+      double obj_w = 0.0;
+      if (na -> get_type () == DATA_NODE){
+        assert(nb -> get_type () == DATA_NODE);
+        DataNode* da = toDataNode(na);
+        DataNode* db = toDataNode(nb);
+        obj_w = da -> compatibilityWeight(db);
+      } else if (na -> get_type() == METHOD_NODE){
+        assert(nb -> get_type () == METHOD_NODE);
+        MethodNode* ma = toMethodNode(na);
+        MethodNode* mb = toMethodNode(nb);
+        obj_w = ma -> compatibilityWeight(mb);
+      }
           objExpr[xij] = obj_w; // Use the compatibility weight in the objective function.
-	  if (obj_w > 0.0)
-	    objExpr[wij] = 1.0;
+      if (obj_w > 0.0)
+        objExpr[wij] = 1.0;
         }
       }
     }
@@ -564,7 +564,7 @@ namespace fixrgraphiso {
       Edge * eA = acdfg_a -> getEdgeFromID(id_a);
       Edge * eB = acdfg_b -> getEdgeFromID(id_b);
       double obj_w = eA -> compatibilityWeight(eB);
-      
+
       objExpr[eij] = obj_w;
     }
 
@@ -620,7 +620,7 @@ namespace fixrgraphiso {
     // 5. Solve
     #ifdef USE_GUROBI_SOLVER
     milp.solveUsingGurobiLibrary();
-    #else 
+    #else
     milp.solveUsingGLPKLibrary();
     #endif
   }
@@ -779,7 +779,7 @@ namespace fixrgraphiso {
     std::map<int, int> inDegreesA;
     std::map<int, int> outDegreesA;
     double avgMatchWeight = 0.0;
-    
+
     compatible_node_map_t::const_iterator it;
     vector<node_id_t>::const_iterator jt;
     for (it = node_map_a_to_b.begin();
@@ -796,18 +796,18 @@ namespace fixrgraphiso {
         MILPVariable wtVar = milp.getVariableFromID(wid);
         double wt = wtVar.floatVal;
         if (var.binVal == 1){
-	  const Node * na = acdfg_a -> getNodeFromID(i);
+      const Node * na = acdfg_a -> getNodeFromID(i);
           const Node * nb = acdfg_b -> getNodeFromID(j);
-	  assert(na -> get_type() == nb -> get_type());
-	  if (na -> get_type() == METHOD_NODE){
-	    methodNodeMatchCount = methodNodeMatchCount+1;
-	    avgMatchWeight = avgMatchWeight + wt;
-	  }
-	  if (na -> get_type() == DATA_NODE){
-	    dataNodeMatchCount = dataNodeMatchCount+1;
-	  }
-	  
-	}
+      assert(na -> get_type() == nb -> get_type());
+      if (na -> get_type() == METHOD_NODE){
+        methodNodeMatchCount = methodNodeMatchCount+1;
+        avgMatchWeight = avgMatchWeight + wt;
+      }
+      if (na -> get_type() == DATA_NODE){
+        dataNodeMatchCount = dataNodeMatchCount+1;
+      }
+
+    }
       }
     }
 
@@ -819,7 +819,7 @@ namespace fixrgraphiso {
     double avgMethodNodeOutDegree = 0.0;
     double avgMethodNodeInDegree = 0.0;
 
-    
+
 
     std::vector<edge_pair_t>::const_iterator mt;
     for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
@@ -828,50 +828,50 @@ namespace fixrgraphiso {
       int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
       MILPVariable var = milp.getVariableFromID(vid);
       if (var.binVal == 1){
-	const Edge * eA = acdfg_a -> getEdgeFromID(eAID);
-	const Edge * eB = acdfg_b -> getEdgeFromID(eBID);
-	int src_id = eA -> get_src_id();
-	int dst_id = eA -> get_dst_id();
-	const Node * srcA = acdfg_a -> getNodeFromID(src_id);
-	const Node * srcB = acdfg_a -> getNodeFromID(dst_id);
+    const Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+    const Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+    int src_id = eA -> get_src_id();
+    int dst_id = eA -> get_dst_id();
+    const Node * srcA = acdfg_a -> getNodeFromID(src_id);
+    const Node * srcB = acdfg_a -> getNodeFromID(dst_id);
 
-	switch (srcA-> get_type()){
-	case DATA_NODE:
-	  {
-	    avgDataNodeOutDegree = avgDataNodeOutDegree+1.0;
-	    break;
-	  }
-	case METHOD_NODE:{
-	  avgMethodNodeOutDegree =avgMethodNodeOutDegree+1.0;
-	  break;
-	}
-	default:
-	  break;
-	}
+    switch (srcA-> get_type()){
+    case DATA_NODE:
+      {
+        avgDataNodeOutDegree = avgDataNodeOutDegree+1.0;
+        break;
+      }
+    case METHOD_NODE:{
+      avgMethodNodeOutDegree =avgMethodNodeOutDegree+1.0;
+      break;
+    }
+    default:
+      break;
+    }
 
-	
-	switch (srcB-> get_type()){
-	case DATA_NODE:
-	  {
-	    avgDataNodeInDegree = avgDataNodeInDegree+1.0;
-	    break;
-	  }
-	case METHOD_NODE:{
-	  avgMethodNodeInDegree =avgMethodNodeInDegree+1.0;
-	  break;
-	}
-	default:
-	  break;
-	}
 
-	
-	if (eA -> get_type() == DEF_EDGE || eA -> get_type() == USE_EDGE){
-	  dataEdgeMatchCount++;
-	}
+    switch (srcB-> get_type()){
+    case DATA_NODE:
+      {
+        avgDataNodeInDegree = avgDataNodeInDegree+1.0;
+        break;
+      }
+    case METHOD_NODE:{
+      avgMethodNodeInDegree =avgMethodNodeInDegree+1.0;
+      break;
+    }
+    default:
+      break;
+    }
 
-	if (eA -> get_type() == CONTROL_EDGE || eA -> get_type() == TRANSITIVE_EDGE){
-	  controlEdgeMatchCount++;
-	}
+
+    if (eA -> get_type() == DEF_EDGE || eA -> get_type() == USE_EDGE){
+      dataEdgeMatchCount++;
+    }
+
+    if (eA -> get_type() == CONTROL_EDGE || eA -> get_type() == TRANSITIVE_EDGE){
+      controlEdgeMatchCount++;
+    }
       }
     }
 
@@ -888,8 +888,8 @@ namespace fixrgraphiso {
     } else {
       avgDataNodeOutDegree = avgDataNodeInDegree = 0.0;
     }
-    
-   
+
+
     res.dataNodeMatchCount = dataNodeMatchCount;
     res.methodNodeMatchCount = methodNodeMatchCount;
     res.dataEdgeMatchCount = dataEdgeMatchCount;
@@ -900,11 +900,10 @@ namespace fixrgraphiso {
     res.avgMethodNodeOutDegree = avgMethodNodeOutDegree;
     res.avgMatchWeight = avgMatchWeight;
     return;
-    
-    
+
+
   }
 
 
 
 } // namespace
-  
