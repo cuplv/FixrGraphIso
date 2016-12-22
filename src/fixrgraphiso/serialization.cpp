@@ -97,7 +97,7 @@ namespace fixrgraphiso {
     Acdfg* acdfg = new Acdfg();
     idMapType idToNodeMap;
     /* data ndoes */
-    for (int j = 0; j < proto_acdfg->data_node_size(); j++) {
+     for (int j = 0; j < proto_acdfg->data_node_size(); j++) {
       const acdfg_protobuf::Acdfg_DataNode& proto_node = \
         proto_acdfg->data_node(j);
       /* Extract data node type */

@@ -107,7 +107,14 @@ namespace fixrgraphiso {
   const data_node_type_t DataNode::get_data_node_type() const{
     return data_node_type_;
   }
-  
+
+  bool DataNode::isConstNode() const {
+    return this -> data_node_type_ == DATA_NODE_CONST;
+  }
+
+  bool DataNode::isVarNode() const{
+    return this -> data_node_type_ == DATA_NODE_VAR;
+  }
   void DataNode::prettyPrint(std::ostream & stream) const {
     
     stream << "Data node id: " << (get_id()) <<

@@ -63,7 +63,7 @@ void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_
 
   IsomorphismResults isoResults(aName,bName);
   ilp.populateResults(isoResults);
-  isoResults.dumpProtobuf(fStem+".iso.bin");
+  isoResults.dumpProtobuf(fStem+".iso.bin", acdfg_a);
 }
 
 int main (int argc, char *argv[])
