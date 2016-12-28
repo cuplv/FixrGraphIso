@@ -1,7 +1,9 @@
 #include "fixrgraphiso/itemSetDB.h"
+#include <algorithm>
 
 using std::cout;
 using std::endl;
+
 namespace fixrgraphiso {
   
   
@@ -71,6 +73,20 @@ namespace fixrgraphiso {
     this -> insertRecordAndUpdateFrequencies(irec);
   }
 
+  bool set_contains(set<int> const & a, set<int> const & b){
+    return std::includes(a.begin(), a.end(), b.begin(), b.end() );
+  }
+  
+  bool is_subset(vector< set<int> > const & all_sets, set<int> const & s){
+    vector< set<int> > :: const_iterator it;
+    for (it = all_sets.begin(); it != all_sets.end(); ++it){
+      if (set_contains(*it, s))
+	return true;
+    }
+
+    return false;
+  }
+  
   bool ItemSetDB::findFrequentItemSetsRecursive(int freq_cutoff,
 						int min_size_cutoff,
 						int last_id,
@@ -100,8 +116,10 @@ namespace fixrgraphiso {
       }
     }
     if (!something && set_so_far.size() >= min_size_cutoff){
-      all_sets.push_back(set_so_far);
-      return true;
+      if (! is_subset(all_sets, set_so_far)) {
+	all_sets.push_back(set_so_far);
+	return true;
+      }
     }
     return false;
   }
