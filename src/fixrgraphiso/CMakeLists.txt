@@ -31,6 +31,18 @@ add_executable(fixrgraphiso
   ${PROTO_SRCS_ISO}
 )
 
+add_executable(frequentitemsets
+  frequentItemSetsMain.cpp
+  itemSetDB.cpp
+  ${PROTO_SRCS_ISO}
+  ${PROTO_SRCS_ACDFG}
+)
+
+target_link_libraries(frequentitemsets
+	${PROTOBUF_LIBRARY}
+	)
+	
+
 if (NOT GUROBI_FOUND)
    target_link_libraries(fixrgraphiso
     ${FIXR_GRAPH_ISO_LINK_LIBS}
@@ -48,3 +60,4 @@ if (GUROBI_FOUND)
    ${GUROBI_C_LIBRARY}
    )
 endif(GUROBI_FOUND)
+

@@ -227,14 +227,12 @@ namespace fixrgraphiso {
     std::fstream input_stream (file_name, std::ios::in | std::ios::binary);
     if (input_stream.is_open()) {
       if (acdfg->ParseFromIstream(&input_stream)) {
-	return acdfg;
+    	return acdfg;
+      } else {
+	    return NULL;
       }
-      else {
-	return NULL;
-      }
-    }
-    else {
-      return NULL;
+    } else {
+       return NULL;
     }
   }
 
