@@ -11,6 +11,7 @@
 #include <set>
 #include <vector>
 #include <string>
+#include <cstdlib>
 #include "fixrgraphiso/proto_iso.pb.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
 #include "fixrgraphiso/itemSetDB.h"
@@ -25,11 +26,11 @@ using std::string;
 
 namespace fixrgraphiso{
   bool loadACDFG = true;
-  int freq = 200;
+  int freq = 50;
   int min_size = 4;
 
   iso_protobuf::Acdfg* loadACDFGFromFile(std::string const & file_name){
-    std::fstream inp_file(file_name, std::ios::in | std::ios::binary);
+    std::fstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
     iso_protobuf::Acdfg * acdfg = new iso_protobuf::Acdfg();
     if (inp_file.is_open()){
       acdfg -> ParseFromIstream(&inp_file);
@@ -58,7 +59,7 @@ namespace fixrgraphiso{
   }
 
   iso_protobuf::Iso * loadIsomorphismFromFile(std::string const & file_name){
-    std::ifstream inp_file(file_name, std::ios::in | std::ios::binary);
+    std::ifstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
     iso_protobuf::Iso * proto_iso = new iso_protobuf::Iso();
     if (inp_file.is_open())
       proto_iso -> ParseFromIstream (&inp_file);
@@ -93,6 +94,7 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
+  
   const char * fName = argv[1];
   std::ifstream inp_file(fName);
   std::string line;
@@ -113,6 +115,7 @@ int main (int argc, char *argv[]) {
   
   /* output should be a list of frequent item sets and corresponding
      list of the isomorphisms under those */
+  cout << " Frequent Item Sets computed " << endl;
   vector< set<string> > result;
   allItems.computeFrequentItemSets(fixrgraphiso::freq,fixrgraphiso::min_size,result);
   google::protobuf::ShutdownProtobufLibrary();
