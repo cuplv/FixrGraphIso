@@ -11,6 +11,8 @@
 #include <set>
 #include <vector>
 #include <string>
+#include <stdlib.h>
+#include <unistd.h>
 #include "fixrgraphiso/proto_iso.pb.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
 #include "fixrgraphiso/itemSetDB.h"
@@ -88,12 +90,35 @@ namespace fixrgraphiso{
 
 int main (int argc, char *argv[]) {
    /* input should be a name of a list of iso files to be processed */
-  if (argc <= 1){
-    std::cout << " Usage " << argv[0] << " [name of input file] " << std::endl;
-    return 1;
+  
+  const char * fName = NULL;
+  while	(optind	< argc){
+    char c;
+    if ( (c = getopt(argc, argv, "f:m:")) != -1){
+      switch (c){
+      case 'f':
+	fixrgraphiso::freq = strtol(optarg, NULL, 10);
+	cout << "setting minimum frequency to " << fixrgraphiso::freq << endl;
+	break;
+      case 'm':
+	fixrgraphiso::min_size = strtol(optarg, NULL, 10);
+	cout << "setting minimum set size cutoff to " << fixrgraphiso::min_size << endl;
+	break;
+      default:
+	break;
+      }
+    } else {
+      fName = argv[optind];
+      optind++;
+    }
   }
 
-  const char * fName = argv[1];
+
+  if (fName == NULL){
+    cout << "Usage: " << argv[0] << "[-f freq -m min_size] name_of_file" << endl;
+    return 1;
+  }
+  
   std::ifstream inp_file(fName);
   std::string line;
   fixrgraphiso::ItemSetDB allItems;
