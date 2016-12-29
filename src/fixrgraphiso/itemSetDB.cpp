@@ -38,8 +38,8 @@ namespace fixrgraphiso {
     excluded_functions.insert(string("EQ"));
     excluded_functions.insert(string("LT"));
     excluded_functions.insert(string("GT"));
-    excluded_functions.insert(string("LEQ"));
-    excluded_functions.insert(string("GEQ"));
+    excluded_functions.insert(string("LE"));
+    excluded_functions.insert(string("GE"));
   }
   
   ItemSetDB::~ItemSetDB(){}
