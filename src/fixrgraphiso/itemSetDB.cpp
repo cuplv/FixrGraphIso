@@ -23,7 +23,7 @@ namespace fixrgraphiso {
       os << sep << *it;
       sep = ", ";
     }
-    os << endl;
+    os << "( "<< idx_record.size()<< " )" << endl;
     // Second print the filenames that identify each record
     vector<ItemRecord*> :: const_iterator jt;
     for (jt = idx_record.begin(); jt != idx_record.end(); ++jt){
@@ -33,7 +33,15 @@ namespace fixrgraphiso {
     os << "E" << endl;
   }
   
-  ItemSetDB::ItemSetDB(): nItems(0){}
+  ItemSetDB::ItemSetDB(): nItems(0){
+    excluded_functions.insert(string("NEQ"));
+    excluded_functions.insert(string("EQ"));
+    excluded_functions.insert(string("LT"));
+    excluded_functions.insert(string("GT"));
+    excluded_functions.insert(string("LEQ"));
+    excluded_functions.insert(string("GEQ"));
+  }
+  
   ItemSetDB::~ItemSetDB(){}
 
   int ItemSetDB::findItemID(string const & str){
@@ -80,6 +88,10 @@ namespace fixrgraphiso {
       this -> incrFrequency(*it);
     }
   }
+
+  bool ItemSetDB::is_excluded(string const & s) const{
+    return (excluded_functions.find(s) != excluded_functions.end());
+  }
   
   void ItemSetDB::addRecord(string const & fname, set<string> const & rec){
     // 1. Compute the indices for each of strings converting them to integers
@@ -87,7 +99,8 @@ namespace fixrgraphiso {
     set<string> :: const_iterator it;
 
     for (it = rec.begin(); it != rec.end(); ++it){
-      r.insert( this -> findItemID(*it));
+      if (! is_excluded(*it))
+	r.insert( this -> findItemID(*it));
     }
     // 2. Add a record and update individual item frequencies for later.
     ItemRecord * irec = new ItemRecord(fname, r);

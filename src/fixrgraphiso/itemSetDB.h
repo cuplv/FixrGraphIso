@@ -50,6 +50,7 @@ namespace fixrgraphiso {
     std::vector< ItemRecord * > records;
     std::map<int, int> item_frequencies;
     std::map<int, std::vector< ItemRecord*> > idx_records;
+    std::set<string> excluded_functions;
     int nItems;
     string findItemName(int j);
     int findItemID(std::string const & str);
@@ -62,6 +63,7 @@ namespace fixrgraphiso {
 				       std::vector< FreqItemSet> & all_sets);
     void addIndex(int j, ItemRecord * i_rec);
     void convertToStringSet(set<int> const & s, set<string> & res);
+    bool is_excluded (string const & s) const;
     
   public:
     
