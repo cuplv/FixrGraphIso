@@ -51,11 +51,11 @@ namespace fixrgraphiso{
       const iso_protobuf::Acdfg_MethodNode & proto_node =
 	acdfg -> method_node(j);
       std::string const & str = proto_node.name();
-      cout << sep << str ;
+      // cout << sep << str ;
       sep = ", ";
       mCalls.insert(str);
     }
-    cout << endl;
+    //cout << endl;
     items -> addRecord(filename, mCalls);
   }
 
@@ -74,13 +74,13 @@ namespace fixrgraphiso{
     int n = proto_iso -> methodcallnames_size();
     int i;
     std::set<string> mCalls;
-    cout << endl;
+    //cout << endl;
     for (i = 0; i < n ; ++i){
       std::string const & str = proto_iso -> methodcallnames(i);
-      cout << str <<",";
+      //cout << str <<",";
       mCalls.insert(str);
     }
-    cout << endl;
+    //cout << endl;
     items-> addRecord(filename, mCalls);
   }
   
@@ -127,7 +127,7 @@ int main (int argc, char *argv[]) {
   while (std::getline(inp_file, line)){
     if (!line.empty() && line[line.length() -1] == '\n')
       line.erase(line.length() -1);
-    cout << "Reading file" << line << endl;
+    //cout << "Reading file" << line << endl;
     if (fixrgraphiso::loadACDFG){
       iso_protobuf::Acdfg * acdfg = fixrgraphiso::loadACDFGFromFile(line);
       fixrgraphiso::captureItemSetFromACDFG(acdfg,line, &allItems);
