@@ -12,6 +12,27 @@ namespace fixrgraphiso {
 
   ItemRecord::~ItemRecord(){}
 
+  FreqItemSet::FreqItemSet(set<int> const & iset,  vector<ItemRecord*> const & recs):s_int(iset),  idx_record(recs){}
+
+  void FreqItemSet::prettyPrint(ostream & os) const {
+    // First print the items
+    os << "I: ";
+    string sep = " ";
+    set<string>::const_iterator it;
+    for (it = s_string.begin(); it != s_string.end(); ++it){
+      os << sep << *it;
+      sep = ", ";
+    }
+    os << endl;
+    // Second print the filenames that identify each record
+    vector<ItemRecord*> :: const_iterator jt;
+    for (jt = idx_record.begin(); jt != idx_record.end(); ++jt){
+      ItemRecord const * irec = *jt;
+      os << "F: " << irec -> get_filename() << endl;
+    }
+    os << "E" << endl;
+  }
+  
   ItemSetDB::ItemSetDB(): nItems(0){}
   ItemSetDB::~ItemSetDB(){}
 
@@ -73,12 +94,13 @@ namespace fixrgraphiso {
     this -> insertRecordAndUpdateFrequencies(irec);
   }
 
-  bool set_contains(set<int> const & a, set<int> const & b){
+  bool set_contains(FreqItemSet const & f, set<int> const & b){
+    set<int> const & a = f.get_int_set_const_ref();
     return std::includes(a.begin(), a.end(), b.begin(), b.end() );
   }
   
-  bool is_subset(vector< set<int> > const & all_sets, set<int> const & s){
-    vector< set<int> > :: const_iterator it;
+  bool is_subset(vector< FreqItemSet > const & all_sets, set<int> const & s){
+    vector< FreqItemSet > :: const_iterator it;
     for (it = all_sets.begin(); it != all_sets.end(); ++it){
       if (set_contains(*it, s))
 	return true;
@@ -86,12 +108,22 @@ namespace fixrgraphiso {
 
     return false;
   }
+
+  void ItemSetDB::convertToStringSet(set<int> const & s, set<string> & res){
+    set<int>::const_iterator it;
+    for (it = s.begin(); it != s.end(); ++it){
+      int j = *it;
+      assert (j >= 0);
+      assert (j < nItems);
+      res.insert( this -> item_names[j]);
+    }
+  }
   
   bool ItemSetDB::findFrequentItemSetsRecursive(int freq_cutoff,
 						int min_size_cutoff,
 						int last_id,
 						set<int> set_so_far,
-						vector< set<int> > & all_sets){
+						vector< FreqItemSet > & all_sets){
     /*-- At the top level, iterate through the hash map of all item frequencies and
       collect those whose frequencies are above the minimum cutoff --*/
     map<int, vector<ItemRecord*> > ::const_iterator it;
@@ -115,34 +147,31 @@ namespace fixrgraphiso {
 	}
       }
     }
+    
     if (!something && set_so_far.size() >= min_size_cutoff){
-      if (! is_subset(all_sets, set_so_far)) {
-	all_sets.push_back(set_so_far);
+      if (!is_subset(all_sets, set_so_far)) {
+	FreqItemSet f( set_so_far, this -> records);
+	all_sets.push_back(f);
 	return true;
       }
     }
     return false;
   }
 
-  void ItemSetDB::computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< set<string> > & result){
-    vector< set<int> > all_sets ;
+  void ItemSetDB::computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< FreqItemSet > & result ){
     set<int> set_so_far;
-    this -> findFrequentItemSetsRecursive(freq_cutoff, min_size_cutoff, -1, set_so_far, all_sets);
-    vector< set<int> > :: const_iterator it;
-    for (it = all_sets.begin(); it != all_sets.end(); ++it ){
-      set<int> const & s = *it;
-      set<int>::const_iterator jt;
-      set<string> str_set;
-      cout << "{ " ;
-      for (jt =  s.begin(); jt != s.end(); ++jt){
-	int j = *jt;
-	string s= this -> findItemName(j);
-	str_set.insert( s );
-	cout << s << ", " ;
-      }
-      cout << "}" << endl;
-      result.push_back(str_set);
+    this -> findFrequentItemSetsRecursive(freq_cutoff, min_size_cutoff, -1, set_so_far, result);
+    vector< FreqItemSet > :: iterator it;
+    // Convert the result into vector of strings
+    for (it = result.begin(); it != result.end(); ++it ){
+      FreqItemSet & s = *it;
+      set<int> const & i_set = s.get_int_set_const_ref();
+      set<string> & s_set = s.get_string_set_ref();
+      this -> convertToStringSet(i_set, s_set);
+      s.prettyPrint(std::cout);
     }
+
+    
   }
   
 }

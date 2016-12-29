@@ -29,7 +29,9 @@ namespace fixrgraphiso{
   bool loadACDFG = true;
   int freq = 50;
   int min_size = 4;
-
+  string outputFileName = "item_sets_out.txt";
+  bool debug = false;
+  
   iso_protobuf::Acdfg* loadACDFGFromFile(std::string const & file_name){
     std::fstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
     iso_protobuf::Acdfg * acdfg = new iso_protobuf::Acdfg();
@@ -51,11 +53,11 @@ namespace fixrgraphiso{
       const iso_protobuf::Acdfg_MethodNode & proto_node =
 	acdfg -> method_node(j);
       std::string const & str = proto_node.name();
-      // cout << sep << str ;
+      if (debug) cout << sep << str ;
       sep = ", ";
       mCalls.insert(str);
     }
-    //cout << endl;
+    if (debug) cout << endl;
     items -> addRecord(filename, mCalls);
   }
 
@@ -74,13 +76,14 @@ namespace fixrgraphiso{
     int n = proto_iso -> methodcallnames_size();
     int i;
     std::set<string> mCalls;
-    //cout << endl;
+    string sep="";
+    if (debug) cout << endl;
     for (i = 0; i < n ; ++i){
       std::string const & str = proto_iso -> methodcallnames(i);
-      //cout << str <<",";
+      if (debug) cout << sep<< str ;
       mCalls.insert(str);
     }
-    //cout << endl;
+    if (debug) cout << endl;
     items-> addRecord(filename, mCalls);
   }
   
@@ -94,15 +97,26 @@ int main (int argc, char *argv[]) {
   const char * fName = NULL;
   while	(optind	< argc){
     char c;
-    if ( (c = getopt(argc, argv, "f:m:")) != -1){
+    if ( (c = getopt(argc, argv, "f:m:o:di")) != -1){
       switch (c){
       case 'f':
 	fixrgraphiso::freq = strtol(optarg, NULL, 10);
-	cout << "setting minimum frequency to " << fixrgraphiso::freq << endl;
+	cout << "Setting minimum frequency to " << fixrgraphiso::freq << endl;
 	break;
       case 'm':
 	fixrgraphiso::min_size = strtol(optarg, NULL, 10);
-	cout << "setting minimum set size cutoff to " << fixrgraphiso::min_size << endl;
+	cout << "Setting minimum set size cutoff to " << fixrgraphiso::min_size << endl;
+	break;
+      case 'd':
+	fixrgraphiso::debug = true;
+	
+	break;
+      case 'i':
+	fixrgraphiso::loadACDFG = false;
+	break;
+      case 'o':
+	fixrgraphiso::outputFileName = string(optarg);
+	cout << "Setting output file to : " << fixrgraphiso::outputFileName << endl;
 	break;
       default:
 	break;
@@ -115,7 +129,7 @@ int main (int argc, char *argv[]) {
 
 
   if (fName == NULL){
-    cout << "Usage: " << argv[0] << "[-f freq -m min_size] name_of_file" << endl;
+    cout << "Usage: " << argv[0] << "[-f freq -m min_size -o out_file_name -d] name_of_file" << endl;
     return 1;
   }
   
@@ -127,7 +141,7 @@ int main (int argc, char *argv[]) {
   while (std::getline(inp_file, line)){
     if (!line.empty() && line[line.length() -1] == '\n')
       line.erase(line.length() -1);
-    //cout << "Reading file" << line << endl;
+    if (fixrgraphiso::debug) cout << "Reading file" << line << endl;
     if (fixrgraphiso::loadACDFG){
       iso_protobuf::Acdfg * acdfg = fixrgraphiso::loadACDFGFromFile(line);
       fixrgraphiso::captureItemSetFromACDFG(acdfg,line, &allItems);
@@ -140,7 +154,7 @@ int main (int argc, char *argv[]) {
   /* output should be a list of frequent item sets and corresponding
      list of the isomorphisms under those */
   cout << " Frequent Item Sets computed " << endl;
-  vector< set<string> > result;
+  vector< fixrgraphiso::FreqItemSet > result;
   allItems.computeFrequentItemSets(fixrgraphiso::freq,fixrgraphiso::min_size,result);
   google::protobuf::ShutdownProtobufLibrary();
   
