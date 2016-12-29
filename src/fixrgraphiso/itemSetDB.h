@@ -68,7 +68,7 @@ namespace fixrgraphiso {
     ItemSetDB();
     ~ItemSetDB();
     void addRecord(std::string const & filename, std::set<std::string> const & rec);
-    void computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< FreqItemSet > & result);
+    void computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< FreqItemSet > & result, ostream & out);
     
   };
 

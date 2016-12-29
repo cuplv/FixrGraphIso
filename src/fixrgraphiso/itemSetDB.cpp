@@ -158,7 +158,7 @@ namespace fixrgraphiso {
     return false;
   }
 
-  void ItemSetDB::computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< FreqItemSet > & result ){
+  void ItemSetDB::computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< FreqItemSet > & result, ostream & out ){
     set<int> set_so_far;
     this -> findFrequentItemSetsRecursive(freq_cutoff, min_size_cutoff, -1, set_so_far, result);
     vector< FreqItemSet > :: iterator it;
@@ -168,7 +168,7 @@ namespace fixrgraphiso {
       set<int> const & i_set = s.get_int_set_const_ref();
       set<string> & s_set = s.get_string_set_ref();
       this -> convertToStringSet(i_set, s_set);
-      s.prettyPrint(std::cout);
+      s.prettyPrint(out);
     }
 
     

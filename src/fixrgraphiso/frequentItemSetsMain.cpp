@@ -24,6 +24,7 @@ using std::endl;
 using std::vector;
 using std::set;
 using std::string;
+using std::ofstream;
 
 namespace fixrgraphiso{
   bool loadACDFG = true;
@@ -153,9 +154,11 @@ int main (int argc, char *argv[]) {
   
   /* output should be a list of frequent item sets and corresponding
      list of the isomorphisms under those */
+  ofstream out_file (fixrgraphiso::outputFileName.c_str());
   cout << " Frequent Item Sets computed " << endl;
   vector< fixrgraphiso::FreqItemSet > result;
-  allItems.computeFrequentItemSets(fixrgraphiso::freq,fixrgraphiso::min_size,result);
+  allItems.computeFrequentItemSets(fixrgraphiso::freq,fixrgraphiso::min_size,result, out_file);
+  out_file.close();
   google::protobuf::ShutdownProtobufLibrary();
-  
+  return 1;
 }
