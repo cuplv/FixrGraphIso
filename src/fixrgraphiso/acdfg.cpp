@@ -17,6 +17,7 @@ namespace fixrgraphiso {
 // Implementation of the nodes
 //------------------------------------------------------------------------------
 
+  
   Node::Node(long id, node_type_t typ): id_(id), nType_(typ){}
 
   Node::Node(const Node& node):id_(node.id_), nType_(node.nType_){}
@@ -27,6 +28,7 @@ namespace fixrgraphiso {
     stream << "Node id: " << id_ << "\n";
   }
 
+  
   string Node::getDotLabel() const {
     assert(get_type() == REGULAR_NODE);
     ostringstream ss;
@@ -123,10 +125,19 @@ namespace fixrgraphiso {
     
   }
 
+  
+  string my_escape(string  arg){
+    string a = "\"";
+    string b = "\\\"";
+    while (arg.find(a) < arg.length())
+      arg= (arg.replace(arg.find(a), a.length(), b));
+    return arg;
+  }
+
   string DataNode::getDotLabel() const {
     ostringstream ss;
     assert(get_type() == DATA_NODE);
-    ss << "shape=ellipse,label=\"DataNode #"<<get_id()<<": " << get_data_type() << "  " << get_name()<<"\"" ;
+    ss << "shape=ellipse,label=\"DataNode #"<<get_id()<<": " << get_data_type() << "  " << my_escape(get_name())<<"\"" ;
     return ss.str();
   }
 

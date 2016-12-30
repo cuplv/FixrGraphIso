@@ -20,10 +20,10 @@ namespace fixrgraphiso {
   using std::string;
 
   typedef enum { REGULAR_NODE, DATA_NODE, METHOD_NODE } node_type_t;
-  typedef enum { DATA_NODE_CONST, DATA_NODE_VAR } data_node_type_t;
+  typedef enum { DATA_NODE_CONST, DATA_NODE_VAR, DATA_NODE_UNKNOWN } data_node_type_t;
   
   typedef enum { CONTROL_EDGE, DEF_EDGE, USE_EDGE, TRANSITIVE_EDGE, EXCEPTIONAL_EDGE} edge_type_t;
-  typedef enum {  DOMINATE, POST_DOMINATED } edge_label_t;
+  typedef enum {  DOMINATE, POST_DOMINATED, UNKNOWN_EDGE_LABEL } edge_label_t;
   typedef long node_id_t;
   typedef long edge_id_t;
   

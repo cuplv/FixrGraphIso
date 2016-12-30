@@ -21,6 +21,33 @@ namespace fixrgraphiso {
 
   
   
+   /*--
+    Function: addEdge
+
+    The specialization of the addEdge Function for edges of type ExceptionalControlEdge
+
+    --*/
+  template<class T> void addEdge (Acdfg* acdfg,
+				  idMapType& idToNodeMap,
+				  T  & proto_edge);
+  
+  template <> void addEdge (Acdfg* acdfg,
+			    idMapType& idToNodeMap,
+			    acdfg_protobuf::Acdfg_ExceptionalControlEdge const &  proto_edge ){
+    Node* from = lookup_node(idToNodeMap, proto_edge.from());
+    Node* to = lookup_node(idToNodeMap, proto_edge.to());
+    std::cout << "Exception edge: correct function executed!!" << std::endl;
+    assert(NULL != from);
+    assert(NULL != to);
+    ExceptionalEdge * e = new ExceptionalEdge(proto_edge.id(), from, to);
+    int eSize = proto_edge.exceptions_size();
+    for (int eID = 0; eID < eSize; ++eID){
+      std::string const & except_str = proto_edge.exceptions(eID);
+      e -> addException(except_str);
+    }
+    acdfg -> add_edge(e);
+  }
+
   /*--
     Function: addEdge
 
@@ -30,9 +57,9 @@ namespace fixrgraphiso {
     below.
     --*/
 
-  template<typename T> void addEdge(Acdfg* acdfg,
-				    idMapType& idToNodeMap,
-				    T  & proto_edge)
+  template<class T> void addEdge (Acdfg* acdfg,
+				  idMapType& idToNodeMap,
+				  T  & proto_edge)
   {
     Node* from = lookup_node(idToNodeMap, proto_edge.from());
     Node* to = lookup_node(idToNodeMap, proto_edge.to());
@@ -52,38 +79,38 @@ namespace fixrgraphiso {
     } else if (typeid(T) == typeid(acdfg_protobuf::Acdfg_TransEdge)){
       TransitiveEdge * e = new TransitiveEdge(proto_edge.id(), from, to);
       acdfg -> add_edge(e);
-    } else {
+    } else if (typeid(T) == typeid(acdfg_protobuf::Iso_Edge)){
+      // Determine edge type and work accordingly
+      if (from -> get_type() == DATA_NODE){
+	assert(to -> get_type() == METHOD_NODE); // This is the only possibility allowed 
+	UseEdge * e = new UseEdge(proto_edge.id(), from, to);
+	acdfg -> add_edge(e);
+      } else {
+	assert(from -> get_type() == METHOD_NODE);
+	if (to -> get_type() == METHOD_NODE){
+	  TransitiveEdge * e = new TransitiveEdge(proto_edge.id(), from, to);
+	  acdfg -> add_edge(e);
+	} else {
+	  assert( to -> get_type() == DATA_NODE);
+	  DefEdge * e = new DefEdge(proto_edge.id(), from, to);
+	  acdfg -> add_edge(e);
+	}
+      }
+    }  else {
       std::cerr << typeid(T).name() << std::endl;
       assert(false); // This should not happen
     }
   }
 
-  
-  /*--
-    Function: addEdge
-
-    The specialization of the addEdge Function for edges of type ExceptionalControlEdge
-
-    --*/
-
-  template<>
-  void addEdge(Acdfg* acdfg,
-	       idMapType& idToNodeMap,
-	       acdfg_protobuf::Acdfg_ExceptionalControlEdge &  except_edge ){
-    Node* from = lookup_node(idToNodeMap, except_edge.from());
-    Node* to = lookup_node(idToNodeMap, except_edge.to());
-
-    assert(NULL != from);
-    assert(NULL != to);
-    ExceptionalEdge * e = new ExceptionalEdge(except_edge.id(), from, to);
-    int eSize = except_edge.exceptions_size();
-    for (int eID = 0; eID < eSize; ++eID){
-      std::string const & except_str = except_edge.exceptions(eID);
-      e -> addException(except_str);
-    }
-    acdfg -> add_edge(e);
+   
+  template <class T>
+  DataNode * createAndAddDataNode(Acdfg * toWhat, idMapType & idToNodeMap, T & proto_node, data_node_type_t dtype){
+    DataNode * node = new DataNode(proto_node.id(), proto_node.name(), proto_node.type(), dtype);
+    Node * app_node= toWhat -> add_node(node);
+    idToNodeMap[app_node -> get_id()] = app_node;
+    return node;
   }
-
+  
   /*--
     Function create_acdfg
     
@@ -106,12 +133,13 @@ namespace fixrgraphiso {
 	dtype = (proto_node.data_type() == acdfg_protobuf::Acdfg_DataNode_DataType_DATA_VAR)? \
 	  DATA_NODE_VAR : DATA_NODE_CONST;
       }
-      DataNode * node = new DataNode(proto_node.id(),
-				     proto_node.name(),
-				     proto_node.type(),
-				     dtype);
-      Node * app_node = acdfg->add_node(node);
-      idToNodeMap[app_node->get_id()] = app_node;
+      createAndAddDataNode(acdfg, idToNodeMap, proto_node, dtype);
+      // DataNode * node = new DataNode(proto_node.id(),
+      // 				     proto_node.name(),
+      // 				     proto_node.type(),
+      // 				     dtype);
+      // Node * app_node = acdfg->add_node(node);
+      // idToNodeMap[app_node->get_id()] = app_node;
     }
 
     /* Misc Nodes */
@@ -135,8 +163,8 @@ namespace fixrgraphiso {
       /* read the assignee */
       DataNode * assignee = NULL;
       if (proto_node.has_assignee())
-	DataNode * assignee = (DataNode*) lookup_node(idToNodeMap, \
-  						      proto_node.assignee());
+	assignee = (DataNode*) lookup_node(idToNodeMap,			\
+					   proto_node.assignee());
       /* read the arguments */
       std::vector<DataNode*> arguments;
       for (int k = 0; k < proto_node.argument_size(); k++) {
@@ -251,5 +279,62 @@ namespace fixrgraphiso {
   }
 
 
+  Acdfg * AcdfgSerializer::create_acdfg(acdfg_protobuf::Iso * proto_iso){
+    Acdfg * acdfg = new Acdfg ();
+    idMapType idToNodeMap;
+    int j;
+    
+    /* -- Data nodes --*/
+    for (j = 0; j < proto_iso -> data_nodes_size(); ++j){
+      const acdfg_protobuf::Iso_DataNode & proto_node = proto_iso -> data_nodes(j);
+      data_node_type_t dtype = DATA_NODE_UNKNOWN;
+      if (proto_node .has_data_type()){
+	dtype = (proto_node.data_type() == acdfg_protobuf::Iso_DataNode_DataType_DATA_VAR)? \
+	  DATA_NODE_VAR: DATA_NODE_CONST;
+      }
+      createAndAddDataNode(acdfg, idToNodeMap, proto_node, dtype);
+    }
+    
+    /* -- Method nodes --*/
+    for (j = 0; j < proto_iso -> method_nodes_size(); ++j){
+      const acdfg_protobuf::Iso_MethodNode & proto_node =	\
+	proto_iso -> method_nodes(j);
+      DataNode * receiver = NULL;
+      if (proto_node.has_invokeeid())
+	receiver = (DataNode *) lookup_node(idToNodeMap,		\
+						       proto_node.invokeeid());
+      DataNode * assignee = NULL;
+      if (proto_node.has_assigneeid())
+	assignee = (DataNode *) lookup_node(idToNodeMap,		\
+						       proto_node.assigneeid());
+      
+      std::vector<DataNode*> arguments;
+      for (int k = 0; k < proto_node.argumentids_size(); ++k){
+	int argument_id = proto_node.argumentids(k);
+	DataNode * n = (DataNode*) lookup_node(idToNodeMap,	\
+					       argument_id);
+	arguments.push_back(n);
+      }
+      MethodNode * node = new MethodNode(proto_node.id(),
+					 proto_node.name(),
+					 receiver,
+					 arguments,
+					 assignee);
+      Node * app_node = acdfg -> add_node(node);
+      idToNodeMap[app_node-> get_id()] = app_node;
+    }
+
+    /*-- Edges: infer type from the types of the from/to edges --*/
+
+    int nEdges = proto_iso-> edges_size();
+    for (j = 0; j < nEdges; ++j){
+      const acdfg_protobuf::Iso_Edge & proto_edge = \
+	proto_iso -> edges(j);
+      addEdge(acdfg, idToNodeMap, proto_edge);
+    }
+
+    return acdfg;
+    
+  }
 
 } // namespace fixrgraphiso

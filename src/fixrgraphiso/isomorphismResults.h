@@ -10,7 +10,8 @@
 #include "fixrgraphiso/proto_iso.pb.h"
 
 namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
-
+using std::cout;
+using std::endl;
 namespace fixrgraphiso {
 
   struct iso {
@@ -98,13 +99,16 @@ namespace fixrgraphiso {
 	    std::vector<DataNode*>::const_iterator iT;
 	    for (iT = args.begin(); iT != args.end(); ++iT){
 	      method_node -> add_argumenttypes((*iT) -> get_data_type()  );
+	      method_node -> add_argumentids((*iT) -> get_id());
 	    }
 	    // Add invokee/receiver types
 	    const DataNode* rcv = mNode -> get_receiver();
 	    if (rcv){
+	      //	      std::cerr << "Debug: invokee type = "<< rcv -> get_data_type() << endl;
 	      method_node -> set_invokeetype(rcv -> get_data_type());
 	      method_node -> set_invokeeid (rcv -> get_id());
 	    } else {
+	      // std::cerr << "Debug: invokee type cleared"<< endl;
 	      method_node -> clear_invokeetype();
 	      method_node -> clear_invokeeid();
 	    }

@@ -9,7 +9,8 @@ namespace fixrgraphiso {
   bool addCompatibleDataNodes = false; // This turns on additional checks for data node compatibility
   bool printEverything=false;
   using std::ostringstream;
-
+  using std::string;
+  
   void IlpApproxIsomorphism::addCompatibleNodes(Node const * na, Node const * nb){
     node_id_t id_a = na -> get_id();
     node_id_t id_b = nb -> get_id();
@@ -624,7 +625,7 @@ namespace fixrgraphiso {
     milp.solveUsingGLPKLibrary();
     #endif
   }
-
+  
   void IlpApproxIsomorphism::prettyPrintEncodingResultInDot(ostream & out){
     // This can only be called after the milp is successfully solved and solution extracted.
 
@@ -639,7 +640,7 @@ namespace fixrgraphiso {
     if (printEverything){
       for (pt = acdfg_a -> begin_nodes(); pt != acdfg_a -> end_nodes(); ++pt){
         const Node * na = *pt;
-        string strA = na -> getDotLabel();
+        string strA = (na -> getDotLabel());
         ostringstream sA;
         sA << "\"a_"<<na -> get_id() <<"\" [ color=gray, " << strA << "];"<<std::endl;
         graphADot.push_back(sA.str());
@@ -647,7 +648,7 @@ namespace fixrgraphiso {
 
       for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
         const Node * nb = *pt;
-        string strB = nb -> getDotLabel();
+        string strB = (nb -> getDotLabel());
         ostringstream sB;
         sB << "\"b_"<<nb -> get_id() <<"\" [color=gray," << strB << "];"<<std::endl;
       }
@@ -668,8 +669,8 @@ namespace fixrgraphiso {
           // Let us dot print them
           const Node * na = acdfg_a -> getNodeFromID(i);
           const Node * nb = acdfg_b -> getNodeFromID(j);
-          string strA = na -> getDotLabel();
-          string strB = nb -> getDotLabel();
+          string strA = (na -> getDotLabel());
+          string strB = (nb -> getDotLabel());
           ostringstream sA, sB,sC;
           sA << "\"a_"<<na -> get_id() <<"\" [ " << strA << "];"<<std::endl;
           sB << "\"b_"<<nb -> get_id() <<"\" [ " << strB << "];"<<std::endl;
