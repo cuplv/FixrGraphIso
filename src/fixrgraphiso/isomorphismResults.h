@@ -58,11 +58,63 @@ namespace fixrgraphiso {
       isoEdges.push_back(istr);
     }
 
-    iso_protobuf::Iso * toProtobuf(Acdfg * acdfg_a) {
+    void dataNodeToProtobuf( DataNode * dNode, iso_protobuf::Iso * proto){
+      iso_protobuf::Iso_DataNode * data_node = proto-> add_data_nodes();
+      data_node -> set_id(dNode -> get_id() );
+      data_node -> set_name(dNode -> get_name());
+      data_node -> set_type(dNode -> get_data_type() );
+      proto -> add_alldatatypes(dNode -> get_data_type());
+      if (dNode -> isConstNode()){
+	data_node -> set_data_type(iso_protobuf::Iso_DataNode_DataType_DATA_CONST);
+      } else {
+	assert(dNode -> isVarNode());
+	data_node -> set_data_type(iso_protobuf::Iso_DataNode_DataType_DATA_VAR);
+      }
+    }
+
+    void methodNodeToProtobuf( MethodNode * mNode, iso_protobuf::Iso* proto, std::set<long> & extraDataNodes){
+      iso_protobuf::Iso_MethodNode * method_node = proto -> add_method_nodes();
+      method_node -> set_id(mNode -> get_id() );
+      method_node -> set_name(mNode -> get_name() );
+      proto ->add_methodcallnames(mNode -> get_name() );
+      // Iterate through the arguments and add types/id
+      const std::vector<DataNode*> & args = mNode -> get_arguments();
+      for (const DataNode * dd : args){
+	method_node -> add_argumenttypes( dd -> get_data_type()  );
+	method_node -> add_argumentids( dd -> get_id());
+	extraDataNodes.insert( dd-> get_id());
+      }
+      // Add invokee/receiver types
+      const DataNode* rcv = mNode -> get_receiver();
+      if (rcv){
+	//	      std::cerr << "Debug: invokee type = "<< rcv -> get_data_type() << endl;
+	method_node -> set_invokeetype(rcv -> get_data_type());
+	method_node -> set_invokeeid (rcv -> get_id());
+	extraDataNodes.insert( rcv -> get_id());
+      } else {
+	// std::cerr << "Debug: invokee type cleared"<< endl;
+	method_node -> clear_invokeetype();
+	method_node -> clear_invokeeid();
+      }
+      // Add assignee types
+      const DataNode * assg = mNode -> get_assignee();
+      if (assg){
+	method_node -> set_assigneetype(assg -> get_data_type());
+	method_node -> set_assigneeid(assg -> get_id());
+	extraDataNodes.insert(assg-> get_id());
+      } else {
+	method_node -> clear_assigneetype();
+	method_node -> clear_assigneeid();
+      }
+      // Done!
+    }
+    
+    iso_protobuf::Iso * toProtobuf(Acdfg * acdfg, bool a_or_b) {
       iso_protobuf::Iso * proto = new iso_protobuf::Iso();
 
       std::vector<iso>::iterator it;
-
+      std::set<long> extraDataNodeIDs;
+      std::set<long> insertedDataNodeIDs;
       // add node maps
       for (it = isoNodes.begin(); it != isoNodes.end(); ++it) {
         iso_protobuf::Iso_MapNode * map_node = proto->add_map_node();
@@ -70,58 +122,19 @@ namespace fixrgraphiso {
         map_node->set_id_2(it->b_id);
         map_node->set_weight(it->wt);
 
-	Node * nd_a = acdfg_a -> getNodeFromID(it -> a_id);
+	Node * nd_a = a_or_b? (acdfg -> getNodeFromID(it -> a_id)) :	\
+	  (acdfg -> getNodeFromID(it -> b_id));
 	switch (nd_a -> get_type() ){
 	case DATA_NODE: {
 	  DataNode * dNode = toDataNode(nd_a);
-	  iso_protobuf::Iso_DataNode * data_node = proto-> add_data_nodes();
-	  data_node -> set_id(it -> a_id);
-	  data_node -> set_name(dNode -> get_name());
-	  data_node -> set_type(dNode -> get_data_type() );
-	  proto -> add_alldatatypes(dNode -> get_data_type());
-	  if (dNode -> isConstNode()){
-	    data_node -> set_data_type(iso_protobuf::Iso_DataNode_DataType_DATA_CONST);
-	  } else {
-	    assert(dNode -> isVarNode());
-	    data_node -> set_data_type(iso_protobuf::Iso_DataNode_DataType_DATA_VAR);
-	  }
+	  insertedDataNodeIDs.insert(dNode -> get_id());
+	  dataNodeToProtobuf(dNode, proto);
 	}
 	  break;
 	case METHOD_NODE:
 	  {
 	    MethodNode * mNode= toMethodNode(nd_a);
-	    iso_protobuf::Iso_MethodNode * method_node = proto -> add_method_nodes();
-	    method_node -> set_id(it -> a_id);
-	    method_node -> set_name(mNode -> get_name() );
-	    proto ->add_methodcallnames(mNode -> get_name() );
-	    // Iterate through the arguments and add types/id
-	    const std::vector<DataNode*> & args = mNode -> get_arguments();
-	    std::vector<DataNode*>::const_iterator iT;
-	    for (iT = args.begin(); iT != args.end(); ++iT){
-	      method_node -> add_argumenttypes((*iT) -> get_data_type()  );
-	      method_node -> add_argumentids((*iT) -> get_id());
-	    }
-	    // Add invokee/receiver types
-	    const DataNode* rcv = mNode -> get_receiver();
-	    if (rcv){
-	      //	      std::cerr << "Debug: invokee type = "<< rcv -> get_data_type() << endl;
-	      method_node -> set_invokeetype(rcv -> get_data_type());
-	      method_node -> set_invokeeid (rcv -> get_id());
-	    } else {
-	      // std::cerr << "Debug: invokee type cleared"<< endl;
-	      method_node -> clear_invokeetype();
-	      method_node -> clear_invokeeid();
-	    }
-	    
-	    const DataNode * assg = mNode -> get_assignee();
-	    if (assg){
-	      method_node -> set_assigneetype(assg -> get_data_type());
-	      method_node -> set_assigneeid(assg -> get_id());
-	    } else {
-	      method_node -> clear_assigneetype();
-	      method_node -> clear_assigneeid();
-	    }
-	    // Done!
+	    methodNodeToProtobuf(mNode, proto, extraDataNodeIDs);
 	  }
 	  break;
 	  
@@ -133,7 +146,18 @@ namespace fixrgraphiso {
 	//	
 	
       }
-
+      // Now insert the data nodes that are referred to in the method nodes themselves.
+      for (auto jt = extraDataNodeIDs.begin(); jt != extraDataNodeIDs.end() ; ++jt){
+	node_id_t id = *jt;
+	if ( insertedDataNodeIDs.find(id) == insertedDataNodeIDs.end()){
+	  Node * n = acdfg-> getNodeFromID(id);
+	  assert( n != NULL);
+	  assert( n -> get_type() == DATA_NODE);
+	  DataNode * dNode = toDataNode(n);
+	  dataNodeToProtobuf(dNode, proto);
+	}
+      }
+      
       // add edge maps
       for (it = isoEdges.begin(); it != isoEdges.end(); ++it) {
         iso_protobuf::Iso_MapEdge * map_edge = proto->add_map_edge();
@@ -141,7 +165,8 @@ namespace fixrgraphiso {
         map_edge->set_id_2(it->b_id);
         map_edge->set_weight(it->wt);
 	// Add edge from graph_a back to the iso
-	const Edge * e = acdfg_a -> getEdgeFromID(it -> a_id);
+	const Edge * e = a_or_b? acdfg -> getEdgeFromID(it -> a_id) : \
+	  acdfg -> getEdgeFromID(it -> b_id);
 	iso_protobuf::Iso_Edge * edge = proto -> add_edges();
 	edge -> set_id(it -> a_id);
 	edge -> set_from(e -> get_src_id() );
@@ -169,12 +194,12 @@ namespace fixrgraphiso {
       return proto;
     }
 
-    int dumpProtobuf(std::string output_dir, Acdfg * acdfg_a) {
+    int dumpProtobuf(std::string output_dir, Acdfg * acdfg, bool a_or_b) {
       // ensure we're using a compatible version of Protobuf
       GOOGLE_PROTOBUF_VERIFY_VERSION;
 
       int condition = 0;
-      iso_protobuf::Iso * proto = toProtobuf(acdfg_a);
+      iso_protobuf::Iso * proto = toProtobuf(acdfg, a_or_b);
 
       std::fstream output(output_dir.c_str(),
         std::ios::out | std::ios::trunc | std::ios::binary);

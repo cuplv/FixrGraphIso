@@ -2,20 +2,22 @@
 //
 // Data structure used to store an Abstract Control Data Flow Graph ACDFG)
 //
-// Author: Sergio Mover
+// Author: Sergio Mover,
+//         Sriram Sankaranarayanan
 //
 
 #include <iostream> // DEBUG
 #include "fixrgraphiso/acdfg.h"
 #include <sstream>
+#include <set>
 namespace fixrgraphiso {
   using std::ostringstream;
   // Match the types of data nodes to be compatible
   bool typeMatchDataNode = false;
   bool varConstMatchDataNode = true;
-//------------------------------------------------------------------------------
-// Implementation of the nodes
-//------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+  // Implementation of the nodes
+  //------------------------------------------------------------------------------
 
   
   Node::Node(long id, node_type_t typ): id_(id), nType_(typ){}
@@ -228,6 +230,10 @@ namespace fixrgraphiso {
   {
     return receiver_;
   }
+
+  int MethodNode::get_num_arguments() const {
+    return (int) arguments_.size();
+  }
   
   const std::vector<DataNode*> & MethodNode::get_arguments() const
   {
@@ -238,12 +244,16 @@ namespace fixrgraphiso {
     return assignee_;
   }
 
+  bool MethodNode::isSpecialMethod() const {
+    std::set<std::string> special_methods {"EQ", "NEQ", "GT", "LT", "LE", "GE"};
+    return (special_methods.find(get_name() ) != special_methods.end());
+  }
   
   void MethodNode::prettyPrint(std::ostream & stream) const {
     
     stream << "Method Node id: " << get_id() << "\n";
     if (NULL != get_receiver()) {
-      stream << "\t\t" << get_receiver()->get_id() << ".";
+      stream << "\t\t" << get_receiver()-> get_name() << ":" << get_receiver()->get_id() << ".";
     }
     
     stream << "\t\t " << get_name() << "(";
@@ -251,7 +261,10 @@ namespace fixrgraphiso {
 	 it != arguments_.end();
 	 ++it) {
       if (it != arguments_.begin()) stream << ",";
-      stream << (*it)->get_name() << ":" << (*it)->get_id();
+      if ((*it) != NULL)
+	stream << (*it)->get_name() << ":" << (*it)->get_id();
+      else
+	stream << "NULL:NULL";
     }
     stream << ")" << std::endl;
     
@@ -386,72 +399,73 @@ namespace fixrgraphiso {
     return w;
   }
   
-//------------------------------------------------------------------------------
-// Implementation of the graph
-//------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+  // Implementation of the graph
+  //------------------------------------------------------------------------------
 
-Acdfg::~Acdfg()
-{
-  for (nodes_t::const_iterator it =  nodes_.begin();
-       it != nodes_.end(); ++it) delete *(it);
+  Acdfg::~Acdfg()
+  {
+    for (nodes_t::const_iterator it =  nodes_.begin();
+	 it != nodes_.end(); ++it)  delete *(it);
+    
 
-  for (edges_t::const_iterator it =  edges_.begin();
-       it != edges_.end(); ++it) delete *(it);
-}
-
-  
-Node* Acdfg::add_node(Node * node)
-{
-  
-  nodes_.push_back(node);
-  nMap_[node->get_id()] = node;
-  return node;
-}
-
-Edge* Acdfg::add_edge(Edge * edge)
-{
-  Edge* new_edge = edge;
-  edges_.push_back(new_edge);
-  long eID = new_edge -> get_id();
-  eMap_[eID] = new_edge;
-
-  
-  // Add the edge ID to the source node's list of outgoing edges
-  const Node * n = new_edge -> get_src();
-  long src_id = n -> get_id();
-  node_id_to_outgoing_edges_map_t::iterator it = outgoingMap_.find(src_id);
-  if (it == outgoingMap_.end()){
-    vector<long> tmp;
-    tmp.push_back(eID);
-    outgoingMap_[src_id] = tmp;
-  } else {
-    vector<long> & v = it -> second;
-    v.push_back(eID);
+    for (edges_t::const_iterator it =  edges_.begin();
+	 it != edges_.end(); ++it) delete *(it);
   }
 
-  // Return the edge pointer
-  return new_edge;
-}
+  
+  Node* Acdfg::add_node(Node * node)
+  {
+  
+    nodes_.push_back(node);
+    nMap_[node->get_id()] = node;
+    return node;
+  }
 
-nodes_t::const_iterator Acdfg::begin_nodes()
-{
-  return nodes_.begin();
-}
+  Edge* Acdfg::add_edge(Edge * edge)
+  {
+    Edge* new_edge = edge;
+    edges_.push_back(new_edge);
+    long eID = new_edge -> get_id();
+    eMap_[eID] = new_edge;
 
-nodes_t::const_iterator Acdfg::end_nodes()
-{
-  return nodes_.end();
-}
+  
+    // Add the edge ID to the source node's list of outgoing edges
+    const Node * n = new_edge -> get_src();
+    long src_id = n -> get_id();
+    node_id_to_outgoing_edges_map_t::iterator it = outgoingMap_.find(src_id);
+    if (it == outgoingMap_.end()){
+      vector<long> tmp;
+      tmp.push_back(eID);
+      outgoingMap_[src_id] = tmp;
+    } else {
+      vector<long> & v = it -> second;
+      v.push_back(eID);
+    }
 
-edges_t::const_iterator Acdfg::begin_edges()
-{
-  return edges_.begin();
-}
+    // Return the edge pointer
+    return new_edge;
+  }
 
-edges_t::const_iterator Acdfg::end_edges()
-{
-  return edges_.end();
-}
+  nodes_t::const_iterator Acdfg::begin_nodes() const
+  {
+    return nodes_.cbegin();
+  }
+
+  nodes_t::const_iterator Acdfg::end_nodes() const
+  {
+    return nodes_.cend();
+  }
+
+  edges_t::const_iterator Acdfg::begin_edges() const
+  {
+    return edges_.cbegin();
+  }
+
+  edges_t::const_iterator Acdfg::end_edges() const
+  {
+    return edges_.cend();
+  }
 
   Node * Acdfg::getNodeFromID(long id){
     node_id_to_ptr_map_t::iterator it = nMap_.find(id);
@@ -465,27 +479,27 @@ edges_t::const_iterator Acdfg::end_edges()
   
   
   const Node* Acdfg::getNodeFromID( long id) const {
-  node_id_to_ptr_map_t::const_iterator it = nMap_.find(id);
-  if (nMap_.end() == it){
-    assert(false); // No such id exists
-    return NULL; // DEAD CODE
-  } 
+    node_id_to_ptr_map_t::const_iterator it = nMap_.find(id);
+    if (nMap_.end() == it){
+      assert(false); // No such id exists
+      return NULL; // DEAD CODE
+    } 
 
-  return it -> second;
+    return it -> second;
   
-}
+  }
 
 
-const Edge* Acdfg::getEdgeFromID( long id) const{
-  edge_id_to_ptr_map_t::const_iterator it = eMap_.find(id);
-  if (eMap_.end() == it){
-    assert(false); // No such id exists
-    return NULL; // DEAD CODE
-  } 
+  const Edge* Acdfg::getEdgeFromID( long id) const{
+    edge_id_to_ptr_map_t::const_iterator it = eMap_.find(id);
+    if (eMap_.end() == it){
+      assert(false); // No such id exists
+      return NULL; // DEAD CODE
+    } 
 
-  return it -> second;
+    return it -> second;
   
-}
+  }
 
   Edge * Acdfg::getEdgeFromID( long id) {
     edge_id_to_ptr_map_t::iterator it = eMap_.find(id);
@@ -498,70 +512,71 @@ const Edge* Acdfg::getEdgeFromID( long id) const{
   }
 
 
-void printNode(Node * node, std::ostream & stream){
+  void printNode(Node * node, std::ostream & stream){
 
-  switch (node -> get_type()){
-  case REGULAR_NODE:
-    node -> prettyPrint(stream);
-    break;
+    switch (node -> get_type()){
+    case REGULAR_NODE:
+      node -> prettyPrint(stream);
+      break;
 
-  case DATA_NODE:
-    {
-      DataNode * dNode = dynamic_cast<DataNode*> (node);
-      assert(dNode != NULL);
-      dNode -> prettyPrint(stream);
+    case DATA_NODE:
+      {
+	DataNode * dNode = dynamic_cast<DataNode*> (node);
+	assert(dNode != NULL);
+	dNode -> prettyPrint(stream);
+      }
+      break;
+
+    case METHOD_NODE:
+      {
+	MethodNode * mNode= dynamic_cast<MethodNode*> (node);
+	assert(mNode != NULL);
+	mNode -> prettyPrint(stream);
+      }
+      break;
+    default:
+      stream << "Fatal: unhandled node type in acdfg.cpp printNode function" << std::endl;
+      assert(false);
+      break;
     }
-    break;
 
-  case METHOD_NODE:
-    {
-      MethodNode * mNode= dynamic_cast<MethodNode*> (node);
-      assert(mNode != NULL);
-      mNode -> prettyPrint(stream);
-    }
-    break;
-  default:
-    stream << "Fatal: unhandled node type in acdfg.cpp printNode function" << std::endl;
-    assert(false);
-    break;
+
+    return;
   }
-
-
-  return;
-}
 
   std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
-{
-  stream << "Acdfg\n" << "List of nodes: " << std::endl;
-  for (nodes_t::const_iterator it =  acdfg.nodes_.begin();
-       it != acdfg.nodes_.end(); ++it) {
-    printNode((*it),stream);
-    stream << std::endl;
-    std::vector<long> oEdges = acdfg.getOutgoingEdgeIDs((*it) -> get_id());
-    // Print outgoing edges
-    stream << "\t Successor nodes: \t";
-    std::string sep="";
-    for (std::vector<long>::const_iterator jt = oEdges.begin();
-	 jt != oEdges.end();
-	 jt ++){
-      const Edge * e = acdfg.getEdgeFromID(*jt);
-      assert(e != NULL);
-      assert(e -> get_src() -> get_id() == (*it) -> get_id());
-      stream << sep << e -> get_dst() -> get_id() ;
-      sep=", ";
+  {
+    stream << "Acdfg\n" << "List of nodes: " << std::endl;
+    for (nodes_t::const_iterator it =  acdfg.nodes_.begin();
+	 it != acdfg.nodes_.end(); ++it) {
+      printNode((*it),stream);
+      stream << std::endl;
+      std::vector<long> oEdges = acdfg.getOutgoingEdgeIDs((*it) -> get_id());
+      // Print outgoing edges
+      stream << "\t Successor nodes: \t";
+      std::string sep="";
+      for (std::vector<long>::const_iterator jt = oEdges.begin();
+	   jt != oEdges.end();
+	   jt ++){
+	const Edge * e = acdfg.getEdgeFromID(*jt);
+	assert(e != NULL);
+	assert(e -> get_src() -> get_id() == (*it) -> get_id());
+	stream << sep << e -> get_dst() -> get_id() ;
+	sep=", ";
+      }
+      stream << std::endl;
+    }
+    stream << "\nEdges:\n";
+    for (edges_t::const_iterator it =  acdfg.edges_.begin();
+	 it != acdfg.edges_.end(); ++it) {
+      stream << (*(*it));
     }
     stream << std::endl;
+    return stream;
   }
-  stream << "\nEdges:\n";
-  for (edges_t::const_iterator it =  acdfg.edges_.begin();
-       it != acdfg.edges_.end(); ++it) {
-    stream << (*(*it));
-  }
-  stream << std::endl;
-  return stream;
-}
 
 
   
 } // namespace fixrgraphiso
+
 

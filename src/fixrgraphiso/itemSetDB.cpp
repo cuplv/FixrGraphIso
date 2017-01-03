@@ -18,16 +18,14 @@ namespace fixrgraphiso {
     // First print the items
     os << "I: ";
     string sep = " ";
-    set<string>::const_iterator it;
-    for (it = s_string.begin(); it != s_string.end(); ++it){
-      os << sep << *it;
+    for (const auto it : s_string){
+      os << sep << it;
       sep = ", ";
     }
     os << "( "<< idx_record.size()<< " )" << endl;
     // Second print the filenames that identify each record
-    vector<ItemRecord*> :: const_iterator jt;
-    for (jt = idx_record.begin(); jt != idx_record.end(); ++jt){
-      ItemRecord const * irec = *jt;
+    //vector<ItemRecord*> :: const_iterator jt;
+    for (const auto irec: idx_record){
       os << "F: " << irec -> get_filename() << endl;
     }
     os << "E" << endl;
@@ -45,7 +43,7 @@ namespace fixrgraphiso {
   ItemSetDB::~ItemSetDB(){}
 
   int ItemSetDB::findItemID(string const & str){
-    str_int_map_t::const_iterator it = item_ids.find(str);
+    const auto it = item_ids.find(str);
     if (it == item_ids.end()){
       item_ids[str] = nItems;
       item_names.push_back(str);
@@ -82,8 +80,7 @@ namespace fixrgraphiso {
   void ItemSetDB::insertRecordAndUpdateFrequencies(ItemRecord * i_rec){
     records.push_back(i_rec);
     set<int> const & c = i_rec -> get_contents();
-    set<int> :: const_iterator it;
-    for (it = c.begin(); it != c.end(); ++it){
+    for (auto it = c.begin(); it != c.end(); ++it){
       this -> addIndex(*it, i_rec);
       this -> incrFrequency(*it);
     }
@@ -96,9 +93,7 @@ namespace fixrgraphiso {
   void ItemSetDB::addRecord(string const & fname, set<string> const & rec){
     // 1. Compute the indices for each of strings converting them to integers
     set<int> r;
-    set<string> :: const_iterator it;
-
-    for (it = rec.begin(); it != rec.end(); ++it){
+    for (auto it = rec.begin(); it != rec.end(); ++it){
       if (! is_excluded(*it))
 	r.insert( this -> findItemID(*it));
     }
@@ -113,8 +108,8 @@ namespace fixrgraphiso {
   }
   
   bool is_subset(vector< FreqItemSet > const & all_sets, set<int> const & s){
-    vector< FreqItemSet > :: const_iterator it;
-    for (it = all_sets.begin(); it != all_sets.end(); ++it){
+    //vector< FreqItemSet > :: const_iterator it;
+    for (auto it = all_sets.cbegin(); it != all_sets.cend(); ++it){
       if (set_contains(*it, s))
 	return true;
     }
@@ -123,8 +118,7 @@ namespace fixrgraphiso {
   }
 
   void ItemSetDB::convertToStringSet(set<int> const & s, set<string> & res){
-    set<int>::const_iterator it;
-    for (it = s.begin(); it != s.end(); ++it){
+    for (auto it = s.begin(); it != s.end(); ++it){
       int j = *it;
       assert (j >= 0);
       assert (j < nItems);

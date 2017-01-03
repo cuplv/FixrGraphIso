@@ -30,6 +30,7 @@ add_executable(fixrgraphiso
   ${PROTO_SRCS_ACDFG}
   ${PROTO_SRCS_ISO}
 )
+target_compile_features(fixrgraphiso PRIVATE cxx_range_for)
 
 add_executable(frequentitemsets
   frequentItemSetsMain.cpp
@@ -38,10 +39,24 @@ add_executable(frequentitemsets
   ${PROTO_SRCS_ACDFG}
 )
 
+target_compile_features(frequentitemsets PRIVATE cxx_range_for)
 target_link_libraries(frequentitemsets
 	${PROTOBUF_LIBRARY}
 	)
 	
+add_executable(frequentsubgraphs
+   frequentSubgraphsMain.cpp
+   isomorphismClass.cpp
+   acdfg.cpp
+   serialization.cpp
+   ${PROTO_SRCS_ISO}
+   ${PROTO_SRCS_ACDFG}
+)
+target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
+target_link_libraries(frequentsubgraphs
+    ${PROTOBUF_LIBRARY}
+    ${Z3_LIBRARY}
+)
 
 if (NOT GUROBI_FOUND)
    target_link_libraries(fixrgraphiso

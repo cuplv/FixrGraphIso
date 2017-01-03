@@ -5,9 +5,12 @@
 
 namespace fixrgraphiso {
   bool debug = false;
+  // Recommended that you do not turn these flags on.
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
   bool addCompatibleDataNodes = false; // This turns on additional checks for data node compatibility
   bool printEverything=false;
+  bool avoidComparisonMethodNodes = true;
+  
   using std::ostringstream;
   using std::string;
   
@@ -117,17 +120,16 @@ namespace fixrgraphiso {
 	      // This function isCompatible(..) for method nodes
 	      // is implemented in acdfg.cpp
 	      // Currently two nodes are compatible if the function names are the same.
-	      // 
-              if (ma -> isCompatible(mb)){
-                this -> addCompatibleNodes(na,nb);
-                if (addCompatibleDataNodes){
-                  this -> addAdditionalCompatibleDataNodes(ma,mb);
-                }
-
-              }
-
-
-            }
+	      //
+	      if (!avoidComparisonMethodNodes || (!ma->isSpecialMethod() && !mb-> isSpecialMethod()) ){
+		if (ma -> isCompatible(mb)){
+		  this -> addCompatibleNodes(na,nb);
+		  if (addCompatibleDataNodes){
+		    this -> addAdditionalCompatibleDataNodes(ma,mb);
+		  }	  
+		}
+	      }
+	    }
             break;
 
           case DATA_NODE:

@@ -36,7 +36,8 @@ namespace fixrgraphiso {
 
     Node(const Node& node);
     Node(long id, node_type_t typ);
-  
+    virtual ~Node() {}
+    
     long get_id() const{
       return id_;
     }
@@ -64,6 +65,7 @@ namespace fixrgraphiso {
   public:
     DataNode(long id, const string& name, const string& data_type, data_node_type_t dtype);
     DataNode(const DataNode& node);
+    virtual ~DataNode() {}
     const string& get_name() const;
     const string& get_data_type() const;
     const data_node_type_t get_data_node_type() const;
@@ -97,16 +99,19 @@ namespace fixrgraphiso {
 	       std::vector<DataNode*> arguments,
 	       DataNode * assignee);
     MethodNode(const MethodNode& node);
+    virtual ~MethodNode() {}
 
     const string& get_name() const;
     const DataNode* get_receiver() const;
     const DataNode * get_assignee() const;
     const std::vector<DataNode*> &  get_arguments() const;
+    int get_num_arguments() const;
     Node * clone() const;
     virtual string getDotLabel() const;
     void prettyPrint(std::ostream & out) const;
     bool isCompatible(MethodNode const * n) const;
     double compatibilityWeight(MethodNode const * n) const;
+    bool isSpecialMethod() const;
     friend std::ostream& operator<<(std::ostream&, const MethodNode&);
     
   protected:
@@ -220,14 +225,59 @@ namespace fixrgraphiso {
     Node* add_node(Node *  node);
     Edge* add_edge(Edge *  edge);
 
-    nodes_t::const_iterator begin_nodes();
-    nodes_t::const_iterator end_nodes();
-    int node_count() {return nodes_.size();};
+    nodes_t::const_iterator begin_nodes() const ;
+    nodes_t::const_iterator end_nodes() const;
+    int node_count() const {return nodes_.size();};
+    int typed_node_count(node_type_t t) const {
+      int rVal =0;
+      for (nodes_t::const_iterator it = begin_nodes(); it != end_nodes(); ++it){
+	if ( (*it) -> get_type() == t)
+	  rVal ++;
+      }
+      return rVal;
+    }
 
-    edges_t::const_iterator begin_edges();
-    edges_t::const_iterator end_edges();
-    int edge_count() {return edges_.size();};
+    int data_node_count() const {
+      return typed_node_count(DATA_NODE);
+    }
 
+    int method_node_count() const {
+      return typed_node_count(METHOD_NODE);
+    }
+    
+
+    edges_t::const_iterator begin_edges() const;
+    edges_t::const_iterator end_edges() const;
+    int edge_count() const {return edges_.size();};
+    int typed_edge_count(edge_type_t t) const{
+      int rVal = 0;
+      for (edges_t::const_iterator jt = begin_edges(); jt != end_edges(); ++jt){
+	if ( (*jt) -> get_type() == t)
+	  ++rVal;
+      }
+      return rVal;
+    }
+
+    int control_edge_count() const { return typed_edge_count(CONTROL_EDGE); }
+    int def_edge_count() const { return typed_edge_count(DEF_EDGE); }
+    int use_edge_count() const { return typed_edge_count(USE_EDGE); }
+    int transitive_edge_count() const { return typed_edge_count(TRANSITIVE_EDGE); }
+    int exceptional_edge_count() const { return typed_edge_count(EXCEPTIONAL_EDGE); }
+
+    std::vector< std::pair<string,int> > all_counts() const {
+      std::vector< std::pair<string, int> > rVal {
+	{"nodes" , node_count()} ,
+	  { "edges", edge_count()},
+	    {"data nodes", data_node_count()},
+	      {"method nodes", method_node_count()},
+		{"control edges", (control_edge_count() + transitive_edge_count())},
+		  {"use edges", use_edge_count()},
+		    {"def edges", def_edge_count()},
+		      {"exceptional edges", exceptional_edge_count() }
+      };
+      return rVal;
+    }
+    
     const Node* getNodeFromID(long id) const;
     const Edge* getEdgeFromID(long id) const;
     Node * getNodeFromID(long id);

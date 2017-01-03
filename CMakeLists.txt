@@ -1,6 +1,7 @@
 project(fixrgraphiso)
 cmake_minimum_required(VERSION 2.8.12)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 if(NOT CMAKE_VERSION VERSION_LESS 2.8.12)
     cmake_policy(SET CMP0022 OLD)
 endif()
@@ -11,6 +12,7 @@ endif()
 
 #############################################################################
 # the external libraries
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ")
 
 # check for protobuf
 include(FindProtobuf)
@@ -33,6 +35,14 @@ if (GUROBI_FOUND)
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_GUROBI_SOLVER")
    include_directories(${GUROBI_INCLUDEDIR})
 endif(GUROBI_FOUND)
+
+include(FindZ3)
+if (NOT Z3_FOUND)
+  message(FATAL_ERROR "ERROR: Z3 not found")
+endif(NOT Z3_FOUND)
+find_package(Z3 REQUIRED)
+include_directories(${Z3_header_PATH})
+
 #############################################################################
 # external dependencies
 
