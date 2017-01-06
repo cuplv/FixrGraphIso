@@ -535,7 +535,7 @@ namespace fixrgraphiso {
 
   IsomorphismClass::IsomorphismClass(string const & fname):iso_filename(fname){
     iso_protobuf::Iso iso;
-    std::fstream inp_file (fname, std::ios::in | std::ios::binary);
+    std::fstream inp_file (fname.c_str(), std::ios::in | std::ios::binary);
     assert(inp_file.is_open());
     iso.ParseFromIstream(& inp_file);
     inp_file.close();
@@ -546,7 +546,6 @@ namespace fixrgraphiso {
   }
 
   IsomorphismClass::~IsomorphismClass(){
-    //delete(acdfg);
   }
 
 

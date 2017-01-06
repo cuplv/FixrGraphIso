@@ -2,14 +2,15 @@
   Comparison nodes are likely yielding a lot of application specific stuff.
   Evaluate their usefulness.
 
-  For time being, Sriram turned them off to enable me to evaluate the frequent subgraphs stuff.
+  RESOLUTION: For time being, Sriram turned them off to enable me to evaluate the frequent subgraphs stuff.
 
 - Issue #2:
   The isomorphism extracted need not be a complete ACDFG fragment.
-  - For each method node, need to dump the arguments whether or not they are part of the isomorphism.
+  RESOLUTION: For each method node, need to dump the arguments whether or not they are part of the isomorphism.
 
 - Issue #3:
   Because the isomorphism is approximate, there are two possible isomorphisms that are obtained for each
   computation. We should dump them as
    _A.iso.bin and _B.iso.bin files. For the annotator, only one of them is needed.
+   RESOLUTION: This has been implemented
 

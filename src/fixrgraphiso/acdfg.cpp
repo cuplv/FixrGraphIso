@@ -12,6 +12,10 @@
 #include <set>
 namespace fixrgraphiso {
   using std::ostringstream;
+  using std::string;
+  using std::cout;
+  using std::endl;
+  
   // Match the types of data nodes to be compatible
   bool typeMatchDataNode = false;
   bool varConstMatchDataNode = true;
@@ -123,7 +127,7 @@ namespace fixrgraphiso {
     
     stream << "Data node id: " << (get_id()) <<
       "\n\t\tname: " << get_name() <<
-      "\n\t\ttype: " << get_data_type() << std::endl;
+      "\n\t\ttype: " << get_data_type() << endl;
     
   }
 
@@ -164,7 +168,9 @@ namespace fixrgraphiso {
   {}
 
   MethodNode::MethodNode(const MethodNode& node) : CommandNode(node.id_, METHOD_NODE),
-						   name_(node.name_), assignee_(NULL)
+						   receiver_(NULL),
+						   name_(node.name_),
+						   assignee_(NULL)
   {
     if (node.receiver_ != NULL){
       receiver_ = new DataNode(*(node.receiver_));
@@ -266,7 +272,7 @@ namespace fixrgraphiso {
       else
 	stream << "NULL:NULL";
     }
-    stream << ")" << std::endl;
+    stream << ")" << endl;
     
   }
 
@@ -331,12 +337,12 @@ namespace fixrgraphiso {
   {
     stream << "Id: (" << edge.get_id() << ") Src -> Dst := " << 
       edge.get_src()->get_id() << " -> " <<
-      edge.get_dst()->get_id() << std::endl;
+      edge.get_dst()->get_id() << endl;
     return stream;
   }
 
   
-  std::string Edge::get_edge_dot_style(){
+  std::string Edge::get_edge_dot_style() const{
     switch (this -> get_type()){
     case USE_EDGE:
     case DEF_EDGE:
@@ -535,7 +541,7 @@ namespace fixrgraphiso {
       }
       break;
     default:
-      stream << "Fatal: unhandled node type in acdfg.cpp printNode function" << std::endl;
+      stream << "Fatal: unhandled node type in acdfg.cpp printNode function" << endl;
       assert(false);
       break;
     }
@@ -546,11 +552,11 @@ namespace fixrgraphiso {
 
   std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)
   {
-    stream << "Acdfg\n" << "List of nodes: " << std::endl;
+    stream << "Acdfg\n" << "List of nodes: " << endl;
     for (nodes_t::const_iterator it =  acdfg.nodes_.begin();
 	 it != acdfg.nodes_.end(); ++it) {
       printNode((*it),stream);
-      stream << std::endl;
+      stream << endl;
       std::vector<long> oEdges = acdfg.getOutgoingEdgeIDs((*it) -> get_id());
       // Print outgoing edges
       stream << "\t Successor nodes: \t";
@@ -564,18 +570,36 @@ namespace fixrgraphiso {
 	stream << sep << e -> get_dst() -> get_id() ;
 	sep=", ";
       }
-      stream << std::endl;
+      stream << endl;
     }
     stream << "\nEdges:\n";
     for (edges_t::const_iterator it =  acdfg.edges_.begin();
 	 it != acdfg.edges_.end(); ++it) {
       stream << (*(*it));
     }
-    stream << std::endl;
+    stream << endl;
     return stream;
   }
 
 
+  void Acdfg::dumpToDot(std::ostream & out) const  {
+    out << "digraph isoX {" << endl;
+    out << "rankdir=LR;\n\
+ node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n	\
+ edge[ arrowhead=onormal,penwidth=2.0,]; \n" <<endl;
+    for (auto pt = begin_nodes(); pt != end_nodes(); ++pt){
+      const Node * na = *pt;
+      string strA = na -> getDotLabel();
+      out << "\"n_"<< na-> get_id() << "\" [" << strA << "];"<<endl;
+    }
+
+    for (auto rt = begin_edges(); rt != end_edges(); ++rt){
+      const Edge * e = *rt;
+      out << "\"n_"<< e -> get_src_id() << "\" -> n_\""<< e -> get_dst_id() << "\""<< e-> get_edge_dot_style() << ";" << endl; 
+    }
+
+    out << " } " << endl;
+  }
   
 } // namespace fixrgraphiso
 

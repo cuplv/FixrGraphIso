@@ -163,7 +163,7 @@ namespace fixrgraphiso {
     friend std::ostream& operator<<(std::ostream&, const Edge&);
 
     double compatibilityWeight(Edge * eB) const;
-    std::string get_edge_dot_style();
+    std::string get_edge_dot_style() const;
     
   protected:
     long id_;
@@ -308,7 +308,9 @@ namespace fixrgraphiso {
     std::string getName() const {
       return this -> name_;
     }
-  
+
+    void dumpToDot(std::ostream & os) const;
+    
   private:
     nodes_t nodes_;
     edges_t edges_;
