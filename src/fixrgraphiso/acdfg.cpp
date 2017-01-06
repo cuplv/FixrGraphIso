@@ -134,7 +134,7 @@ namespace fixrgraphiso {
   
   string my_escape(string  arg){
     string a = "\"";
-    string b = "\\\"";
+    string b = "\\\'";
     while (arg.find(a) < arg.length())
       arg= (arg.replace(arg.find(a), a.length(), b));
     return arg;
@@ -595,7 +595,7 @@ namespace fixrgraphiso {
 
     for (auto rt = begin_edges(); rt != end_edges(); ++rt){
       const Edge * e = *rt;
-      out << "\"n_"<< e -> get_src_id() << "\" -> n_\""<< e -> get_dst_id() << "\""<< e-> get_edge_dot_style() << ";" << endl; 
+      out << "\"n_"<< e -> get_src_id() << "\" -> \"n_"<< e -> get_dst_id() << "\""<< e-> get_edge_dot_style() << ";" << endl; 
     }
 
     out << " } " << endl;

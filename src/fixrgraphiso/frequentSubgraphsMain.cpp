@@ -63,28 +63,32 @@ int main(int argc, char * argv[]){
   for (auto iso1: allIsos){
     bool is_subsumed = false;
     int i;
-    for (i =0; i < maximalIsos.size(); ++i){
+    vector<int> subsumedIsos;
+    for (i = maximalIsos.size()-1; i >= 0;  --i){
       fixrgraphiso::IsomorphismClass & iso2 = maximalIsos[i];
       if (iso2.subsumes(&iso1)){
 	is_subsumed = true;
 	break;
       }
       if (iso1.subsumes(&iso2)){
-	break;
+	subsumedIsos.push_back(i);
       }
     }
-
-    if ( i >= maximalIsos.size()) maximalIsos.push_back(iso1);
-    else if (!is_subsumed){
-      maximalIsos[i] = iso1;
+    
+    if (!is_subsumed)
+      maximalIsos.push_back(iso1);
+    for (int j: subsumedIsos){
+      assert (!is_subsumed);
+      maximalIsos.erase(maximalIsos.begin() + j);
     }
+    
   }
   
   cout << "# Maximal Isos: " << maximalIsos.size() << endl;
   int count = 0;
   for (const auto iso: maximalIsos){
     cout << iso.getIsoFilename () << endl;
-    string fname = string("iso_")+std::to_string(count);
+    string fname = string("iso_")+std::to_string(count)+".dot";
     std::ofstream out_file(fname.c_str());
     (iso.get_acdfg()) -> dumpToDot( out_file);
     out_file.close();

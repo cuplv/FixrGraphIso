@@ -115,6 +115,7 @@ namespace fixrgraphiso {
       std::vector<iso>::iterator it;
       std::set<long> extraDataNodeIDs;
       std::set<long> insertedDataNodeIDs;
+      std::set<long> insertedMethodNodeIDs;
       // add node maps
       for (it = isoNodes.begin(); it != isoNodes.end(); ++it) {
         iso_protobuf::Iso_MapNode * map_node = proto->add_map_node();
@@ -135,6 +136,7 @@ namespace fixrgraphiso {
 	  {
 	    MethodNode * mNode= toMethodNode(nd_a);
 	    methodNodeToProtobuf(mNode, proto, extraDataNodeIDs);
+	    insertedMethodNodeIDs.insert(mNode -> get_id());
 	  }
 	  break;
 	  
@@ -155,6 +157,18 @@ namespace fixrgraphiso {
 	  assert( n -> get_type() == DATA_NODE);
 	  DataNode * dNode = toDataNode(n);
 	  dataNodeToProtobuf(dNode, proto);
+	  // add edges from the extra node ids to everything else
+	  vector<long> outgoingEdges = acdfg -> getOutgoingEdgeIDs(id);
+	  for (long id_out: outgoingEdges){
+	    const Edge * e = acdfg -> getEdgeFromID(id_out);
+	    long id_tgt = e -> get_dst_id();
+	    if (insertedMethodNodeIDs.find(id_tgt) != insertedMethodNodeIDs.end()){
+	      iso_protobuf::Iso_Edge * edge = proto -> add_edges();
+	      edge -> set_id(e -> get_id() );
+	      edge -> set_from(e -> get_src_id() );
+	      edge -> set_to(e-> get_dst_id() );
+	    }
+	  }
 	}
       }
       
@@ -168,10 +182,14 @@ namespace fixrgraphiso {
 	const Edge * e = a_or_b? acdfg -> getEdgeFromID(it -> a_id) : \
 	  acdfg -> getEdgeFromID(it -> b_id);
 	iso_protobuf::Iso_Edge * edge = proto -> add_edges();
-	edge -> set_id(it -> a_id);
+	edge -> set_id(e -> get_id());
 	edge -> set_from(e -> get_src_id() );
 	edge -> set_to(e-> get_dst_id() );
       }
+
+      
+
+     
 
       proto->set_weight(totalWeight);
       proto->set_obj_value(objValue);
