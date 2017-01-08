@@ -107,7 +107,9 @@ namespace fixrgraphiso {
   DataNode * createAndAddDataNode(Acdfg * toWhat, idMapType & idToNodeMap, T & proto_node, data_node_type_t dtype){
     DataNode * node = new DataNode(proto_node.id(), proto_node.name(), proto_node.type(), dtype);
     Node * app_node= toWhat -> add_node(node);
+    assert( idToNodeMap.find (app_node -> get_id()) == idToNodeMap.end());
     idToNodeMap[app_node -> get_id()] = app_node;
+    assert( node -> get_type() == DATA_NODE);
     return node;
   }
   
@@ -157,7 +159,7 @@ namespace fixrgraphiso {
         proto_acdfg->method_node(j);
 
       /* read to the receiver */
-      DataNode* receiver = (DataNode*) lookup_node(idToNodeMap, \
+      DataNode* receiver = (DataNode*) lookup_node(idToNodeMap,		\
 						   proto_node.invokee());
       // assert(NULL != receiver);
       /* read the assignee */

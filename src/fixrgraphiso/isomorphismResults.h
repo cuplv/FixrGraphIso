@@ -82,15 +82,19 @@ namespace fixrgraphiso {
       for (const DataNode * dd : args){
 	method_node -> add_argumenttypes( dd -> get_data_type()  );
 	method_node -> add_argumentids( dd -> get_id());
+	//cout << dd -> get_id() << endl;
 	extraDataNodes.insert( dd-> get_id());
+	assert(dd -> get_type() == DATA_NODE);
       }
       // Add invokee/receiver types
       const DataNode* rcv = mNode -> get_receiver();
-      if (rcv){
-	//	      std::cerr << "Debug: invokee type = "<< rcv -> get_data_type() << endl;
+      if (rcv != NULL){
+	std::cerr << "Debug: invokee type = "<< rcv -> get_name() << endl;
 	method_node -> set_invokeetype(rcv -> get_data_type());
 	method_node -> set_invokeeid (rcv -> get_id());
 	extraDataNodes.insert( rcv -> get_id());
+	//cout << rcv -> get_id() << endl;
+	assert(rcv -> get_type() == DATA_NODE);
       } else {
 	// std::cerr << "Debug: invokee type cleared"<< endl;
 	method_node -> clear_invokeetype();
@@ -98,10 +102,12 @@ namespace fixrgraphiso {
       }
       // Add assignee types
       const DataNode * assg = mNode -> get_assignee();
-      if (assg){
+      if (assg != NULL){
 	method_node -> set_assigneetype(assg -> get_data_type());
 	method_node -> set_assigneeid(assg -> get_id());
 	extraDataNodes.insert(assg-> get_id());
+	//cout << assg -> get_id() <<endl;
+	assert(assg -> get_type() == DATA_NODE);
       } else {
 	method_node -> clear_assigneetype();
 	method_node -> clear_assigneeid();
@@ -154,7 +160,7 @@ namespace fixrgraphiso {
 	if ( insertedDataNodeIDs.find(id) == insertedDataNodeIDs.end()){
 	  Node * n = acdfg-> getNodeFromID(id);
 	  assert( n != NULL);
-	  assert( n -> get_type() == DATA_NODE);
+	  //assert( n -> get_type() == DATA_NODE);
 	  DataNode * dNode = toDataNode(n);
 	  dataNodeToProtobuf(dNode, proto);
 	  // add edges from the extra node ids to everything else

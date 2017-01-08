@@ -62,7 +62,7 @@ namespace fixrgraphiso {
   }
 
   
-  DataNode::DataNode(const DataNode& node): Node(node.id_, DATA_NODE),
+  DataNode::DataNode(const DataNode& node): Node(node.get_id(), DATA_NODE),
 					    name_(node.name_),
 					    data_type_(node.data_type_),
 					    data_node_type_(node.data_node_type_){
@@ -165,7 +165,9 @@ namespace fixrgraphiso {
 					      receiver_(receiver),
 					      arguments_(arguments),
 					      assignee_(assignee)
-  {}
+  {
+    
+  }
 
   MethodNode::MethodNode(const MethodNode& node) : CommandNode(node.id_, METHOD_NODE),
 						   receiver_(NULL),
@@ -177,6 +179,9 @@ namespace fixrgraphiso {
     } else {
       receiver_ = NULL;
     }
+
+    
+    
     for (std::vector<DataNode*>::const_iterator it = node.arguments_.begin();
 	 it != node.arguments_.end();
 	 ++it){
@@ -424,6 +429,7 @@ namespace fixrgraphiso {
   {
   
     nodes_.push_back(node);
+    assert(nMap_.find(node -> get_id()) == nMap_.end());
     nMap_[node->get_id()] = node;
     return node;
   }
@@ -433,6 +439,7 @@ namespace fixrgraphiso {
     Edge* new_edge = edge;
     edges_.push_back(new_edge);
     long eID = new_edge -> get_id();
+    assert (eMap_.find(eID) == eMap_.end());
     eMap_[eID] = new_edge;
 
   

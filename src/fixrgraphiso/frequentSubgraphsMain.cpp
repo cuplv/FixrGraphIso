@@ -60,34 +60,48 @@ int main(int argc, char * argv[]){
   //   }
   // }
   vector<fixrgraphiso::IsomorphismClass> maximalIsos;
+ 
+  
   for (auto iso1: allIsos){
     bool is_subsumed = false;
     int i;
     vector<int> subsumedIsos;
+    int freq = 1;
     for (i = maximalIsos.size()-1; i >= 0;  --i){
       fixrgraphiso::IsomorphismClass & iso2 = maximalIsos[i];
       if (iso2.subsumes(&iso1)){
+	iso2.incrFrequency();
 	is_subsumed = true;
 	break;
       }
       if (iso1.subsumes(&iso2)){
 	subsumedIsos.push_back(i);
+	freq = freq + iso2.getFrequency();
       }
     }
     
-    if (!is_subsumed)
+    if (!is_subsumed){
+      iso1.setFrequency(freq);
       maximalIsos.push_back(iso1);
+    }
     for (int j: subsumedIsos){
       assert (!is_subsumed);
       maximalIsos.erase(maximalIsos.begin() + j);
     }
     
   }
+  // Sort the maximal Isos according to the frequencies
+  std::sort(maximalIsos.begin(), maximalIsos.end(),
+	    [](const fixrgraphiso::IsomorphismClass  & iso1, const fixrgraphiso::IsomorphismClass & iso2){
+	      return iso1.getFrequency() > iso2.getFrequency();
+	    });
   
   cout << "# Maximal Isos: " << maximalIsos.size() << endl;
   int count = 0;
-  for (const auto iso: maximalIsos){
+  for (int k = 0; k < maximalIsos.size(); ++k){
+    fixrgraphiso::IsomorphismClass & iso = maximalIsos[k];
     cout << iso.getIsoFilename () << endl;
+    cout << "Freq = " << iso.getFrequency() << endl;
     string fname = string("iso_")+std::to_string(count)+".dot";
     std::ofstream out_file(fname.c_str());
     (iso.get_acdfg()) -> dumpToDot( out_file);

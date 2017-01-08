@@ -102,13 +102,16 @@ namespace fixrgraphiso {
     string filename_a;
     string filename_b;
     string iso_filename;
-
+    int freq;
   public:
     IsomorphismClass(string const & iso_filename);
     ~IsomorphismClass();
     bool subsumes(IsomorphismClass const * what) const;
     Acdfg * get_acdfg() const { return acdfg; }
     string getIsoFilename() const { return iso_filename;} 
+    int getFrequency() const {return freq; }
+    void setFrequency(int f){ this -> freq = f ; }
+    void incrFrequency(){ freq++; }
     
   };
 

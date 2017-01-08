@@ -32,7 +32,7 @@ namespace fixrgraphiso {
 
   public:
   
-    Node():nType_(REGULAR_NODE){};
+    //Node():nType_(REGULAR_NODE){};
 
     Node(const Node& node);
     Node(long id, node_type_t typ);
@@ -42,7 +42,7 @@ namespace fixrgraphiso {
       return id_;
     }
   
-    node_type_t get_type() const{
+    virtual node_type_t get_type() const{
       return nType_;
     }
 
@@ -77,7 +77,7 @@ namespace fixrgraphiso {
     void prettyPrint(std::ostream & out) const;
     Node * clone() const;
     friend std::ostream& operator<<(std::ostream&, const DataNode&);
-    
+    virtual node_type_t get_type() const { return DATA_NODE; }
   protected:
     string name_;
     string data_type_;
@@ -113,7 +113,7 @@ namespace fixrgraphiso {
     double compatibilityWeight(MethodNode const * n) const;
     bool isSpecialMethod() const;
     friend std::ostream& operator<<(std::ostream&, const MethodNode&);
-    
+    virtual node_type_t get_type() const { return METHOD_NODE; }
   protected:
     // Name of the method
     string name_;
