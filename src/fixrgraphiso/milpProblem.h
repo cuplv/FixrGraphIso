@@ -72,7 +72,7 @@ namespace fixrgraphiso {
     void solveUsingGLPKLibrary();
 
     #ifdef USE_GUROBI_SOLVER
-    void solveUsingGurobiLibrary();
+    bool solveUsingGurobiLibrary();
     #endif
 
     MILPVariable getVariableFromID(int i){

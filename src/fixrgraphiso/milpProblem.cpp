@@ -4,7 +4,8 @@
 
 using namespace std;
 namespace fixrgraphiso{
-
+  extern bool debug;
+  
   MILPVariable MILProblem::createVariable(ilp_variable_t typ, node_id_t i, node_id_t j){
     std::ostringstream ss;
     std::string pref="NONE";
@@ -295,7 +296,7 @@ namespace fixrgraphiso{
 
       // Iterate through all variables
       MILPVariable & var = it -> second;
-      std::cout << " \t " << var.name << " := " ;
+      if (debug ) std::cout << " \t " << var.name << " := " ;
 
       switch( var.typ ){
       case ISO_NODE:
@@ -310,7 +311,7 @@ namespace fixrgraphiso{
           val = 1;
         }
         var.binVal = val;
-        std::cout << var.binVal << std::endl;
+        if (debug) std::cout << var.binVal << std::endl;
         break;
       }
       case ISO_WT: {
@@ -318,7 +319,7 @@ namespace fixrgraphiso{
         double v = glp_mip_col_val(lp, 1 + var.id);
         assert( v >= -1e-06 && v<= 1.0 + 1e-06);
         var.floatVal = v;
-        std::cout << v << std::endl;
+        if (debug) std::cout << v << std::endl;
         break;
       }
       default: {
@@ -352,11 +353,13 @@ GRBLinExpr createGRBLinExprFromExpr(expr_t const & e, std::map<int, GRBVar> id2V
   return retExpr;
 }
 
-void MILProblem::solveUsingGurobiLibrary(){
+bool MILProblem::solveUsingGurobiLibrary(){
 
   try {
     GRBEnv env = GRBEnv();
+    env.set(GRB_DoubleParam_TimeLimit, 180.0);
     GRBModel m = GRBModel(env);
+   
     std::map<int, GRBVar> id2VarMap;
     // Now declare the variables
     std::map<int, MILPVariable>::iterator it;
@@ -415,7 +418,7 @@ void MILProblem::solveUsingGurobiLibrary(){
 
 	// Iterate through all variables
 	MILPVariable & var = it -> second;
-	std::cout << " \t " << var.name << " := " ;
+	if (debug) std::cout << " \t " << var.name << " := " ;
 	map<int, GRBVar>::iterator vt = id2VarMap.find(var.id);
 	assert(vt != id2VarMap.end());
 	GRBVar gVar = vt -> second;
@@ -433,14 +436,14 @@ void MILProblem::solveUsingGurobiLibrary(){
 	    val = 1;
 	  }
 	  var.binVal = val;
-	  std::cout << var.binVal << std::endl;
+	  if (debug) std::cout << var.binVal << std::endl;
 	  break;
 	}
 	case ISO_WT: {
 	  // set it to a continuous variable with limits between 0 and 1
 	  assert( v >= -1e-06 && v<= 1.0 + 1e-06);
 	  var.floatVal = v;
-	  std::cout << v << std::endl;
+	  if (debug) std::cout << v << std::endl;
 	  break;
 	}
 	default: {
@@ -469,7 +472,7 @@ void MILProblem::solveUsingGurobiLibrary(){
 		  << optimstatus << std::endl;
 	break;
       }
-      assert(false); // Cannot proceed further here.
+      solvedSuccessfully=false;
 
     }
 
@@ -477,7 +480,7 @@ void MILProblem::solveUsingGurobiLibrary(){
     std::cerr << "Exit with error code " << e.getErrorCode() << std::endl;
     std::cerr << e.getMessage() << std::endl;
   }
-
+  return solvedSuccessfully;
 }
 
 #endif

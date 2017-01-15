@@ -15,6 +15,9 @@
 
 using namespace fixrgraphiso;
 
+namespace fixrgraphiso{
+  bool debug = false;
+};
 extern Acdfg * createGraphA();
 extern Acdfg * createGraphB();
 
@@ -54,18 +57,19 @@ void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_
   // }
   
   IlpApproxIsomorphism ilp(acdfg_a, acdfg_b);
-  ilp.computeILPEncoding();
+  bool stat = ilp.computeILPEncoding();
+  if (stat){
+ 
   
-  
-  std::ofstream file((fStem+".dot").c_str());
-  ilp.prettyPrintEncodingResultInDot(file);
-  file.close();
-
-  IsomorphismResults isoResults(aName,bName);
-  ilp.populateResults(isoResults);
-  isoResults.dumpProtobuf(fStem+".iso.bin", acdfg_a, true);
-  isoResults.dumpProtobuf(fStem+"_B.iso.bin", acdfg_b, false);
-  
+    std::ofstream file((fStem+".dot").c_str());
+    ilp.prettyPrintEncodingResultInDot(file);
+    file.close();
+    
+    IsomorphismResults isoResults(aName,bName);
+    ilp.populateResults(isoResults);
+    isoResults.dumpProtobuf(fStem+".iso.bin", acdfg_a, true);
+    isoResults.dumpProtobuf(fStem+"_B.iso.bin", acdfg_b, false);
+  }
 }
 
 int main (int argc, char *argv[])

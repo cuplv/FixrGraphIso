@@ -530,9 +530,10 @@ namespace fixrgraphiso {
   }
   
   /*--
-    Constructor for IsomorphismClass.
+    Constructors for IsomorphismClass.
     --*/
-
+  IsomorphismClass::IsomorphismClass(Acdfg * what): iso_filename(what -> getName()), freq(1), acdfg(what){}
+  
   IsomorphismClass::IsomorphismClass(string const & fname):iso_filename(fname), freq(1){
     iso_protobuf::Iso iso;
     std::fstream inp_file (fname.c_str(), std::ios::in | std::ios::binary);

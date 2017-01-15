@@ -304,12 +304,18 @@ namespace fixrgraphiso {
       DataNode * receiver = NULL;
       if (proto_node.has_invokeeid())
 	receiver = (DataNode *) lookup_node(idToNodeMap,		\
-						       proto_node.invokeeid());
+					    proto_node.invokeeid());
+
+
       DataNode * assignee = NULL;
-      if (proto_node.has_assigneeid())
-	assignee = (DataNode *) lookup_node(idToNodeMap,		\
-						       proto_node.assigneeid());
-      
+
+      if (proto_node.has_assigneeid()){
+	Node * tmp = lookup_node(idToNodeMap,			\
+				 proto_node.assigneeid());
+	assert(tmp -> get_type() == DATA_NODE);
+	assignee = toDataNode(tmp);
+      }
+
       std::vector<DataNode*> arguments;
       for (int k = 0; k < proto_node.argumentids_size(); ++k){
 	int argument_id = proto_node.argumentids(k);

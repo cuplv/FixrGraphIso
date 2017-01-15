@@ -24,9 +24,9 @@ namespace fixrgraphiso {
   //------------------------------------------------------------------------------
 
   
-  Node::Node(long id, node_type_t typ): id_(id), nType_(typ){}
+  Node::Node(long id, node_type_t typ): id_(id), nType_(typ), match_frequency(0){}
 
-  Node::Node(const Node& node):id_(node.id_), nType_(node.nType_){}
+  Node::Node(const Node& node):id_(node.id_), nType_(node.nType_), match_frequency(node.match_frequency){}
   
   
 
@@ -42,9 +42,6 @@ namespace fixrgraphiso {
     return ss.str();
   }
   
-  Node * Node::clone() const {
-    return new Node(*this);
-  }
 
   
   std::ostream& operator<<(std::ostream& stream, const Node& node)
@@ -67,10 +64,10 @@ namespace fixrgraphiso {
 					    data_type_(node.data_type_),
 					    data_node_type_(node.data_node_type_){
   }
-
-  Node * DataNode::clone() const{
+  
+  DataNode * DataNode::clone() const{
     DataNode * n_node = new DataNode(*this);
-    return (Node*) n_node;
+    return n_node;
   }
 
   double DataNode::compatibilityWeight(DataNode const * n) const {
@@ -227,10 +224,6 @@ namespace fixrgraphiso {
     return (this -> name_ == node -> name_);
   }
   
-  Node * MethodNode::clone() const{
-    MethodNode * n_node = new MethodNode(*this);
-    return (Node*) n_node;
-  }
 
   const string& MethodNode::get_name() const
   {
@@ -315,16 +308,33 @@ namespace fixrgraphiso {
     return m;
   }
 
+  const MethodNode* toMethodNode(const Node * n){
+    assert (n -> get_type() == METHOD_NODE);
+    const MethodNode* m = dynamic_cast<const MethodNode*> (n);
+    assert( m != NULL);
+    return m;
+  }
+
   DataNode * toDataNode(Node * n){
     assert (n -> get_type() == DATA_NODE);
     DataNode* d = dynamic_cast<DataNode*> (n);
     assert( d!= NULL);
     return d;
   }
+
+  const DataNode * toDataNode( const Node * n){
+    assert (n -> get_type() == DATA_NODE);
+    const DataNode* d = dynamic_cast<const DataNode*> (n);
+    assert( d!= NULL);
+    return d;
+  }
+  
   
   //------------------------------------------------------------------------------
   // Implementation of the edges
   //------------------------------------------------------------------------------
+
+  
   
   Edge::Edge(const Edge& edge)
   {
@@ -332,6 +342,7 @@ namespace fixrgraphiso {
     eType_ = edge.eType_;
     src_ = edge.src_;
     dst_ = edge.dst_;
+    match_frequency = edge.match_frequency;
   }
   
   const long Edge::get_id() const {return id_;}
@@ -489,7 +500,14 @@ namespace fixrgraphiso {
 
     return it -> second;
   }
-  
+
+  bool Acdfg::hasNode( node_id_t id) const {
+    return nMap_.find(id) != nMap_.end();
+  }
+
+  bool Acdfg::hasEdge( edge_id_t id) const {
+    return eMap_.find(id) != eMap_.end();
+  }
   
   const Node* Acdfg::getNodeFromID( long id) const {
     node_id_to_ptr_map_t::const_iterator it = nMap_.find(id);
@@ -555,6 +573,139 @@ namespace fixrgraphiso {
 
 
     return;
+  }
+
+  DataNode * fetchOrClone(Acdfg * a, const DataNode * d, std::set<node_id_t> & addedNodes){
+    /*-- Does the node already exist? --*/
+    DataNode * new_rcv = NULL;
+    if (d != NULL){
+      node_id_t id = d -> get_id();
+      if (addedNodes.find(id) != addedNodes.end()){
+	/*-- If yes, fetch it from the old acdfg --*/
+	Node * tmp = a-> getNodeFromID(id);
+	assert(tmp && tmp -> get_type() == DATA_NODE) ;
+	new_rcv = toDataNode(tmp);
+      } else {
+	/*-- does not already exist, clone --*/
+	new_rcv = d -> clone();
+	addedNodes.insert( id );
+	a -> add_node(new_rcv);
+      }
+    }
+    return new_rcv;
+  }
+
+  Acdfg * Acdfg::extractSubgraphWithFrequencyCutoff(int cutoff) const {
+    /*--
+      1. Extract all nodes that have been matched with some 
+      minimum frequency.
+      
+      2. Complete the graph by adding data nodes and edges that correspond to arguments,
+      receivers and invokees of method nodes.
+      --*/
+    Acdfg * retG = new Acdfg();
+    std::set<node_id_t> nodesAboveFreqCutoff;
+    std::set<node_id_t> addedNodes;
+    
+    for (auto it = begin_nodes(); it != end_nodes(); ++it){
+      const Node * n = *it;
+      if (n -> get_type() != REGULAR_NODE){
+	if (n -> getMatchFrequency() >= cutoff){
+	  switch (n -> get_type() ){
+	  case DATA_NODE:{
+	    const DataNode * d = toDataNode(n);
+	    nodesAboveFreqCutoff.insert(d -> get_id() );
+	    /*- Does the node already exist? -*/
+	    if (addedNodes.find(d -> get_id()) == addedNodes.end()){
+	      /*-- If not, clone it --*/
+	      addedNodes.insert(d-> get_id());
+	      DataNode * dNew = d-> clone();
+	      retG -> add_node(dNew);
+	    }
+	  }
+	    break;
+	  case METHOD_NODE:{
+	    const MethodNode * m = toMethodNode(n);
+	    assert( addedNodes.find(m -> get_id()) == addedNodes.end() );
+	    addedNodes.insert( m -> get_id());
+	    nodesAboveFreqCutoff.insert( m -> get_id());
+	    /* Clone the receiver */
+	    const DataNode * rcv = m -> get_receiver();
+	    DataNode * new_rcv = fetchOrClone(retG, rcv, addedNodes);
+
+	    /* Clone the assignee */
+
+	    const DataNode * assg = m -> get_assignee();
+	    
+	    DataNode * new_assg = fetchOrClone(retG, assg, addedNodes);
+	    /* Clone the arguments */
+	    std::vector<DataNode *> const & args = m -> get_arguments();
+	    std::vector<DataNode *> new_args;
+	    for (const DataNode * dArg: args){
+	      assert( dArg != NULL);
+	      DataNode * nArg = fetchOrClone(retG, dArg, addedNodes);
+	      new_args.push_back(nArg);
+	    }
+	    
+
+	    /* Make a new method node */
+	    MethodNode * mNew = new MethodNode(m -> get_id(), m -> get_name(), new_rcv, new_args, new_assg);
+	    retG -> add_node(mNew);
+	    
+	  }
+	    break;
+	  default:
+	    assert(false);
+	    break;
+	  }
+	}
+      }
+    }
+
+    /*-- Criteria for adding edges:
+        1. Control Edges: if above cutoff frequency.
+        2. Def/Use edges: if both source/destination are present in the graph.
+	---*/
+    for (auto jt = begin_edges(); jt != end_edges(); ++jt){
+      const Edge * e = *jt;
+      node_id_t srcID = e -> get_src_id();
+      node_id_t destID = e -> get_dst_id();
+      switch (e -> get_type()){
+      case CONTROL_EDGE:
+      case TRANSITIVE_EDGE:
+	if (e -> getMatchFrequency() >= cutoff){
+	  Node * srcNode = retG -> getNodeFromID( srcID);
+	  Node * destNode = retG -> getNodeFromID( destID);
+	  
+	  TransitiveEdge * nEdge = new TransitiveEdge( e -> get_id(), srcNode, destNode);
+	  retG -> add_edge(nEdge);
+	}
+	break;
+
+      case DEF_EDGE:
+	if (retG -> hasNode(srcID) && retG -> hasNode(destID)){
+	  Node * srcNode = retG -> getNodeFromID( srcID);
+	  Node * destNode = retG -> getNodeFromID( destID);
+	  DefEdge * nEdge = new DefEdge( e -> get_id(), srcNode, destNode);
+	  retG -> add_edge(nEdge);
+	}
+	break;
+      case USE_EDGE:
+	if (retG -> hasNode(srcID) && retG -> hasNode(destID)){
+	  Node * srcNode = retG -> getNodeFromID( srcID);
+	  Node * destNode = retG -> getNodeFromID( destID);
+	  UseEdge * nEdge = new UseEdge( e -> get_id(), srcNode, destNode);
+	  retG -> add_edge(nEdge);
+	}	
+	break;
+      case EXCEPTIONAL_EDGE:
+	std::cerr << "Warning: Exceptional edges are not handled in the frequent subgraph mining yet. " << std::endl;
+	break;
+      }
+      
+    }
+
+    return retG;
   }
 
   std::ostream& operator<<(std::ostream& stream, const Acdfg& acdfg)

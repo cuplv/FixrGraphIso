@@ -4,7 +4,7 @@
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 
 namespace fixrgraphiso {
-  bool debug = false;
+  extern bool debug;
   // Recommended that you do not turn these flags on.
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
   bool addCompatibleDataNodes = false; // This turns on additional checks for data node compatibility
@@ -608,7 +608,7 @@ namespace fixrgraphiso {
 
   }
 
-  void IlpApproxIsomorphism::computeILPEncoding(){
+  bool IlpApproxIsomorphism::computeILPEncoding(){
     // 1. Compute the compatible nodes
     computeCompatibleNodes();
     // 2. Compute the pair of compatible edges
@@ -622,9 +622,11 @@ namespace fixrgraphiso {
 
     // 5. Solve
     #ifdef USE_GUROBI_SOLVER
-    milp.solveUsingGurobiLibrary();
+    bool stat = milp.solveUsingGurobiLibrary();
+    return stat;
     #else 
     milp.solveUsingGLPKLibrary();
+    return true;
     #endif
   }
   
@@ -734,6 +736,37 @@ namespace fixrgraphiso {
     out << " } " << std::endl;
   }
 
+  void IlpApproxIsomorphism::populateFrequencies(){
+    // Iterate through all compatible nodes chosen by the iso
+    for (const auto it: node_map_a_to_b){
+      node_id_t i = it.first;
+      const vector<node_id_t> & compats = it.second;
+      for (node_id_t j: compats){
+	int vid = milp.lookupIsoNodeVariable(i,j);
+	MILPVariable var =milp.getVariableFromID(vid);
+	if (var.binVal == 1){
+	  Node * na = acdfg_a -> getNodeFromID(i);
+	  Node * nb = acdfg_b -> getNodeFromID(j);
+	  na -> incrMatchFrequency();
+	  nb -> incrMatchFrequency();
+	}
+      }
+    }
+
+    for (auto mt : compat_edges_a_to_b){
+      edge_id_t eAID = mt. first;
+      edge_id_t eBID = mt. second;
+      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+      MILPVariable var = milp.getVariableFromID(vid);
+      if (var.binVal == 1){
+        Edge * ea = acdfg_a -> getEdgeFromID(eAID);
+	Edge * eb = acdfg_b -> getEdgeFromID(eBID);
+	ea -> incrMatchFrequency();
+	eb -> incrMatchFrequency();
+      }
+    }
+    
+  }
 
   void IlpApproxIsomorphism::populateResults(IsomorphismResults & res){
     compatible_node_map_t::const_iterator it;

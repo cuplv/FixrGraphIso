@@ -49,14 +49,13 @@ add_executable(frequentsubgraphs
    isomorphismClass.cpp
    acdfg.cpp
    serialization.cpp
+   ilpApproxIsomorphismEncoder.cpp
+   milpProblem.cpp
    ${PROTO_SRCS_ISO}
    ${PROTO_SRCS_ACDFG}
 )
 target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
-target_link_libraries(frequentsubgraphs
-    ${PROTOBUF_LIBRARY}
-    ${Z3_LIBRARY}
-)
+
 
 if (NOT GUROBI_FOUND)
    target_link_libraries(fixrgraphiso
@@ -64,6 +63,13 @@ if (NOT GUROBI_FOUND)
     ${PROTOBUF_LIBRARY}
     ${GLPK_LIBRARY}
     )
+
+    target_link_libraries(frequentsubgraphs
+    ${GLPK_LIBRARY}
+    ${PROTOBUF_LIBRARY}
+    ${Z3_LIBRARY}
+    )   
+ 
 endif(NOT GUROBI_FOUND)
 
 if (GUROBI_FOUND)
@@ -74,5 +80,14 @@ if (GUROBI_FOUND)
    ${GUROBI_CPP_LIBRARY}
    ${GUROBI_C_LIBRARY}
    )
+
+target_link_libraries(frequentsubgraphs
+    ${GLPK_LIBRARY}	
+   ${GUROBI_CPP_LIBRARY}	
+   ${GUROBI_C_LIBRARY}
+    ${PROTOBUF_LIBRARY}
+    ${Z3_LIBRARY}
+    ) 
+
 endif(GUROBI_FOUND)
 

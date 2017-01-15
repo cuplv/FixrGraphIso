@@ -48,15 +48,19 @@ namespace fixrgraphiso {
 
     virtual string getDotLabel() const;
 
-    virtual Node * clone() const;
   
     virtual void prettyPrint(std::ostream & out) const ;
   
     friend std::ostream& operator<<(std::ostream&, const Node&);
 
+    int getMatchFrequency() const { return match_frequency; }
+    void setMatchFrequency(int m) { match_frequency = m; }
+    void incrMatchFrequency() { match_frequency++; }
+
   protected:
     long id_;
     node_type_t nType_;
+    int match_frequency;
   
   };
 
@@ -75,7 +79,7 @@ namespace fixrgraphiso {
     double compatibilityWeight(DataNode const * n) const;
     virtual string getDotLabel() const;
     void prettyPrint(std::ostream & out) const;
-    Node * clone() const;
+    DataNode * clone() const;
     friend std::ostream& operator<<(std::ostream&, const DataNode&);
     virtual node_type_t get_type() const { return DATA_NODE; }
   protected:
@@ -106,7 +110,6 @@ namespace fixrgraphiso {
     const DataNode * get_assignee() const;
     const std::vector<DataNode*> &  get_arguments() const;
     int get_num_arguments() const;
-    Node * clone() const;
     virtual string getDotLabel() const;
     void prettyPrint(std::ostream & out) const;
     bool isCompatible(MethodNode const * n) const;
@@ -128,7 +131,8 @@ namespace fixrgraphiso {
   // General Conversion functions that will be useful for us.
   MethodNode * toMethodNode(Node* n);
   DataNode * toDataNode(Node* n);
-
+  const DataNode * toDataNode( const Node * n);
+  const MethodNode * toMethodNode(const Node* n);
   // Represent an edge of the Acdfg
   class Edge {
   public:
@@ -136,8 +140,10 @@ namespace fixrgraphiso {
     Edge(long id, edge_type_t typ, Node* src, Node* dst): id_(id),
 							  eType_(typ),
 							  src_(src),
-							  dst_(dst)
+							  dst_(dst),
+							  match_frequency(0)
     {};
+    
   
     Edge(const Edge& edge);
     const long get_id() const;
@@ -165,6 +171,9 @@ namespace fixrgraphiso {
     double compatibilityWeight(Edge * eB) const;
     std::string get_edge_dot_style() const;
     
+    int getMatchFrequency() const { return match_frequency; } 
+    void incrMatchFrequency() { match_frequency++; }
+    
   protected:
     long id_;
     edge_type_t eType_;
@@ -176,6 +185,9 @@ namespace fixrgraphiso {
     std::vector<edge_label_t> eLabels_;
     // Only used in exception edges.
     std::vector<std::string> exceptList_;
+    // Match frequency
+    int match_frequency;
+    
   };
 
   class DefEdge : public Edge {
@@ -219,7 +231,9 @@ namespace fixrgraphiso {
   typedef std::map<long, Node*> node_id_to_ptr_map_t;
   typedef std::map<long, Edge*> edge_id_to_ptr_map_t;
   typedef std::map<long, vector<long> > node_id_to_outgoing_edges_map_t;
+  
   class Acdfg {
+    
   public:
     ~Acdfg();
     Node* add_node(Node *  node);
@@ -278,6 +292,9 @@ namespace fixrgraphiso {
       return rVal;
     }
     
+    bool hasNode (node_id_t id) const;
+    bool hasEdge (edge_id_t id) const;
+				 
     const Node* getNodeFromID(long id) const;
     const Edge* getEdgeFromID(long id) const;
     Node * getNodeFromID(long id);
@@ -310,6 +327,9 @@ namespace fixrgraphiso {
     }
 
     void dumpToDot(std::ostream & os) const;
+
+    Acdfg * extractSubgraphWithFrequencyCutoff(int freqCutoff) const;
+    
     
   private:
     nodes_t nodes_;
@@ -317,6 +337,7 @@ namespace fixrgraphiso {
     node_id_to_ptr_map_t nMap_;
     edge_id_to_ptr_map_t eMap_;
     node_id_to_outgoing_edges_map_t outgoingMap_;
+    
     std::string name_;
   };
 

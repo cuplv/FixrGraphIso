@@ -104,6 +104,7 @@ namespace fixrgraphiso {
     string iso_filename;
     int freq;
   public:
+    IsomorphismClass(Acdfg * what);
     IsomorphismClass(string const & iso_filename);
     ~IsomorphismClass();
     bool subsumes(IsomorphismClass const * what) const;
