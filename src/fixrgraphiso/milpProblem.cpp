@@ -357,7 +357,7 @@ bool MILProblem::solveUsingGurobiLibrary(){
 
   try {
     GRBEnv env = GRBEnv();
-    env.set(GRB_DoubleParam_TimeLimit, 180.0);
+    env.set(GRB_DoubleParam_TimeLimit, 60.0);
     GRBModel m = GRBModel(env);
    
     std::map<int, GRBVar> id2VarMap;
@@ -467,6 +467,10 @@ bool MILProblem::solveUsingGurobiLibrary(){
 	std::cout << "Model is unbounded " << std::endl;
 	break;
 
+      case GRB_TIME_LIMIT:
+	std::cout << "Time limit exceeded " << std::endl;
+	solvedSuccessfully = false;
+	break;
       default:
 	std::cout << "Optimization was stopped with status = "
 		  << optimstatus << std::endl;

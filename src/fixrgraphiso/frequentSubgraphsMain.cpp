@@ -80,22 +80,39 @@ namespace fixrgraphiso{
     }
   }
 
-  void computeSubsumedACDFGs(std::vector<IsomorphismClass> & allIsos, std::vector<IsomorphismClass> & maximalIsos){
+  void computeSubsumedACDFGs(std::vector<IsomorphismClass> & allIsos, std::vector<IsomorphismClass> & maximalIsos, bool minimal=true){
     for (auto iso1: allIsos){
       bool is_subsumed = false;
       int i;
       vector<int> subsumedIsos;
       int freq = 1;
+      Acdfg * a = iso1.get_acdfg();
+      if (a -> method_node_count() < 3){
+	std::cout << "IGNORING: " << a -> getName() << std::endl;
+	continue;
+      }
       for (i = maximalIsos.size()-1; i >= 0;  --i){
 	fixrgraphiso::IsomorphismClass & iso2 = maximalIsos[i];
-	if (iso2.subsumes(&iso1)){
-	  iso2.incrFrequency();
-	  is_subsumed = true;
-	  break;
-	}
-	if (iso1.subsumes(&iso2)){
-	  subsumedIsos.push_back(i);
-	  freq = freq + iso2.getFrequency();
+	if (minimal){
+	  if (iso1.subsumes(&iso2)){
+	    is_subsumed = true;
+	    iso2.incrFrequency();
+	    break;
+	  }
+	  if (iso2.subsumes(&iso1)){
+	    subsumedIsos.push_back(i);
+	    freq = freq + iso2.getFrequency();
+	  }
+	} else {
+	  if (iso2.subsumes(&iso1)){
+	    iso2.incrFrequency();
+	    is_subsumed = true;
+	    break;
+	  }
+	  if (iso1.subsumes(&iso2)){
+	    subsumedIsos.push_back(i);
+	    freq = freq + iso2.getFrequency();
+	  }
 	}
       }
       
