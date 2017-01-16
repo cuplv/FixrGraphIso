@@ -159,14 +159,23 @@ namespace fixrgraphiso {
         proto_acdfg->method_node(j);
 
       /* read to the receiver */
-      DataNode* receiver = (DataNode*) lookup_node(idToNodeMap,		\
-						   proto_node.invokee());
+      Node* r = lookup_node(idToNodeMap,		\
+			    proto_node.invokee());
+
+      DataNode * receiver = NULL;
+      if (r -> get_type() == DATA_NODE)
+	receiver = toDataNode(r);
+      
+	
       // assert(NULL != receiver);
       /* read the assignee */
       DataNode * assignee = NULL;
-      if (proto_node.has_assignee())
-	assignee = (DataNode*) lookup_node(idToNodeMap,			\
-					   proto_node.assignee());
+      if (proto_node.has_assignee()) {
+	Node * a =  lookup_node(idToNodeMap,			\
+				proto_node.assignee());
+	if (a -> get_type() == DATA_NODE)
+	  assignee = toDataNode(a);
+      }
       /* read the arguments */
       std::vector<DataNode*> arguments;
       for (int k = 0; k < proto_node.argument_size(); k++) {
