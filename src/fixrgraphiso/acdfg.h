@@ -108,6 +108,8 @@ namespace fixrgraphiso {
     const string& get_name() const;
     const DataNode* get_receiver() const;
     const DataNode * get_assignee() const;
+    DataNode * get_receiver();
+    DataNode * get_assignee();
     const std::vector<DataNode*> &  get_arguments() const;
     int get_num_arguments() const;
     virtual string getDotLabel() const;
@@ -239,6 +241,8 @@ namespace fixrgraphiso {
     Node* add_node(Node *  node);
     Edge* add_edge(Edge *  edge);
 
+    void fixMissingUseDefEdges();
+
     nodes_t::const_iterator begin_nodes() const ;
     nodes_t::const_iterator end_nodes() const;
     int node_count() const {return nodes_.size();};
@@ -329,6 +333,7 @@ namespace fixrgraphiso {
     void dumpToDot(std::ostream & os) const;
 
     Acdfg * extractSubgraphWithFrequencyCutoff(int freqCutoff) const;
+
     
     
   private:
@@ -337,8 +342,8 @@ namespace fixrgraphiso {
     node_id_to_ptr_map_t nMap_;
     edge_id_to_ptr_map_t eMap_;
     node_id_to_outgoing_edges_map_t outgoingMap_;
-    
     std::string name_;
+    void ensureEdge(edge_type_t eType, Node * src, Node * dest);
   };
 
 

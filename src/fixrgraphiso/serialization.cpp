@@ -180,9 +180,11 @@ namespace fixrgraphiso {
       std::vector<DataNode*> arguments;
       for (int k = 0; k < proto_node.argument_size(); k++) {
 	const int argument_id = proto_node.argument(k);
-	DataNode* n = (DataNode*) lookup_node(idToNodeMap,   \
-  					      argument_id);
-	arguments.push_back(n);
+	Node* n =  lookup_node(idToNodeMap,			\
+			       argument_id);
+	assert(n -> get_type() == DATA_NODE);
+	DataNode * dArg = toDataNode(n);
+	arguments.push_back(dArg);
       }
 
       /*- create the method node -*/
@@ -207,7 +209,7 @@ namespace fixrgraphiso {
 	proto_acdfg->def_edge(j);
       addEdge(acdfg, idToNodeMap, proto_edge);
     }
-
+    
     for (int j = 0; j < proto_acdfg->use_edge_size(); j++) {
       const acdfg_protobuf::Acdfg_UseEdge& proto_edge =	\
 	proto_acdfg->use_edge(j);
@@ -254,6 +256,7 @@ namespace fixrgraphiso {
       }
     }
 
+    acdfg -> fixMissingUseDefEdges();
     return acdfg;
   }
 

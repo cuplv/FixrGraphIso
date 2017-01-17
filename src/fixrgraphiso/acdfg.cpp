@@ -229,6 +229,10 @@ namespace fixrgraphiso {
   {
     return name_;
   }
+
+  DataNode * MethodNode::get_receiver() {
+    return receiver_;
+  }
   
   const DataNode* MethodNode::get_receiver() const
   {
@@ -248,6 +252,11 @@ namespace fixrgraphiso {
     return assignee_;
   }
 
+  DataNode * MethodNode::get_assignee()  {
+    return assignee_;
+  }
+
+  
   bool MethodNode::isSpecialMethod() const {
     std::set<std::string> special_methods {"EQ", "NEQ", "GT", "LT", "LE", "GE"};
     return (special_methods.find(get_name() ) != special_methods.end());
@@ -469,6 +478,61 @@ namespace fixrgraphiso {
 
     // Return the edge pointer
     return new_edge;
+  }
+
+  
+  void Acdfg::ensureEdge(edge_type_t eType, Node * src, Node * dest){
+    node_id_t srcID = src -> get_id();
+    node_id_t destID = dest -> get_id();
+    edges_t :: const_iterator jt;
+    long new_edge_id = -1;
+    for (jt = begin_edges(); jt != end_edges(); ++jt){
+      const Edge * e = *jt;
+
+      if (e -> get_id() > new_edge_id)
+	new_edge_id = e -> get_id();
+      
+      if (e -> get_src_id() == srcID && e -> get_dst_id() == destID && e -> get_type() == eType)
+	return;
+    }
+    
+    new_edge_id++;
+    switch (eType){
+    case USE_EDGE: {
+      UseEdge * e = new UseEdge(new_edge_id, src, dest);
+      add_edge(e);
+    }
+      break;
+    case DEF_EDGE:{
+      DefEdge * d = new DefEdge(new_edge_id, src, dest);
+      add_edge(d);
+    }
+      break;
+    default:
+      assert(false);
+      break;
+    }
+  }
+
+
+  void Acdfg::fixMissingUseDefEdges(){
+    /*-- For every method node, 
+       ensure there is a use edge from receiver to the node,
+       ensure there is a def edge from assignee to the node. 
+       --*/
+    nodes_t::const_iterator it;
+    for (it = begin_nodes(); it != end_nodes(); ++it){
+      Node * n = *it;
+      if (n -> get_type() == METHOD_NODE){
+	MethodNode * mNode = toMethodNode(n);
+	DataNode * rcv = mNode -> get_receiver();
+	DataNode * assg = mNode -> get_assignee();
+	if (rcv)
+	  ensureEdge(USE_EDGE, rcv, mNode);
+	if (assg)
+	  ensureEdge( DEF_EDGE, mNode, assg);
+      }
+    }
   }
 
   nodes_t::const_iterator Acdfg::begin_nodes() const

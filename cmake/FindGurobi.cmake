@@ -1,16 +1,19 @@
 # Try to find the Gurobi libraries and the includes
 
 
-find_path(GUROBI_header_PATH gurobi_c++.h
-          /home/ubuntu/gurobi701/linux64/include )
+find_path(GUROBI_header_PATH
+          NAMES gurobi_c++.h
+          PATHS /home/ubuntu/gurobi701/linux64/include  /Library/gurobi701/mac64/include )
+
+
 
 find_library(GUROBI_C_LIBRARY
 	     NAMES gurobi70
-	     PATHS  /home/ubuntu/gurobi701/linux64/lib )
+	     PATHS  /Library/gurobi701/mac64 /home/ubuntu/gurobi701/linux64/lib )
 
 find_library(GUROBI_CPP_LIBRARY
              NAMES gurobi_c++
-             PATHS /home/ubuntu/gurobi701/linux64/lib )
+             PATHS /Library/gurobi701/mac64 /home/ubuntu/gurobi701/linux64/lib )
 
 	     
 if (GUROBI_header_PATH AND GUROBI_C_LIBRARY AND GUROBI_CPP_LIBRARY)
