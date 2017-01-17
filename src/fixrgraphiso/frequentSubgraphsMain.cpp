@@ -35,8 +35,8 @@ namespace fixrgraphiso{
   void processCommandLine(int argc, char * argv[] , vector<string> & filenames){
     
     char c;
-    while (optind < argc){
-      if ((c = getopt(argc, argv, "df:"))!= -1){
+    int index;
+    while ((c = getopt(argc, argv, "df:"))!= -1){
 	switch (c){
 	case 'd':
 	  fixrgraphiso::debug = true;
@@ -47,12 +47,14 @@ namespace fixrgraphiso{
 	default:
 	  break;
 	}
-      } else {
-	string fname(argv[optind]);
-	filenames.push_back(fname);
-	optind++;
-      }
     }
+
+    for (index = optind; index < argc; ++index){
+      string fname(argv[index]);
+      filenames.push_back(fname);
+      std::cout << index <<  "--> " << fname << std::endl;
+    }
+    
     if (filenames.size() <= 0){
       cout << "Usage:" << argv[0] << " -f [frequency cutoff] [list of iso.bin files] " << endl;
       return;

@@ -362,13 +362,13 @@ namespace fixrgraphiso {
     switch (this -> get_type()){
     case USE_EDGE:
     case DEF_EDGE:
-      return string("[color=blue, penwidth=3]");
+      return string("[color=blue, penwidth=2]");
     case EXCEPTIONAL_EDGE:
       return string("[color=red, penwidth=3]");
     case CONTROL_EDGE:
       return string("[color=black, penwidth=3]");
     case TRANSITIVE_EDGE:
-      return string("[color=black, penwidth=0.5]");
+      return string("[color=black, penwidth=3]");
     default:
       return string("");
 

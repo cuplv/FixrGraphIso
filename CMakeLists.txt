@@ -36,6 +36,10 @@ if (GUROBI_FOUND)
    include_directories(${GUROBI_INCLUDEDIR})
 endif(GUROBI_FOUND)
 
+if (NOT GUROBI_FOUND)
+  message("Gurobi not found")
+endif(NOT GUROBI_FOUND)
+
 include(FindZ3)
 if (NOT Z3_FOUND)
   message(FATAL_ERROR "ERROR: Z3 not found")
