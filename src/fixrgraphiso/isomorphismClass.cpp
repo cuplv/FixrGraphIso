@@ -532,7 +532,9 @@ namespace fixrgraphiso {
   /*--
     Constructors for IsomorphismClass.
     --*/
-  IsomorphismClass::IsomorphismClass(Acdfg * what): iso_filename(what -> getName()), freq(1), acdfg(what){}
+  IsomorphismClass::IsomorphismClass(Acdfg * what): iso_filename(what -> getName()), freq(1), acdfg(what){
+    subsumingACDFGs.push_back(what -> getName());
+  }
   
   IsomorphismClass::IsomorphismClass(string const & fname):iso_filename(fname), freq(1){
     iso_protobuf::Iso iso;
