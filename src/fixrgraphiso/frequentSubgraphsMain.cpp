@@ -39,7 +39,7 @@ namespace fixrgraphiso{
     
     char c;
     int index;
-    while ((c = getopt(argc, argv, "df:t:o:"))!= -1){
+    while ((c = getopt(argc, argv, "df:t:o:g:"))!= -1){
 	switch (c){
 	case 'd':
 	  fixrgraphiso::debug = true;

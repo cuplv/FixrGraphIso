@@ -45,33 +45,36 @@ def processClusterFile(fname):
             copyFile(m.group(1), count)
     return list_of_clusters
 
+def help_message(fixr_root_directory):
+    print ("processClusters.py [options]")
+    print ("\t -a | --start <starting cluster id> default: 1")
+    print ("\t -b | --end <ending cluster id> default: 426")
+    print ("\t -f | --fixr < fixr root directory> default: %s"%(fixr_root_directory))
+    print ("\t -n | --nocopy Skip the copying step default: off")
 
 def main(argv):
-    try:
-        opts, args = getopt.getopt(argv,"a:b:hf:",["fixr=","nocopy","start=","end=","help"])
-    except getopt.GetoptError:
-        print 'test.py -i <inputfile> -o <outputfile>'
-        sys.exit(2)
     start_range = 1
     end_range = 426
     run_cluster_copy=True
     fixr_root_directory='/Users/macuser/Projects/git/FixrGraphIso'
+
+    try:
+        opts, args = getopt.getopt(argv[1:],"a:b:hf:n",["fixr=","nocopy","start=","end=","help"])
+    except getopt.GetoptError:
+        help_message(fixr_root_directory)
+        sys.exit(2)
     for (o,a) in opts:
+        print (o,a)
         if o in ("-a","--start"):
             start_range = int(a)
         if o in ("-b","--end"):
-            end_range = int(b)
+            end_range = int(a)
         if o in ("-n", "--nocopy"):
             run_cluster_copy = False
         if o in ("-f","--fixr"):
             fixr_root_directory = a
         if o in ("-h","--help"):
-            print ("processClusters.py [options]")
-            print ("\t -a | --start <starting cluster id> default: 1")
-            print ("\t -b | --end <ending cluster id> default: 426")
-            print ("\t -f | --fixr < fixr root directory> default: %s"%(fixr_root_directory))
-            print ("\t -n | --nocopy Skip the copying step default: off")
-            sys.exit(2)
+            help_message(fixr_root_directory)
     
     clusters = processClusterFile('clusters.txt')
     if (end_range > start_range):
