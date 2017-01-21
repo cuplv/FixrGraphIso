@@ -1,14 +1,16 @@
 import os
 import os.path
+import sys
 import re
+import getopt
 
-def runForCluster(clusterID):
-    cmd_name = '/home/ubuntu/cuplv/FixrGraphIso/build/src/fixrgraphiso/frequentsubgraphs'
+def runForCluster(fixr_graph_iso_home, clusterID):
+    cmd_name = fixr_graph_iso_home+'/build/src/fixrgraphiso/frequentsubgraphs'
     dirName = './all_clusters/cluster_%d'%(clusterID)
     os.chdir(dirName)
     num_files = len([name for name in os.listdir('.') if os.path.isfile(name)])
-    freq = int(0.85 * num_files)
-    cmd = '%s -f %d *.acdfg.bin > ../run%d.out'%(cmd_name, freq, clusterID)
+    freq = int(0.5 * num_files)
+    cmd = '%s -f %d -g %d -o ../cluster_%d_info.txt *.acdfg.bin > ../run%d.out'%(cmd_name, freq, freq, clusterID, clusterID)
     print ('Running %s'%(cmd))
     os.system(cmd)
     os.chdir('../..')
@@ -42,6 +44,41 @@ def processClusterFile(fname):
             copyFile(m.group(1), count)
     return list_of_clusters
 
-#clusters = processClusterFile('clusters.txt')
-for cid in range(1,426):
-    runForCluster(cid)
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv,"a:b:hf:",["fixr=","nocopy","start=","end=","help"])
+    except getopt.GetoptError:
+        print 'test.py -i <inputfile> -o <outputfile>'
+        sys.exit(2)
+    start_range = 1
+    end_range = 426
+    run_cluster_copy=True
+    fixr_root_directory='/Users/macuser/Projects/git/FixrGraphIso'
+    for (o,a) in opts:
+        if o in ("-a","--start"):
+            start_range = int(a)
+        if o in ("-b","--end"):
+            end_range = int(b)
+        if o in ("-n", "--nocopy"):
+            run_cluster_copy = False
+        if o in ("-f","--fixr"):
+            fixr_root_directory = a
+        if o in ("-h","--help"):
+            print ("processClusters.py [options]")
+            print ("\t -a | --start <starting cluster id> default: 1")
+            print ("\t -b | --end <ending cluster id> default: 426")
+            print ("\t -f | --fixr < fixr root directory> default: %s"%(fixr_root_directory))
+            print ("\t -n | --nocopy Skip the copying step default: off")
+            sys.exit(2)
+    
+    clusters = processClusterFile('clusters.txt')
+    if (end_range > start_range):
+        for cid in range(start_range, end_range):
+            runForCluster(fixr_root_directory, cid)
+    else:
+        print( 'start range (%d) must be larger than end range (%d) '%(start_range, end_range))
+    
+
+
+main(sys.argv)

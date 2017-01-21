@@ -103,7 +103,9 @@ namespace fixrgraphiso {
     string filename_b;
     string iso_filename;
     int freq;
+    std::vector<std::string> subsumingACDFGs;
   public:
+    
     IsomorphismClass(Acdfg * what);
     IsomorphismClass(string const & iso_filename);
     ~IsomorphismClass();
@@ -113,6 +115,18 @@ namespace fixrgraphiso {
     int getFrequency() const {return freq; }
     void setFrequency(int f){ this -> freq = f ; }
     void incrFrequency(){ freq++; }
+    void addSubsumingACDFG(std::string const & what){
+      subsumingACDFGs.push_back(what);
+    }
+
+    std::vector<std::string> const & getSubsumingACDFGs(){ return subsumingACDFGs; }
+    
+    void copySubsumingACDFGs(IsomorphismClass const & what){
+      std::vector<std::string> const & v = what.subsumingACDFGs;
+      for (const auto s: v){
+	(this -> subsumingACDFGs).push_back(s);
+      }
+    }
     
   };
 

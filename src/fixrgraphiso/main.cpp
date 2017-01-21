@@ -17,6 +17,7 @@ using namespace fixrgraphiso;
 
 namespace fixrgraphiso{
   bool debug = false;
+  double gurobi_timeout = 30.0;
 };
 extern Acdfg * createGraphA();
 extern Acdfg * createGraphB();

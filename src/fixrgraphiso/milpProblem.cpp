@@ -5,6 +5,7 @@
 using namespace std;
 namespace fixrgraphiso{
   extern bool debug;
+  extern double gurobi_timeout;
   
   MILPVariable MILProblem::createVariable(ilp_variable_t typ, node_id_t i, node_id_t j){
     std::ostringstream ss;
@@ -357,7 +358,7 @@ bool MILProblem::solveUsingGurobiLibrary(){
 
   try {
     GRBEnv env = GRBEnv();
-    env.set(GRB_DoubleParam_TimeLimit, 60.0);
+    env.set(GRB_DoubleParam_TimeLimit, gurobi_timeout);
     GRBModel m = GRBModel(env);
    
     std::map<int, GRBVar> id2VarMap;
