@@ -32,7 +32,12 @@ namespace fixrgraphiso{
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
     Acdfg * acdfg = s.create_acdfg(proto_acdfg);
     acdfg -> setName(filename);
-    allACDFGs.push_back(acdfg);
+    if (acdfg -> node_count() >= 100 || acdfg -> edge_count() >= 200){
+      std::cerr << "ACDFG " << filename << " too large # nodes: " << acdfg -> node_count() << " # edges : " << acdfg -> edge_count() << std::endl;
+      delete(acdfg);
+    } else {
+      allACDFGs.push_back(acdfg);
+    }
   }
 
   void processCommandLine(int argc, char * argv[] , vector<string> & filenames){
