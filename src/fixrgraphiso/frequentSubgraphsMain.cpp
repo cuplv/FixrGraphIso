@@ -169,7 +169,7 @@ namespace fixrgraphiso{
       } else {
 	out_file << "Unpopular Pattern #" << k << " Frequency = " << iso.getFrequency() << endl;
       }
-      out_file << "F: " << iso.getIsoFilename () << endl;
+      //out_file << "F: " << iso.getIsoFilename () << endl;
       std::vector<std::string> const & fnames = iso.getSubsumingACDFGs();
       for (const auto s: fnames){
 	out_file << "F: "<< s << endl; 
