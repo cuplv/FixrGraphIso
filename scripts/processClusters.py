@@ -39,7 +39,7 @@ def processClusterFile(fname):
             print (m.group(1))
             makeDirectory(count)
             list_of_clusters.append(count)
-        m = re.match(r'F:\s*(\S\$*)$', line)
+        m = re.match(r'F:\s*([\S\$]*)$', line)
         if m:
             print (m.group(1))
             copyFile(m.group(1), count)
