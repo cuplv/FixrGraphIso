@@ -16,9 +16,12 @@ class ClusterProcessor:
         num_files = len([name for name in os.listdir('.') if os.path.isfile(name)])
         freq = int(0.25 * num_files)
         pop_cutoff = int(0.15 * num_files)
-        fun_list0 = [s.strip() for s in fun_list.split()]
-        fun_list1 = ["-m "+s for s in fun_list0]
-        fun_string = ''.join(fun_list1)
+        fun_list0 = [s.strip() for s in fun_names.split(',')]
+        fun_list1 = [s.replace('$','\$') for s in fun_list0]
+        fun_list2 = [s.replace('<','\<') for s in fun_list1]
+        fun_list3 = [s.replace('>','\>') for s in fun_list2]
+        fun_list4 = ["-m "+s+" " for s in fun_list3]
+        fun_string = ''.join(fun_list4)
         cmd = '%s -f %d -g %d -o ../cluster_%d_info.txt %s *.acdfg.bin > ../run%d.out'%(cmd_name, freq, pop_cutoff, clusterID, fun_string, clusterID)
         print ('Running %s'%(cmd))
         os.system(cmd)
@@ -65,6 +68,7 @@ class ClusterProcessor:
         print ("\t -f | --fixr < fixr root directory> default: %s"%(self.fixr_root_directory))
         print ("\t -n | --nocopy Skip the copying step default: off")
         print ("\t -c | --cluster-file-name <name of the file with cluster results> default: clusters.txt")
+        print ("\t -d | --output-dir <output dir name> default: all_clusters")
 
     def main(self,argv):
         self.start_range = 1
@@ -91,14 +95,14 @@ class ClusterProcessor:
             if o in ("-c","--cluster-file-name"):
                 self.cluster_file_name = a
             if o in ("-d","--output-dir"):
-                self.rootName = a
+                self.outputRootName = a
             if o in ("-h","--help"):
                 self.help_message()
                 sys.exit(1)
 
         clusters = self.processClusterFile()
         if (self.end_range > self.start_range):
-            for (cid, fun_names) in range(self.start_range, self.end_range):
+            for (cid, fun_names) in clusters:
                 self.runForCluster(cid, fun_names)
         else:
             print( 'start range (%d) must be less than end range (%d) '%(self.start_range, self.end_range))
