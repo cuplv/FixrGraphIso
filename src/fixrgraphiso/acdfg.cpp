@@ -16,7 +16,7 @@ namespace fixrgraphiso {
   using std::string;
   using std::cout;
   using std::endl;
-  
+  extern bool debug;
   // Match the types of data nodes to be compatible
   bool typeMatchDataNode = false;
   bool varConstMatchDataNode = true;
@@ -672,8 +672,14 @@ namespace fixrgraphiso {
       if (n -> get_type() == METHOD_NODE){
 	MethodNode * mNode = toMethodNode(n);
 	std::string node_name = mNode -> get_name();
-	if (methodNameSet.find(node_name) != methodNameSet.end()){
-	  targets.push_back(mNode);
+	for (string n: methodnames){
+	  std::size_t found = node_name.find(n);
+	  if (found != std::string::npos){
+	    targets.push_back(mNode);
+	    if (debug){
+	      cout << "Added method node: " << node_name << endl;
+	    }
+	  }
 	}
       }
     }

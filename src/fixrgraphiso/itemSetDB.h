@@ -36,11 +36,18 @@ namespace fixrgraphiso {
     set<int> s_int;
     set<string> s_string;
     vector<ItemRecord*> idx_record;
+    bool mergedInto;
+    void mergeItemSet(FreqItemSet & what, set<ItemRecord*> & set_this);
   public:
     FreqItemSet(set<int> const & iset,  vector<ItemRecord*> const & recs);
-    void prettyPrint(ostream & os) const;
+    void prettyPrint(ostream & os, bool printRecords = true) const;
     set<string> & get_string_set_ref(){ return s_string; }
     set<int> const & get_int_set_const_ref() const { return s_int; }
+    set<int> & get_int_set_ref() { return s_int; }
+    vector<ItemRecord*> get_idx_record_ref() { return idx_record;}
+    bool hasBeenMerged() const {return mergedInto; }
+    bool mergeCompatible(FreqItemSet & what);
+    void setMergedInto() { mergedInto = true;} 
   };
   
   class ItemSetDB {

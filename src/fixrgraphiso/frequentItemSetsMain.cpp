@@ -51,7 +51,7 @@ namespace fixrgraphiso{
     std::set<string> mCalls;
     std::string sep = " ";
     for (int j = 0; j < acdfg -> method_node_size(); ++j){
-    	const iso_protobuf::Acdfg_MethodNode & proto_node = acdfg -> method_node(j);
+      const iso_protobuf::Acdfg_MethodNode & proto_node = acdfg -> method_node(j);
       std::string const & str = proto_node.name();
       if (debug) cout << sep << str ;
       sep = ", ";
@@ -60,6 +60,8 @@ namespace fixrgraphiso{
     if (debug) cout << endl;
     items -> addRecord(filename, mCalls);
   }
+
+#ifdef OLD__UNUSED_CODE
 
   iso_protobuf::Iso * loadIsomorphismFromFile(std::string const & file_name){
     std::ifstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
@@ -87,8 +89,11 @@ namespace fixrgraphiso{
     items-> addRecord(filename, mCalls);
   }
   
+#endif
   
 }
+
+
 
 
 int main (int argc, char *argv[]) {
@@ -111,9 +116,11 @@ int main (int argc, char *argv[]) {
 	fixrgraphiso::debug = true;
 	
 	break;
+#ifdef OLD__UNUSED_CODE
       case 'i':
 	fixrgraphiso::loadACDFG = false;
 	break;
+#endif
       case 'o':
 	fixrgraphiso::outputFileName = string(optarg);
 	cout << "Setting output file to : " << fixrgraphiso::outputFileName << endl;
@@ -142,12 +149,17 @@ int main (int argc, char *argv[]) {
     if (!line.empty() && line[line.length() -1] == '\n')
       line.erase(line.length() -1);
     if (fixrgraphiso::debug) cout << "Reading file" << line << endl;
+#ifndef OLD__UNUSED_CODE
+    assert(fixrgraphiso::loadACDFG);
+#endif
     if (fixrgraphiso::loadACDFG){
       iso_protobuf::Acdfg * acdfg = fixrgraphiso::loadACDFGFromFile(line);
       fixrgraphiso::captureItemSetFromACDFG(acdfg,line, &allItems);
     } else {
+#ifdef OLD__UNUSED_CODE
       iso_protobuf::Iso * iso = fixrgraphiso::loadIsomorphismFromFile(line);
       fixrgraphiso::captureItemSetFromIsomorphism(iso,line, &allItems);
+#endif
     }
   }
   

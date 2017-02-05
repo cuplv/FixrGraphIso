@@ -325,7 +325,8 @@ namespace fixrgraphiso {
       // Iterate through all nodes in b
       if ((*it) -> get_type() == DATA_NODE){
 	for (jt = acdfg_a -> begin_nodes(); jt != acdfg_a -> end_nodes(); ++jt)
-	  if ((*jt) -> get_type() == DATA_NODE) this -> addCompatibleNodePair(*jt, *it);
+	  if ((*jt) -> get_type() == DATA_NODE)
+	    this -> addCompatibleNodePair(*jt, *it);
       }
     }
     

@@ -58,7 +58,7 @@ namespace fixrgraphiso{
       case 'm': {
 	string methName(optarg);
 	methodNames.push_back(methName);
-	cout << "Method : " << methName << " - added";
+	cout << "Method : " << methName << " - added" << endl;
       }
 	break;
       case 'd':
@@ -90,7 +90,7 @@ namespace fixrgraphiso{
     }
 
     if (filenames.size() <= 0){
-      cout << "Usage:" << argv[0] << " -f [frequency cutoff] -t [gurobi timeout] -o [output info filename] -g [popularity cutoff] [list of iso.bin files] " << endl;
+      cout << "Usage:" << argv[0] << " -f [frequency cutoff] -t [gurobi timeout] -o [output info filename] -g [popularity cutoff] -m <method to slice> -m <method 2 to slice> -m ... [list of iso.bin files] " << endl;
       return;
     }
   }
@@ -216,6 +216,7 @@ namespace fixrgraphiso{
       out_file << "Dot: " << iso_file_name;
       a -> dumpToDot(iso_file_name);
       a -> printInfo(out_file);
+      count ++;
     }
     out_file.close();
   }
