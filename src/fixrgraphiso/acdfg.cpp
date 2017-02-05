@@ -11,6 +11,7 @@
 #include <sstream>
 #include <set>
 namespace fixrgraphiso {
+
   using std::ostringstream;
   using std::string;
   using std::cout;
@@ -517,9 +518,9 @@ namespace fixrgraphiso {
 
   void Acdfg::fixMissingUseDefEdges(){
     /*-- For every method node, 
-       ensure there is a use edge from receiver to the node,
-       ensure there is a def edge from assignee to the node. 
-       --*/
+      ensure there is a use edge from receiver to the node,
+      ensure there is a def edge from assignee to the node. 
+      --*/
     nodes_t::const_iterator it;
     for (it = begin_nodes(); it != end_nodes(); ++it){
       Node * n = *it;
@@ -659,6 +660,95 @@ namespace fixrgraphiso {
     return new_rcv;
   }
 
+
+  void Acdfg::getMethodsFromName(const std::vector<string> & methodnames, std::vector<MethodNode*> & targets){
+    /* -- Iterate through all method nodes and check if it is found inside the given vector --*/
+    std::set<string> methodNameSet;
+    for (const string str: methodnames) {
+      methodNameSet.insert(str);
+    }
+    for (auto it = this -> begin_nodes(); it != this -> end_nodes(); ++it){
+      Node * n = *it;
+      if (n -> get_type() == METHOD_NODE){
+	MethodNode * mNode = toMethodNode(n);
+	std::string node_name = mNode -> get_name();
+	if (methodNameSet.find(node_name) != methodNameSet.end()){
+	  targets.push_back(mNode);
+	}
+      }
+    }
+    return;
+  }
+
+
+  Acdfg* Acdfg::sliceACDFG(const std::vector<MethodNode*>  & targets){
+    /*-
+      1. Extract all related data nodes.
+      2. Extract all relevant edges.
+      3. Create a new ACDFG
+      -*/
+    Acdfg * retG = new Acdfg();
+
+    std::set<node_id_t> nodesToAdd;
+    for (const MethodNode* m: targets){
+      nodesToAdd.insert(m -> get_id());
+      /* -- Now add the arguments, receiver and invokee --*/
+      const DataNode * rcv = m -> get_receiver();
+      DataNode * new_rcv = fetchOrClone(retG, rcv, nodesToAdd);
+      const DataNode * assg = m -> get_assignee();
+      DataNode * new_assg = fetchOrClone(retG, assg, nodesToAdd);
+      const vector<DataNode*> & args = m -> get_arguments();
+      vector<DataNode * > new_args;
+      for (DataNode * a: args) {
+	DataNode * nArg = fetchOrClone(retG, a, nodesToAdd);
+	new_args.push_back(nArg);
+      }
+      MethodNode * mNew = new MethodNode(m -> get_id(), m -> get_name(), new_rcv, new_args, new_assg);
+      retG -> add_node(mNew);
+    }
+
+    /* Now iterate through the edges */
+    std::set<edge_id_t> edgesToAdd;
+    for (auto jt = this -> begin_edges(); jt != this -> end_edges(); ++jt){
+      const Edge * e = *jt;
+      node_id_t srcID = e -> get_src_id();
+      node_id_t destID = e -> get_dst_id();
+      if (nodesToAdd.find(srcID) != nodesToAdd.end() && nodesToAdd.find(destID) != nodesToAdd.end()){
+	/* Both source and destination edges exist */
+	Node * srcNode = retG -> getNodeFromID(srcID);
+	Node * destNode = retG -> getNodeFromID(destID);
+	switch(e -> get_type()){
+	case CONTROL_EDGE:
+	case TRANSITIVE_EDGE: {
+	  TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
+	  retG -> add_edge(nEdge);
+	}
+	  break;
+	case USE_EDGE: {
+	  UseEdge * uEdge = new  UseEdge(e -> get_id(), srcNode, destNode);
+	  retG -> add_edge(uEdge);
+	}
+	  break;
+
+	case DEF_EDGE: {
+	  DefEdge * dEdge = new DefEdge(e -> get_id(), srcNode, destNode);
+	  retG -> add_edge(dEdge);
+	}
+	  break;
+
+	case EXCEPTIONAL_EDGE: 
+	  break;
+	default:
+	  assert(false);
+	  break;
+	}
+      }
+    }
+
+    return retG;
+
+  }
+
   Acdfg * Acdfg::extractSubgraphWithFrequencyCutoff(int cutoff) const {
     /*--
       1. Extract all nodes that have been matched with some 
@@ -727,9 +817,9 @@ namespace fixrgraphiso {
     }
 
     /*-- Criteria for adding edges:
-        1. Control Edges: if above cutoff frequency.
-        2. Def/Use edges: if both source/destination are present in the graph.
-	---*/
+      1. Control Edges: if above cutoff frequency.
+      2. Def/Use edges: if both source/destination are present in the graph.
+      ---*/
     for (auto jt = begin_edges(); jt != end_edges(); ++jt){
       const Edge * e = *jt;
       node_id_t srcID = e -> get_src_id();

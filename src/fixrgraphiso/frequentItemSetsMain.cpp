@@ -51,8 +51,7 @@ namespace fixrgraphiso{
     std::set<string> mCalls;
     std::string sep = " ";
     for (int j = 0; j < acdfg -> method_node_size(); ++j){
-      const iso_protobuf::Acdfg_MethodNode & proto_node =
-	acdfg -> method_node(j);
+    	const iso_protobuf::Acdfg_MethodNode & proto_node = acdfg -> method_node(j);
       std::string const & str = proto_node.name();
       if (debug) cout << sep << str ;
       sep = ", ";
