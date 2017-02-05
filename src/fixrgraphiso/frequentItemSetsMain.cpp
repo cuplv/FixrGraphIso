@@ -32,7 +32,7 @@ namespace fixrgraphiso{
   int min_size = 4;
   string outputFileName = "item_sets_out.txt";
   bool debug = false;
-  
+  extern int cutoff_percentage;
   iso_protobuf::Acdfg* loadACDFGFromFile(std::string const & file_name){
     std::fstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
     iso_protobuf::Acdfg * acdfg = new iso_protobuf::Acdfg();
@@ -51,8 +51,7 @@ namespace fixrgraphiso{
     std::set<string> mCalls;
     std::string sep = " ";
     for (int j = 0; j < acdfg -> method_node_size(); ++j){
-      const iso_protobuf::Acdfg_MethodNode & proto_node =
-	acdfg -> method_node(j);
+      const iso_protobuf::Acdfg_MethodNode & proto_node = acdfg -> method_node(j);
       std::string const & str = proto_node.name();
       if (debug) cout << sep << str ;
       sep = ", ";
@@ -61,6 +60,8 @@ namespace fixrgraphiso{
     if (debug) cout << endl;
     items -> addRecord(filename, mCalls);
   }
+
+#ifdef OLD__UNUSED_CODE
 
   iso_protobuf::Iso * loadIsomorphismFromFile(std::string const & file_name){
     std::ifstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
@@ -88,8 +89,11 @@ namespace fixrgraphiso{
     items-> addRecord(filename, mCalls);
   }
   
+#endif
   
 }
+
+
 
 
 int main (int argc, char *argv[]) {
@@ -98,7 +102,7 @@ int main (int argc, char *argv[]) {
   const char * fName = NULL;
   while	(optind	< argc){
     char c;
-    if ( (c = getopt(argc, argv, "f:m:o:di")) != -1){
+    if ( (c = getopt(argc, argv, "f:m:o:dic:")) != -1){
       switch (c){
       case 'f':
 	fixrgraphiso::freq = strtol(optarg, NULL, 10);
@@ -112,9 +116,14 @@ int main (int argc, char *argv[]) {
 	fixrgraphiso::debug = true;
 	
 	break;
+      case 'c':
+	fixrgraphiso::cutoff_percentage = strtol(optarg, NULL, 10);
+	break;
+#ifdef OLD__UNUSED_CODE
       case 'i':
 	fixrgraphiso::loadACDFG = false;
 	break;
+#endif
       case 'o':
 	fixrgraphiso::outputFileName = string(optarg);
 	cout << "Setting output file to : " << fixrgraphiso::outputFileName << endl;
@@ -130,7 +139,7 @@ int main (int argc, char *argv[]) {
 
 
   if (fName == NULL){
-    cout << "Usage: " << argv[0] << "[-f freq -m min_size -o out_file_name -d] name_of_file" << endl;
+    cout << "Usage: " << argv[0] << "[-f freq -m min_size -o out_file_name -c cutoff_percentage_for_merging -d] name_of_file" << endl;
     return 1;
   }
   
@@ -143,12 +152,17 @@ int main (int argc, char *argv[]) {
     if (!line.empty() && line[line.length() -1] == '\n')
       line.erase(line.length() -1);
     if (fixrgraphiso::debug) cout << "Reading file" << line << endl;
+#ifndef OLD__UNUSED_CODE
+    assert(fixrgraphiso::loadACDFG);
+#endif
     if (fixrgraphiso::loadACDFG){
       iso_protobuf::Acdfg * acdfg = fixrgraphiso::loadACDFGFromFile(line);
       fixrgraphiso::captureItemSetFromACDFG(acdfg,line, &allItems);
     } else {
+#ifdef OLD__UNUSED_CODE
       iso_protobuf::Iso * iso = fixrgraphiso::loadIsomorphismFromFile(line);
       fixrgraphiso::captureItemSetFromIsomorphism(iso,line, &allItems);
+#endif
     }
   }
   

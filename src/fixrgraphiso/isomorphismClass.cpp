@@ -325,7 +325,8 @@ namespace fixrgraphiso {
       // Iterate through all nodes in b
       if ((*it) -> get_type() == DATA_NODE){
 	for (jt = acdfg_a -> begin_nodes(); jt != acdfg_a -> end_nodes(); ++jt)
-	  if ((*jt) -> get_type() == DATA_NODE) this -> addCompatibleNodePair(*jt, *it);
+	  if ((*jt) -> get_type() == DATA_NODE)
+	    this -> addCompatibleNodePair(*jt, *it);
       }
     }
     
@@ -525,6 +526,28 @@ namespace fixrgraphiso {
   }
 
   bool IsoSubsumption::check(){
+    
+    if (!checkNodeCounts()){
+      if (debug) std::cout << "\t Node counts rule out subsumption" << endl;
+      return false;
+    }
+    
+    if (! findCompatibleMethodNodes()){
+      if (debug) std::cout << "\t Incompatible method node found. Subsumption ruled out" << endl;
+      return false;
+    }
+    if (! findCompatibleDataNodes()){
+      if (debug) std::cout << "\t Incompatible data node found. Subsumption ruled out" << endl;
+      return false;
+    }
+
+    if (!findCompatibleEdgePairs()){
+      if (debug) std::cout << "\t Incompatible edges found. Subsumption ruled out" << endl;
+      return false;
+    }
+
+    makeEncoding();
+    
     e.solve();
     return e.isSat();
   }
@@ -586,35 +609,12 @@ namespace fixrgraphiso {
           5. If two edges are isomorphic then their source and target nodes must be isomorphic to each other.
 	  ---*/
     IsoSubsumption isoSub(this -> acdfg, b -> acdfg);
-    
-    if (! isoSub.checkNodeCounts()){
-      if (debug) std::cout << "\t Node counts rule out subsumption" << endl;
-      return false;
-    }
-    
-    if (! isoSub.findCompatibleMethodNodes()){
-      if (debug) std::cout << "\t Incompatible method node found. Subsumption ruled out" << endl;
-      return false;
-    }
-    if (! isoSub.findCompatibleDataNodes()){
-      if (debug) std::cout << "\t Incompatible data node found. Subsumption ruled out" << endl;
-      return false;
-    }
-
-    if (!isoSub.findCompatibleEdgePairs()){
-      if (debug) std::cout << "\t Incompatible edges found. Subsumption ruled out" << endl;
-      return false;
-    }
-
-    isoSub.makeEncoding();
-    
     if (isoSub.check()) {
       if (debug) cout << "\t SAT solver returned SAT! " << endl;
       return true;
     }
     if (debug) cout << "\t SAT solver returned UNSAT!" << endl;
     return false;
-  
   }
   
 

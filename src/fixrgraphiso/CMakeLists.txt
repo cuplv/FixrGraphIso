@@ -46,6 +46,7 @@ target_link_libraries(frequentitemsets
 	
 add_executable(frequentsubgraphs
    frequentSubgraphsMain.cpp
+   acdfgBin.cpp
    isomorphismClass.cpp
    acdfg.cpp
    serialization.cpp

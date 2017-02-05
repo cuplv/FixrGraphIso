@@ -5,16 +5,16 @@ using std::cout;
 using std::endl;
 
 namespace fixrgraphiso {
-  
-  
+  extern bool debug;
+  int cutoff_percentage = 75;
   ItemRecord::ItemRecord(std::string const & fname, set<int> const & r):record_contents(r), filename(fname)
   {}
 
   ItemRecord::~ItemRecord(){}
 
-  FreqItemSet::FreqItemSet(set<int> const & iset,  vector<ItemRecord*> const & recs):s_int(iset),  idx_record(recs){}
+  FreqItemSet::FreqItemSet(set<int> const & iset,  vector<ItemRecord*> const & recs):s_int(iset),  idx_record(recs), mergedInto(false){}
 
-  void FreqItemSet::prettyPrint(ostream & os) const {
+  void FreqItemSet::prettyPrint(ostream & os, bool printRecords) const {
     // First print the items
     os << "I: ";
     string sep = " ";
@@ -25,10 +25,69 @@ namespace fixrgraphiso {
     os << "( "<< idx_record.size()<< " )" << endl;
     // Second print the filenames that identify each record
     //vector<ItemRecord*> :: const_iterator jt;
-    for (const auto irec: idx_record){
-      os << "F: " << irec -> get_filename() << endl;
+    if (printRecords){
+      for (const auto irec: idx_record){
+	os << "F: " << irec -> get_filename() << endl;
+      }
+      os << "E" << endl;
     }
-    os << "E" << endl;
+  }
+
+  void FreqItemSet::mergeItemSet(FreqItemSet & what, set<ItemRecord*> & set_this){
+    set<int> & what_s_int = what.get_int_set_ref();
+    set<string> & what_s_string = what.get_string_set_ref();
+    vector<ItemRecord*> what_idx_record = what.get_idx_record_ref();
+    for (int t: what_s_int){
+      s_int.insert(t);
+    }
+
+    for (string s: what_s_string){
+      s_string.insert(s);
+    }
+
+    for (ItemRecord * w: what_idx_record){
+      if (set_this.find(w) == set_this.end())
+	idx_record.push_back(w);
+    }
+
+    what.mergedInto = true;
+  }
+  
+  bool FreqItemSet::mergeCompatible(FreqItemSet & what)  {
+    std::set<ItemRecord*> set_this, set_what;
+    for (ItemRecord* it: idx_record){
+      set_this.insert(it);
+    }
+    int count1=0;
+    vector<ItemRecord*> what_idx_record = what.get_idx_record_ref();
+    for (ItemRecord * it : what_idx_record){
+      set_what.insert(it);
+      if (set_this.find(it) != set_this.end())
+	count1 ++;
+    }
+    int min_freq_cutoff = what_idx_record.size() * cutoff_percentage/100;
+    if (count1 < min_freq_cutoff)
+      return false;
+    
+    // int count2 = 0;
+    // for (ItemRecord * it : set_this){
+    //   if (set_what.find(it) != set_what.end())
+    // 	count2++;
+    // }
+
+    // if (count2 < set_this.size()/2)
+    //   return false;
+
+    if (debug){
+      cout << "Merging items --> ";
+      what.prettyPrint(std::cout, false);
+      cout << "into" ;
+      this -> prettyPrint(std::cout, false);
+      cout << endl;
+    }
+    this -> mergeItemSet(what, set_this);
+    what.setMergedInto();
+    return true;
   }
   
   ItemSetDB::ItemSetDB(): nItems(0){
@@ -169,16 +228,37 @@ namespace fixrgraphiso {
     set<int> set_so_far;
     this -> findFrequentItemSetsRecursive(freq_cutoff, min_size_cutoff, -1, set_so_far, result);
     vector< FreqItemSet > :: iterator it;
+    // Merge frequent item sets according to merge criteria
+    int n = result.size();
+    for (int i = 0; i < n-1; ++i){
+      FreqItemSet & item_i = result[i];
+      if (!item_i.hasBeenMerged()){
+	for (int j  = i+1; j < n; ++j){
+	  FreqItemSet & item_j = result[j];
+	  if (!item_j.hasBeenMerged())
+	    item_i.mergeCompatible(item_j);
+	 
+	}
+      }
+    }
+
+    std::sort(result.begin(), result.end(),
+	      [](const FreqItemSet & iso1, const  FreqItemSet & iso2){
+		return iso1.getFrequency() > iso2.getFrequency();
+	      });
+
+    // Detect potential anamolies for frequent item sets
+    
     // Convert the result into vector of strings
     for (it = result.begin(); it != result.end(); ++it ){
       FreqItemSet & s = *it;
-      set<int> const & i_set = s.get_int_set_const_ref();
-      set<string> & s_set = s.get_string_set_ref();
-      this -> convertToStringSet(i_set, s_set);
-      s.prettyPrint(out);
+      if (!s.hasBeenMerged()){
+	set<int> const & i_set = s.get_int_set_const_ref();
+	set<string> & s_set = s.get_string_set_ref();
+	this -> convertToStringSet(i_set, s_set);
+	s.prettyPrint(out);
+      }
     }
-
-    
   }
   
 }

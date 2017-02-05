@@ -22,3 +22,32 @@ The project assumes the following external dependencies:
 - Z3 (release z3-4.4.1)
 
 
+
+# Run clustering
+
+TO_DEF:
+GRAPH_FOLDER
+FREQUENT_ITEMSET_BIN  frequentitemsets 
+FREQUENT_SUBGRAPHS_BIN frequentsubgraphs
+PROCESS_CLUSTER_SCRIPT ~/cuplv/FixrGraphIso/scripts/processClusters.py
+
+A. Find the acdfg files in the filesToItemSetCluster folder
+find <graph folder>s -name "*.acdfg.bin" > filesToItemSetCluster
+
+B. Run frequent item sets
+<frequentitemset_bin> -f 40 -m 3 -o clusters.txt filesToItemSetCluster
+
+The above command takes a few minutes to run and dumps the clusters into the cluster.txt file in a format that my scripts understand
+
+C. Create all_clusters file by running (the script below needs work)
+mkdir all_clusters
+~/cuplv/FixrGraphIso/scripts/processClusters.py <name of the output from previous command> <output directory> <cluser_id>
+
+nclusters=`cat clusters.txt  | grep "I:" | wc -l` && nclusters=$((nclusters+1)); echo $nclusters
+python <FIXR_ISO>/scripts/processClusters.py -f <FIXR_ISO> -n -a 1 -b $nclusters
+
+This will create all the clusters and run the command to generate patterns for a particular cluster_id
+
+Outputs:
+- clusters.txt
+- 
