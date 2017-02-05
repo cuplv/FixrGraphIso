@@ -65,6 +65,7 @@ class ClusterProcessor:
         print ("\t -f | --fixr < fixr root directory> default: %s"%(self.fixr_root_directory))
         print ("\t -n | --nocopy Skip the copying step default: off")
         print ("\t -c | --cluster-file-name <name of the file with cluster results> default: clusters.txt")
+        print ("\t -d | --output-dir <output dir name> default: all_clusters")
 
     def main(self,argv):
         self.start_range = 1
@@ -91,14 +92,14 @@ class ClusterProcessor:
             if o in ("-c","--cluster-file-name"):
                 self.cluster_file_name = a
             if o in ("-d","--output-dir"):
-                self.rootName = a
+                self.outputRootName = a
             if o in ("-h","--help"):
                 self.help_message()
                 sys.exit(1)
 
         clusters = self.processClusterFile()
         if (self.end_range > self.start_range):
-            for (cid, fun_names) in range(self.start_range, self.end_range):
+            for (cid, fun_names) in clusters:
                 self.runForCluster(cid, fun_names)
         else:
             print( 'start range (%d) must be less than end range (%d) '%(self.start_range, self.end_range))
