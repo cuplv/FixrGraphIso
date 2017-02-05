@@ -11,7 +11,7 @@ def runForCluster(fixr_graph_iso_home, clusterID):
     num_files = len([name for name in os.listdir('.') if os.path.isfile(name)])
     freq = int(0.25 * num_files)
     pop_cutoff = int(0.15 * num_files)
-    cmd = '%s -f %d -g %d -o ../cluster_%d_info.txt *.acdfg.bin > ../run%d.out'%(cmd_name, freq, pop_cutoff, clusterID, clusterID)
+    cmd = '%s -f %d -g %d -o ../info_cluster_%d.txt *.acdfg.bin > ../run%d.out'%(cmd_name, freq, pop_cutoff, clusterID, clusterID)
     print ('Running %s'%(cmd))
     os.system(cmd)
     os.chdir('../..')
