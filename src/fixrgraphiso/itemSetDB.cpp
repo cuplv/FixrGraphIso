@@ -68,14 +68,14 @@ namespace fixrgraphiso {
     if (count1 < set_what.size()/2)
       return false;
     
-    int count2 = 0;
-    for (ItemRecord * it : set_this){
-      if (set_what.find(it) != set_what.end())
-	count2++;
-    }
+    // int count2 = 0;
+    // for (ItemRecord * it : set_this){
+    //   if (set_what.find(it) != set_what.end())
+    // 	count2++;
+    // }
 
-    if (count2 < set_this.size()/2)
-      return false;
+    // if (count2 < set_this.size()/2)
+    //   return false;
 
     if (debug){
       cout << "Merging items --> ";
