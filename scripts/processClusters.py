@@ -101,5 +101,6 @@ class ClusterProcessor:
             print( 'start range (%d) must be less than end range (%d) '%(self.start_range, self.end_range))
 
 
-
-main(sys.argv)
+if __name__ == '__main__':
+    ClusterProcessor p
+    p.main(sys.argv)
