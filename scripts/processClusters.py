@@ -5,7 +5,7 @@ import re
 import getopt
 
 class ClusterProcessor:
-    def __init__():
+    def __init__(self):
         pass
 
     def runForCluster(self, clusterID, fun_names):
@@ -102,5 +102,5 @@ class ClusterProcessor:
 
 
 if __name__ == '__main__':
-    ClusterProcessor p
+    p = ClusterProcessor()
     p.main(sys.argv)
