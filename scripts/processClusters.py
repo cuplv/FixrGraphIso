@@ -16,9 +16,12 @@ class ClusterProcessor:
         num_files = len([name for name in os.listdir('.') if os.path.isfile(name)])
         freq = int(0.25 * num_files)
         pop_cutoff = int(0.15 * num_files)
-        fun_list0 = [s.strip() for s in fun_list.split()]
-        fun_list1 = ["-m "+s for s in fun_list0]
-        fun_string = ''.join(fun_list1)
+        fun_list0 = [s.strip() for s in fun_names.split(',')]
+        fun_list1 = [s.replace('$','\$') for s in fun_list0]
+        fun_list2 = [s.replace('<','\<') for s in fun_list1]
+        fun_list3 = [s.replace('>','\>') for s in fun_list2]
+        fun_list4 = ["-m "+s+" " for s in fun_list3]
+        fun_string = ''.join(fun_list4)
         cmd = '%s -f %d -g %d -o ../cluster_%d_info.txt %s *.acdfg.bin > ../run%d.out'%(cmd_name, freq, pop_cutoff, clusterID, fun_string, clusterID)
         print ('Running %s'%(cmd))
         os.system(cmd)
