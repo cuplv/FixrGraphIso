@@ -239,7 +239,12 @@ namespace fixrgraphiso {
 	}
       }
     }
-     
+
+    std::sort(result.begin(), result.end(),
+	      [](const FreqItemSet & iso1, const  FreqItemSet & iso2){
+		return iso1.getFrequency() > iso2.getFrequency();
+	      });
+
     // Detect potential anamolies for frequent item sets
     
     // Convert the result into vector of strings
