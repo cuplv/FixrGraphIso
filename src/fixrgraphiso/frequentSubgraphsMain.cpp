@@ -29,7 +29,7 @@ namespace fixrgraphiso{
   string info_file_name = "cluster-info.txt";
   bool useApproximateIsomorphism=false;
   int minTargetSize = 3;
-
+  int maxTargetSize = 30;
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
@@ -250,6 +250,8 @@ namespace fixrgraphiso{
       orig_acdfg -> getMethodsFromName(methodnames, targets);
       if (targets.size() < minTargetSize){
 	std::cerr << "Warning: filename = " << f << "Could not find 3 methods from the list of names you have provided me. Ignoring this file." << std::endl;
+      } else if (targets.size() >= maxTargetSize){
+	std::cerr << "Warning: filename = " << f << "too many matching methods found -- "<<  targets.size() <<" -- Ignoring this file." << std::endl;
       } else {
 	Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets);
 	new_acdfg -> setName(f);
