@@ -6,7 +6,7 @@ using std::endl;
 
 namespace fixrgraphiso {
   extern bool debug;
-  
+  int cutoff_percentage = 75;
   ItemRecord::ItemRecord(std::string const & fname, set<int> const & r):record_contents(r), filename(fname)
   {}
 
@@ -65,7 +65,8 @@ namespace fixrgraphiso {
       if (set_this.find(it) != set_this.end())
 	count1 ++;
     }
-    if (count1 < set_what.size()/2)
+    int min_freq_cutoff = what_idx_record.size() * cutoff_percentage/100;
+    if (count1 < min_freq_cutoff)
       return false;
     
     // int count2 = 0;
