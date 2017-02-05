@@ -30,6 +30,7 @@ namespace fixrgraphiso{
   bool useApproximateIsomorphism=false;
   int minTargetSize = 3;
   int maxTargetSize = 30;
+  int maxEdgeSize = 50;
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
@@ -254,8 +255,13 @@ namespace fixrgraphiso{
 	std::cerr << "Warning: filename = " << f << "too many matching methods found -- "<<  targets.size() <<" -- Ignoring this file." << std::endl;
       } else {
 	Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets);
-	new_acdfg -> setName(f);
-	allSlicedACDFGs.push_back(new_acdfg);
+	if (new_acdfg -> edge_count() >= maxEdgeSize){
+	  std::cerr << "Warning: Filename = " << f << "too many edges found -- " << new_acdfg -> edge_count() << "-- Ignorning this file." << std::endl;
+	  delete(new_acdfg);
+	} else {
+	  new_acdfg -> setName(f);
+	  allSlicedACDFGs.push_back(new_acdfg);
+	}
       }
       delete(orig_acdfg);
     }
