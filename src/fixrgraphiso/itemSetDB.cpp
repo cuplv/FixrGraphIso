@@ -235,7 +235,8 @@ namespace fixrgraphiso {
       if (!item_i.hasBeenMerged()){
 	for (int j  = i+1; j < n; ++j){
 	  FreqItemSet & item_j = result[j];
-	  item_i.mergeCompatible(item_j);
+	  if (!item_j.hasBeenMerged())
+	    item_i.mergeCompatible(item_j);
 	 
 	}
       }
