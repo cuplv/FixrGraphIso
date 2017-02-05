@@ -14,9 +14,10 @@ namespace fixrgraphiso {
   /*--
     Constructor for IsoEncoder 
     --*/
-  IsoEncoder::IsoEncoder():  s(ctx), alreadySolved(false), satisfiable(false){}
+  IsoEncoder::IsoEncoder():  ctx(), s(ctx), alreadySolved(false), satisfiable(false){}
 
   IsoEncoder::~IsoEncoder(){
+    
   }
 
   /*-
@@ -366,8 +367,10 @@ namespace fixrgraphiso {
 	}
       }
       if (!something_compatible){
-	cout << "\t Incompatible edge found in graph B" << endl;
-	cout << "\t" << eb -> get_src_id() << "--> " << eb -> get_dst_id() << endl;
+	if (debug){
+	  cout << "\t Incompatible edge found in graph B" << endl;
+	  cout << "\t" << eb -> get_src_id() << "--> " << eb -> get_dst_id() << endl;
+	}
 	return false;
       }
     }
