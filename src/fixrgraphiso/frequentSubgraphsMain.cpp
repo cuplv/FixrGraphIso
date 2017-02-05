@@ -30,7 +30,7 @@ namespace fixrgraphiso{
   bool useApproximateIsomorphism=false;
   int minTargetSize = 3;
   int maxTargetSize = 30;
-  int maxEdgeSize = 50;
+  int maxEdgeSize = 100;
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
