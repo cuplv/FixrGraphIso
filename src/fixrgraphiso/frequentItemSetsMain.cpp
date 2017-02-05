@@ -32,7 +32,7 @@ namespace fixrgraphiso{
   int min_size = 4;
   string outputFileName = "item_sets_out.txt";
   bool debug = false;
-  
+  extern int cutoff_percentage;
   iso_protobuf::Acdfg* loadACDFGFromFile(std::string const & file_name){
     std::fstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
     iso_protobuf::Acdfg * acdfg = new iso_protobuf::Acdfg();
@@ -102,7 +102,7 @@ int main (int argc, char *argv[]) {
   const char * fName = NULL;
   while	(optind	< argc){
     char c;
-    if ( (c = getopt(argc, argv, "f:m:o:di")) != -1){
+    if ( (c = getopt(argc, argv, "f:m:o:dic:")) != -1){
       switch (c){
       case 'f':
 	fixrgraphiso::freq = strtol(optarg, NULL, 10);
@@ -115,6 +115,9 @@ int main (int argc, char *argv[]) {
       case 'd':
 	fixrgraphiso::debug = true;
 	
+	break;
+      case 'c':
+	fixrgraphiso::cutoff_percentage = strtol(optarg, NULL, 10);
 	break;
 #ifdef OLD__UNUSED_CODE
       case 'i':
@@ -136,7 +139,7 @@ int main (int argc, char *argv[]) {
 
 
   if (fName == NULL){
-    cout << "Usage: " << argv[0] << "[-f freq -m min_size -o out_file_name -d] name_of_file" << endl;
+    cout << "Usage: " << argv[0] << "[-f freq -m min_size -o out_file_name -c cutoff_percentage_for_merging -d] name_of_file" << endl;
     return 1;
   }
   
