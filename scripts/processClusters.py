@@ -52,8 +52,10 @@ class ClusterProcessor:
             m = re.match(r'F:\s*([\S\$]*)$', line)
             if m:
                 print (m.group(1))
+                file_old = m.group(1)
+                file_new = file_old.replace('$','\$')
                 if (self.run_cluster_copy):
-                    self.copyFile(m.group(1), count)
+                    self.copyFile(file_new, count)
         return list_of_clusters
 
     def help_message(self):
@@ -92,6 +94,7 @@ class ClusterProcessor:
                 self.rootName = a
             if o in ("-h","--help"):
                 self.help_message()
+                sys.exit(1)
 
         clusters = self.processClusterFile()
         if (self.end_range > self.start_range):
