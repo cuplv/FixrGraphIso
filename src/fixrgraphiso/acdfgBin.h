@@ -37,20 +37,15 @@ namespace fixrgraphiso{
       return acdfgs.size() ;
     }
 
-    int getSubsumingFrequency() const {
-      return subsumingBins.size();
-    }
 
-    int getPopularity() const{
-      return getFrequency() + getSubsumingFrequency();
-    }
+    int getPopularity() const;
 
     Acdfg * getRepresentative(){
       assert(acdfgs.size() > 0);
       return *(acdfgs.begin());
     }
 
-    void printInfo(std::ostream & out, bool printPopularity = true) const;
+    void printInfo(std::ostream & out) const;
 
     void dumpToDot(string fileName) const;
 
@@ -68,6 +63,9 @@ namespace fixrgraphiso{
 
     void setPopular() { popular = true;}
     bool isPopular() { return popular;}
+
+    const std::vector<Acdfg*>  & getACDFGs() const { return acdfgs; }
+    
 
   protected:
 

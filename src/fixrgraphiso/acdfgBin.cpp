@@ -44,15 +44,27 @@ namespace fixrgraphiso {
     return true;
   }
 
-  void AcdfgBin::printInfo(std::ostream & out, bool printPopularity) const {
-    if (printPopularity)
-      out << "\t Frequency = " << getPopularity() <<  endl;
+  int AcdfgBin::getPopularity() const {
+    int f = getFrequency();
+    for (const AcdfgBin* a : subsumingBins){
+      f += a -> getFrequency();
+    }
+    return f;
+  }
+
+  void AcdfgBin::printInfo(std::ostream & out) const {
+    
+    out << "\t Frequency = " << getPopularity() <<  endl;
+
     for (const Acdfg * a : acdfgs){
       out << a -> getName() << endl;
     }
     
     for (const AcdfgBin * b : subsumingBins){
-      b-> printInfo(out, false);
+      const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
+      for (const Acdfg * a: sub_acdfgs){
+	out << a -> getName() << endl;
+      }
     }
     
   }
