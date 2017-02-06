@@ -77,7 +77,7 @@ class ClusterProcessor:
     def main(self,argv):
         self.start_range = 1
         self.end_range = 426
-        self.run_cluster_copy=True
+        self.run_cluster_copy = True
         self.fixr_root_directory='/Users/macuser/Projects/git/FixrGraphIso'
         self.cluster_file_name = 'clusters.txt'
         self.outputRootName = 'all_clusters'
