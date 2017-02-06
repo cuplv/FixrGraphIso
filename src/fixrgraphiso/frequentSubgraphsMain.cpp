@@ -34,9 +34,9 @@ namespace fixrgraphiso{
   int minTargetSize = 3;
   int maxTargetSize = 50;
   int maxEdgeSize = 400;
-  string method_name_file = "methods.txt";
 
-    
+  using std::ifstream;
+
   void loadNamesFromFile (string filename, vector<string> & listOfNames){
     ifstream ifile(filename.c_str());
     std::string line;
@@ -48,10 +48,10 @@ namespace fixrgraphiso{
       listOfNames.push_back(line);
       std::cout << "\t Adding :" << line << std::endl;
     }
-    
+
   }
 
-  
+
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
@@ -78,9 +78,9 @@ namespace fixrgraphiso{
     while ((c = getopt(argc, argv, "dm:f:t:o:i:"))!= -1){
       switch (c){
       case 'm': {
-	methodNamesFile = optarg;
-	cout << "Loading methods" << endl;
-	loadNamesFromFile(methodNamesFile, methodNames);
+		string methodNamesFile = optarg;
+		cout << "Loading methods" << endl;
+		loadNamesFromFile(methodNamesFile, methodNames);
       }
 	break;
       case 'd':
@@ -107,7 +107,7 @@ namespace fixrgraphiso{
 	break;
       }
     }
-    
+
     for (index = optind; index < argc; ++index){
       string fname(argv[index]);
       filenames.push_back(fname);
@@ -232,7 +232,7 @@ namespace fixrgraphiso{
   // }
 
 #endif
-  
+
   void dumpAllBins(std::vector<AcdfgBin*> &allBins, const std::string & infoFileName){
     std::ofstream out_file(infoFileName.c_str());
     int count = 1;
@@ -309,7 +309,7 @@ namespace fixrgraphiso{
 		<< " popular, and " << anomalyCandidates.size()		\
 		<< "anomaly candidates " << std::endl;
     }
-    
+
     for (auto it = anomalyCandidates.begin(); it != anomalyCandidates.end(); ){
       bool subsuming = false;
       AcdfgBin * a = *it;
@@ -335,7 +335,7 @@ namespace fixrgraphiso{
 		<< " popular, and " << anomalyCandidates.size()		\
 		<< "anomaly candidates " << std::endl;
     }
-    
+
     for (auto it = anomalyCandidates.begin(); it != anomalyCandidates.end(); ++it){
       AcdfgBin * a = *it;
       for (auto jt = anomalyCandidates.begin(); jt != anomalyCandidates.end(); ++jt){
@@ -366,8 +366,8 @@ namespace fixrgraphiso{
 		<< " popular, and " << anomalyCandidates.size()		\
 		<< "anomaly candidates " << std::endl;
     }
-    
-    
+
+
      for (AcdfgBin* a: anomalyCandidates){
        if (!a -> isSubsuming())
 	 a -> setAnomalous();
@@ -377,8 +377,8 @@ namespace fixrgraphiso{
        if (!a -> isSubsuming())
 	 a -> setPopular();
      }
-    
-    
+
+
   }
 
   void computePatternsThroughSlicing(vector<string> & filenames, vector<string> & methodnames){
@@ -388,13 +388,13 @@ namespace fixrgraphiso{
       Acdfg * orig_acdfg = loadACDFGFromFilename(f);
       vector<MethodNode*> targets;
       orig_acdfg -> getMethodsFromName(methodnames, targets);
-      
+
       if (targets.size() < minTargetSize){
 	// File has too few methods, something is not correct.
 	std::cerr << "Warning: filename = " << f			\
 		  << "Could not find 3 methods from the list of method names" \
 		  << " -- Ignoring this file." << std::endl;
-	
+
       } else if (targets.size() >= maxTargetSize){
 	std::cerr << "Warning: filename = " << f			\
 		  << "too many matching methods found -- "		\
@@ -437,16 +437,16 @@ namespace fixrgraphiso{
 	      [](const AcdfgBin  * iso1, const AcdfgBin * iso2){
 		return iso1 -> getFrequency() > iso2 -> getFrequency();
 	      });
-    
+
     analyzeAnomalies(allBins);
-    dumpAllBins(allBins, info_file_name);	
+    dumpAllBins(allBins, info_file_name);
   }
 
   void frequentSubgraphsMain(int argc, char * argv [] ){
     vector<string> filenames;
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
-    
+
 // #ifdef D__OLD_CODE
 //     if (useApproximateIsomorphism){
 //       vector<Acdfg*> allACDFGs;
@@ -547,6 +547,3 @@ int main(int argc, char * argv[]){
   fixrgraphiso::frequentSubgraphsMain(argc, argv);
   return 1;
 }
-
-
-
