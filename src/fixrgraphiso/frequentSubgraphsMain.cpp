@@ -31,7 +31,7 @@ namespace fixrgraphiso{
   double gurobi_timeout = 30.0;
   string info_file_name = "cluster-info.txt";
   bool useApproximateIsomorphism=false;
-  int minTargetSize = 3;
+  int minTargetSize = 2;
   int maxTargetSize = 50;
   int maxEdgeSize = 400;
 
@@ -392,7 +392,8 @@ namespace fixrgraphiso{
       if (targets.size() < minTargetSize){
 	// File has too few methods, something is not correct.
 	std::cerr << "Warning: filename = " << f			\
-		  << "Could not find 3 methods from the list of method names" \
+		  << " Could not find "<< minTargetSize			\
+		  << " methods from the list of method names"		\
 		  << " -- Ignoring this file." << std::endl;
 
       } else if (targets.size() >= maxTargetSize){
