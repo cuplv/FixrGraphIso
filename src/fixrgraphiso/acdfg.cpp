@@ -679,6 +679,7 @@ namespace fixrgraphiso {
 	    if (debug){
 	      cout << "Added method node: " << node_name << endl;
 	    }
+	    break;
 	  }
 	}
       }
@@ -710,6 +711,7 @@ namespace fixrgraphiso {
 	new_args.push_back(nArg);
       }
       MethodNode * mNew = new MethodNode(m -> get_id(), m -> get_name(), new_rcv, new_args, new_assg);
+      
       retG -> add_node(mNew);
     }
 
