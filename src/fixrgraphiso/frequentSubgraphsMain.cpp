@@ -31,7 +31,7 @@ namespace fixrgraphiso{
   bool useApproximateIsomorphism=false;
   int minTargetSize = 3;
   int maxTargetSize = 50;
-  int maxEdgeSize = 500;
+  int maxEdgeSize = 400;
   
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;

@@ -36,7 +36,6 @@ namespace fixrgraphiso {
 			    acdfg_protobuf::Acdfg_ExceptionalControlEdge const &  proto_edge ){
     Node* from = lookup_node(idToNodeMap, proto_edge.from());
     Node* to = lookup_node(idToNodeMap, proto_edge.to());
-    std::cout << "Exception edge: correct function executed!!" << std::endl;
     assert(NULL != from);
     assert(NULL != to);
     ExceptionalEdge * e = new ExceptionalEdge(proto_edge.id(), from, to);
