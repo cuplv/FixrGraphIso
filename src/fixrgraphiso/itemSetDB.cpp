@@ -240,7 +240,7 @@ namespace fixrgraphiso {
     for (ItemRecord * i_rec: records){
       for (FreqItemSet & f : result){
 	set<int> & itemSet = f.get_int_set_ref();
-	if (i_rec -> numberOfCommonItems(itemSet) >= 2){
+	if (i_rec -> numberOfCommonItems(itemSet) >= itemSet.size() -1 ){
 	  f.addItemRecord(i_rec);
 	}
       }
