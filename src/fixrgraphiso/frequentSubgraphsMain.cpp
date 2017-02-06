@@ -3,6 +3,7 @@
 #include <cassert>
 #include <set>
 #include <vector>
+#include <algorithm>
 #include <string>
 #include <stdlib.h>
 #include <unistd.h>
