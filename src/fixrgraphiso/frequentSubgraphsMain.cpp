@@ -29,8 +29,8 @@ namespace fixrgraphiso{
   string info_file_name = "cluster-info.txt";
   bool useApproximateIsomorphism=false;
   int minTargetSize = 3;
-  int maxTargetSize = 30;
-  int maxEdgeSize = 100;
+  int maxTargetSize = 50;
+  int maxEdgeSize = 150;
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
