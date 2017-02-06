@@ -14,6 +14,8 @@ namespace fixrgraphiso {
   /*--
     Constructor for IsoEncoder 
     --*/
+  extern bool debug;
+  
   IsoEncoder::IsoEncoder():  ctx(), s(ctx), alreadySolved(false), satisfiable(false){}
 
   IsoEncoder::~IsoEncoder(){

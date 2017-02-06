@@ -15,15 +15,14 @@ class ClusterProcessor:
         dirName = './%s/cluster_%d'%(self.outputRootName, clusterID)
         os.chdir(dirName)
         num_files = len([name for name in os.listdir('.') if os.path.isfile(name)])
-        freq = int(0.25 * num_files)
-        pop_cutoff = int(0.15 * num_files)
+        freq = self.freq_cutoff
         fun_list0 = [s.strip() for s in fun_names.split(',')]
         fun_list1 = [s.replace('$','\$') for s in fun_list0]
         fun_list2 = [s.replace('<','\<') for s in fun_list1]
         fun_list3 = [s.replace('>','\>') for s in fun_list2]
         fun_list4 = ["-m "+s+" " for s in fun_list3]
         fun_string = ''.join(fun_list4)
-        cmd = '%s -f %d -g %d -o ../cluster_%d_info.txt %s *.acdfg.bin > ../run%d.out'%(cmd_name, freq, pop_cutoff, clusterID, fun_string, clusterID)
+        cmd = '%s -f %d -o ../cluster_%d_info.txt %s *.acdfg.bin > ../run%d.out'%(cmd_name, freq,  clusterID, fun_string, clusterID)
         print ('Running %s'%(cmd))
         os.system(cmd)
         os.chdir('../..')
@@ -66,10 +65,11 @@ class ClusterProcessor:
         print ("processClusters.py [options]")
         print ("\t -a | --start <starting cluster id> default: 1")
         print ("\t -b | --end <ending cluster id> default: 426")
-        print ("\t -f | --fixr < fixr root directory> default: %s"%(self.fixr_root_directory))
+        print ("\t -p | --fixr < fixr root directory> default: %s"%(self.fixr_root_directory))
         print ("\t -n | --nocopy Skip the copying step default: off")
         print ("\t -c | --cluster-file-name <name of the file with cluster results> default: clusters.txt")
         print ("\t -d | --output-dir <output dir name> default: all_clusters")
+        print ("\t -f | --freq <frequency cutoff > default: 20 ")
 
     def main(self,argv):
         self.start_range = 1
@@ -78,8 +78,9 @@ class ClusterProcessor:
         self.fixr_root_directory='/Users/macuser/Projects/git/FixrGraphIso'
         self.cluster_file_name = 'clusters.txt'
         self.outputRootName = 'all_clusters'
+        self.freq_cutoff  =20
         try:
-            opts, args = getopt.getopt(argv[1:],"a:b:hf:nc:d:",["fixr-path=","nocopy","start=","end=","help","cluster-file-name=","output-dir="])
+            opts, args = getopt.getopt(argv[1:],"a:b:hp:f:nc:d:",["fixr-path=","nocopy","start=","end=","help","cluster-file-name=","output-dir=", "freq="])
         except getopt.GetoptError:
             self.help_message()
             sys.exit(2)
@@ -91,12 +92,14 @@ class ClusterProcessor:
                 self.end_range = int(a)
             if o in ("-n", "--nocopy"):
                 self.run_cluster_copy = False
-            if o in ("-f","--fixr-path"):
+            if o in ("-p","--fixr-path"):
                 self.fixr_root_directory = a
             if o in ("-c","--cluster-file-name"):
                 self.cluster_file_name = a
             if o in ("-d","--output-dir"):
                 self.outputRootName = a
+            if o in ("-f","--freq"):
+                self.freq_cutoff= int(a)
             if o in ("-h","--help"):
                 self.help_message()
                 sys.exit(1)
