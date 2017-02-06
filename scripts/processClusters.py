@@ -25,7 +25,7 @@ class ClusterProcessor:
         for s in fun_list3:
             print(s, file=fil)
         fil.close()
-        cmd = '%s -f %d -o ./cluster_%d_info.txt -m %s *.acdfg.bin >& ./run%d.out'%(cmd_name, freq,  clusterID, method_file, clusterID)
+        cmd = '%s -f %d -o ./cluster_%d_info.txt -m %s *.acdfg.bin > ./run%d.out 2> ./run%d.err.out'%(cmd_name, freq,  clusterID, method_file, clusterID, clusterID)
         print ('%s'%(cmd))
         os.system(cmd)
         os.chdir('../..')
