@@ -27,6 +27,7 @@ namespace fixrgraphiso {
     ~ItemRecord();
     std::set<int> const & get_contents() const { return record_contents;}
     string get_filename() const {return filename; }
+    int numberOfCommonItems(set<int> const & itemSet) const;
   };
 
   typedef map<std::string, int> str_int_map_t;
@@ -35,20 +36,22 @@ namespace fixrgraphiso {
   protected:
     set<int> s_int;
     set<string> s_string;
-    vector<ItemRecord*> idx_record;
+    set<ItemRecord*> idx_record;
     bool mergedInto;
-    void mergeItemSet(FreqItemSet & what, set<ItemRecord*> & set_this);
+    void mergeItemSet(FreqItemSet & what);
   public:
     FreqItemSet(set<int> const & iset,  vector<ItemRecord*> const & recs);
+    FreqItemSet(set<int> const & iset,  set<ItemRecord*> const & recs);
     void prettyPrint(ostream & os, bool printRecords = true) const;
     set<string> & get_string_set_ref(){ return s_string; }
     set<int> const & get_int_set_const_ref() const { return s_int; }
     set<int> & get_int_set_ref() { return s_int; }
-    vector<ItemRecord*> get_idx_record_ref() { return idx_record;}
+    set<ItemRecord*> & get_idx_record_ref() { return idx_record;}
     bool hasBeenMerged() const {return mergedInto; }
     bool mergeCompatible(FreqItemSet & what);
     void setMergedInto() { mergedInto = true;}
     int getFrequency() const { return idx_record.size(); }
+    void addItemRecord(ItemRecord * it){ idx_record.insert(it); }
   };
   
   class ItemSetDB {
@@ -72,6 +75,7 @@ namespace fixrgraphiso {
     void addIndex(int j, ItemRecord * i_rec);
     void convertToStringSet(set<int> const & s, set<string> & res);
     bool is_excluded (string const & s) const;
+    void addRemainingRecordsToFrequentItemSets(vector<FreqItemSet> & result);
     
   public:
     

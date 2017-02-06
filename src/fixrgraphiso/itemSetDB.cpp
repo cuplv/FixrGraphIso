@@ -12,7 +12,24 @@ namespace fixrgraphiso {
 
   ItemRecord::~ItemRecord(){}
 
-  FreqItemSet::FreqItemSet(set<int> const & iset,  vector<ItemRecord*> const & recs):s_int(iset),  idx_record(recs), mergedInto(false){}
+  int ItemRecord::numberOfCommonItems(set<int> const & what) const {
+    int f = 0;
+    for (int it: what){
+      if (record_contents.find(it) != record_contents.end())
+	f++;
+    }
+    return f;
+  }
+
+  FreqItemSet::FreqItemSet(set<int> const & iset,  vector<ItemRecord*> const & recs):s_int(iset),  idx_record(), mergedInto(false){
+    for (ItemRecord * it : recs){
+      idx_record.insert(it);
+    }
+  }
+
+  
+  FreqItemSet::FreqItemSet(set<int> const & iset,  set<ItemRecord*> const & recs):s_int(iset),  idx_record(recs), mergedInto(false){}
+  
 
   void FreqItemSet::prettyPrint(ostream & os, bool printRecords) const {
     // First print the items
@@ -33,10 +50,10 @@ namespace fixrgraphiso {
     }
   }
 
-  void FreqItemSet::mergeItemSet(FreqItemSet & what, set<ItemRecord*> & set_this){
+  void FreqItemSet::mergeItemSet(FreqItemSet & what){
     set<int> & what_s_int = what.get_int_set_ref();
     set<string> & what_s_string = what.get_string_set_ref();
-    vector<ItemRecord*> what_idx_record = what.get_idx_record_ref();
+    set<ItemRecord*> & what_idx_record = what.get_idx_record_ref();
     for (int t: what_s_int){
       s_int.insert(t);
     }
@@ -46,23 +63,18 @@ namespace fixrgraphiso {
     }
 
     for (ItemRecord * w: what_idx_record){
-      if (set_this.find(w) == set_this.end())
-	idx_record.push_back(w);
+      idx_record.insert(w);
     }
 
     what.mergedInto = true;
   }
   
   bool FreqItemSet::mergeCompatible(FreqItemSet & what)  {
-    std::set<ItemRecord*> set_this, set_what;
-    for (ItemRecord* it: idx_record){
-      set_this.insert(it);
-    }
+    
     int count1=0;
-    vector<ItemRecord*> what_idx_record = what.get_idx_record_ref();
+    set<ItemRecord*> & what_idx_record = what.get_idx_record_ref();
     for (ItemRecord * it : what_idx_record){
-      set_what.insert(it);
-      if (set_this.find(it) != set_this.end())
+      if (idx_record.find(it) != idx_record.end())
 	count1 ++;
     }
     int min_freq_cutoff = what_idx_record.size() * cutoff_percentage/100;
@@ -85,7 +97,7 @@ namespace fixrgraphiso {
       this -> prettyPrint(std::cout, false);
       cout << endl;
     }
-    this -> mergeItemSet(what, set_this);
+    this -> mergeItemSet(what);
     what.setMergedInto();
     return true;
   }
@@ -224,6 +236,17 @@ namespace fixrgraphiso {
     return false;
   }
 
+  void ItemSetDB::addRemainingRecordsToFrequentItemSets(vector<FreqItemSet> & result){
+    for (ItemRecord * i_rec: records){
+      for (FreqItemSet & f : result){
+	set<int> & itemSet = f.get_int_set_ref();
+	if (i_rec -> numberOfCommonItems(itemSet) >= 2){
+	  f.addItemRecord(i_rec);
+	}
+      }
+    }
+  }
+  
   void ItemSetDB::computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< FreqItemSet > & result, ostream & out ){
     set<int> set_so_far;
     this -> findFrequentItemSetsRecursive(freq_cutoff, min_size_cutoff, -1, set_so_far, result);
@@ -242,6 +265,8 @@ namespace fixrgraphiso {
       }
     }
 
+    addRemainingRecordsToFrequentItemSets(result);
+    
     std::sort(result.begin(), result.end(),
 	      [](const FreqItemSet & iso1, const  FreqItemSet & iso2){
 		return iso1.getFrequency() > iso2.getFrequency();

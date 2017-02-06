@@ -63,31 +63,31 @@ namespace fixrgraphiso{
 
 #ifdef OLD__UNUSED_CODE
 
-  iso_protobuf::Iso * loadIsomorphismFromFile(std::string const & file_name){
-    std::ifstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
-    iso_protobuf::Iso * proto_iso = new iso_protobuf::Iso();
-    if (inp_file.is_open())
-      proto_iso -> ParseFromIstream (&inp_file);
-    else
-      assert (false);
-    inp_file.close();
-    return proto_iso;
-  }
+  // iso_protobuf::Iso * loadIsomorphismFromFile(std::string const & file_name){
+  //   std::ifstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
+  //   iso_protobuf::Iso * proto_iso = new iso_protobuf::Iso();
+  //   if (inp_file.is_open())
+  //     proto_iso -> ParseFromIstream (&inp_file);
+  //   else
+  //     assert (false);
+  //   inp_file.close();
+  //   return proto_iso;
+  // }
 
-  void captureItemSetFromIsomorphism(iso_protobuf::Iso * proto_iso, const string & filename, ItemSetDB* items ){
-    int n = proto_iso -> methodcallnames_size();
-    int i;
-    std::set<string> mCalls;
-    string sep="";
-    if (debug) cout << endl;
-    for (i = 0; i < n ; ++i){
-      std::string const & str = proto_iso -> methodcallnames(i);
-      if (debug) cout << sep<< str ;
-      mCalls.insert(str);
-    }
-    if (debug) cout << endl;
-    items-> addRecord(filename, mCalls);
-  }
+  // void captureItemSetFromIsomorphism(iso_protobuf::Iso * proto_iso, const string & filename, ItemSetDB* items ){
+  //   int n = proto_iso -> methodcallnames_size();
+  //   int i;
+  //   std::set<string> mCalls;
+  //   string sep="";
+  //   if (debug) cout << endl;
+  //   for (i = 0; i < n ; ++i){
+  //     std::string const & str = proto_iso -> methodcallnames(i);
+  //     if (debug) cout << sep<< str ;
+  //     mCalls.insert(str);
+  //   }
+  //   if (debug) cout << endl;
+  //   items-> addRecord(filename, mCalls);
+  // }
   
 #endif
   
@@ -120,9 +120,9 @@ int main (int argc, char *argv[]) {
 	fixrgraphiso::cutoff_percentage = strtol(optarg, NULL, 10);
 	break;
 #ifdef OLD__UNUSED_CODE
-      case 'i':
-	fixrgraphiso::loadACDFG = false;
-	break;
+      // case 'i':
+      // 	fixrgraphiso::loadACDFG = false;
+      // 	break;
 #endif
       case 'o':
 	fixrgraphiso::outputFileName = string(optarg);
@@ -160,8 +160,8 @@ int main (int argc, char *argv[]) {
       fixrgraphiso::captureItemSetFromACDFG(acdfg,line, &allItems);
     } else {
 #ifdef OLD__UNUSED_CODE
-      iso_protobuf::Iso * iso = fixrgraphiso::loadIsomorphismFromFile(line);
-      fixrgraphiso::captureItemSetFromIsomorphism(iso,line, &allItems);
+      // iso_protobuf::Iso * iso = fixrgraphiso::loadIsomorphismFromFile(line);
+      // fixrgraphiso::captureItemSetFromIsomorphism(iso,line, &allItems);
 #endif
     }
   }
