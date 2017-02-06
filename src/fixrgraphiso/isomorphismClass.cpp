@@ -428,7 +428,7 @@ namespace fixrgraphiso {
 	IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
 	var_pairs.push_back( var );
       }
-      e.exactlyOne(var_pairs);
+      e.atleastOne(var_pairs);
     }
 
     
@@ -439,16 +439,16 @@ namespace fixrgraphiso {
     // Every edge in A must be connected to at most one edge in b.
     // Sriram: this is actually redundant.
 
-    for (const auto p: edges_a_to_b){
-      edge_id_t edg_a = p.first;
-      vector<edge_id_t> const & v = p.second;
-      vector<IsoEncoder::var_t > var_pairs;
-      for (edge_id_t edg_b: v){
-	IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
-	var_pairs.push_back(var);
-      }
-      e.atmostOne(var_pairs);
-    }
+    // for (const auto p: edges_a_to_b){
+    //   edge_id_t edg_a = p.first;
+    //   vector<edge_id_t> const & v = p.second;
+    //   vector<IsoEncoder::var_t > var_pairs;
+    //   for (edge_id_t edg_b: v){
+    // 	IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
+    // 	var_pairs.push_back(var);
+    //   }
+    //   e.atmostOne(var_pairs);
+    // }
 
     
 
