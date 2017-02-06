@@ -5,6 +5,16 @@
 
 namespace fixrgraphiso {
 
+  bool AcdfgBin::isACDFGBinSubsuming( AcdfgBin * b){
+    Acdfg * repr_a = getRepresentative();
+    Acdfg * repr_b = b -> getRepresentative();
+
+    IsoSubsumption d(repr_b, repr_a);
+    return d.check();
+  }
+
+  
+
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b){
     Acdfg * repr = *(acdfgs.begin());
     IsoSubsumption dir_a (repr, b);
