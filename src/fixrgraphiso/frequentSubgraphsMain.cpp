@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <cctype>
 #include <stdlib.h>
 #include <unistd.h>
 #include "fixrgraphiso/proto_iso.pb.h"
@@ -33,6 +34,23 @@ namespace fixrgraphiso{
   int minTargetSize = 3;
   int maxTargetSize = 50;
   int maxEdgeSize = 400;
+  string method_name_file = "methods.txt";
+
+    
+  void loadNamesFromFile (string filename, vector<string> & listOfNames){
+    ifstream ifile(filename.c_str());
+    std::string line;
+    while (std::getline(ifile, line)){
+      line.erase( std::remove_if( line.begin(),
+				  line.end(),
+				  [](char x){ return std::isspace(x);}),
+		  line.end());
+      listOfNames.push_back(line);
+      std::cout << "\t Adding :" << line << std::endl;
+    }
+    
+  }
+
   
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
@@ -57,12 +75,12 @@ namespace fixrgraphiso{
 
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:"))!= -1){
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:"))!= -1){
       switch (c){
       case 'm': {
-	string methName(optarg);
-	methodNames.push_back(methName);
-	cout << "Method : " << methName << " - added" << endl;
+	methodNamesFile = optarg;
+	cout << "Loading methods" << endl;
+	loadNamesFromFile(methodNamesFile, methodNames);
       }
 	break;
       case 'd':
@@ -75,6 +93,12 @@ namespace fixrgraphiso{
 	gurobi_timeout = strtof(optarg, NULL);
 	cout << "Setting Gurobi timeout to : " << gurobi_timeout << std::endl;
 	break;
+      case 'i':{
+	string inputFileName = optarg;
+	cout << "Loading ACDFGs " << endl;
+	loadNamesFromFile(inputFileName, filenames);
+      }
+	break;
       case 'o':
 	info_file_name = string(optarg);
 	cout << "Info will be dumped to : " << info_file_name << std::endl;
@@ -83,7 +107,7 @@ namespace fixrgraphiso{
 	break;
       }
     }
-
+    
     for (index = optind; index < argc; ++index){
       string fname(argv[index]);
       filenames.push_back(fname);
@@ -91,7 +115,7 @@ namespace fixrgraphiso{
     }
 
     if (filenames.size() <= 0){
-      cout << "Usage:" << argv[0] << " -f [frequency cutoff] -t [gurobi timeout] -o [output info filename]  -m <method to slice> -m <method 2 to slice> -m ... [list of iso.bin files] " << endl;
+      cout << "Usage:" << argv[0] << " -f [frequency cutoff] -o [output info filename]  -m [file with method names] -i [file with acdfg names] [list of iso.bin files] " << endl;
       return;
     }
   }
@@ -422,16 +446,16 @@ namespace fixrgraphiso{
     vector<string> filenames;
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
-
-#ifdef D__OLD_CODE
-    if (useApproximateIsomorphism){
-      vector<Acdfg*> allACDFGs;
-      for (string s: filenames){
-	loadACDFGFromFilename(s, allACDFGs);
-      }
-      computePatternsThroughApproximateIsomorphism(allACDFGs);
-    } else
-#endif
+    
+// #ifdef D__OLD_CODE
+//     if (useApproximateIsomorphism){
+//       vector<Acdfg*> allACDFGs;
+//       for (string s: filenames){
+// 	loadACDFGFromFilename(s, allACDFGs);
+//       }
+//       computePatternsThroughApproximateIsomorphism(allACDFGs);
+//     } else
+// #endif
       {
 	computePatternsThroughSlicing(filenames, methodnames);
       }

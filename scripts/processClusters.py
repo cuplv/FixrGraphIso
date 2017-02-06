@@ -20,10 +20,13 @@ class ClusterProcessor:
         fun_list1 = [s.replace('$','\$') for s in fun_list0]
         fun_list2 = [s.replace('<','\<') for s in fun_list1]
         fun_list3 = [s.replace('>','\>') for s in fun_list2]
-        fun_list4 = ["-m "+s+" " for s in fun_list3]
-        fun_string = ''.join(fun_list4)
-        cmd = '%s -f %d -o ../cluster_%d_info.txt %s *.acdfg.bin > ../run%d.out'%(cmd_name, freq,  clusterID, fun_string, clusterID)
-        print ('Running %s'%(cmd))
+        method_file = 'methods_%d.txt'%(clusterID)
+        fil = open(method_file, 'wt')
+        for s in fun_list3:
+            print(s, file=fil)
+        fil.close()
+        cmd = '%s -f %d -o ./cluster_%d_info.txt -m %s *.acdfg.bin >& ./run%d.out'%(cmd_name, freq,  clusterID, method_file, clusterID)
+        print ('%s'%(cmd))
         os.system(cmd)
         os.chdir('../..')
 
