@@ -282,21 +282,25 @@ namespace fixrgraphiso {
       if ((*it) -> get_type() == METHOD_NODE){
 	Node * nb = *it;
 	MethodNode * mb = toMethodNode(nb);
+
+	/* Make sure that no argument is null */
 	const vector<DataNode*> & vb = mb -> get_arguments();
 	for (const DataNode * d: vb){
 	  if (d == NULL){
-	    if (debug){
-	      mb -> prettyPrint(std::cout);
-	    }
-	    return false;
+	    std::cerr << "Warning: NULL argument found in method node. " ;
+	    mb -> prettyPrint(std::cerr);
+	    std::cerr << std::endl;
 	  }
+	    return false;
 	}
-    
+	
+	/* Find all compatible method nodes by iterating through graph a*/
 	bool something_compatible = false;
 	for (jt = acdfg_a -> begin_nodes(); jt != acdfg_a -> end_nodes(); ++jt){
 	  if ((*jt) -> get_type() == METHOD_NODE){
 	    Node * na = (*jt);
 	    MethodNode * ma = toMethodNode(na);
+	    
 	    if (this -> staticCheckMethodNodeCompatible(ma, mb)){
 	      something_compatible = true;
 	      this -> addCompatibleNodePair(ma, mb);
@@ -305,6 +309,7 @@ namespace fixrgraphiso {
 	}
 	if (!something_compatible){
 	  if (debug){
+	    std::cout << "Method node does not have a compatible counterpart -- subsumption ruled out ! " << std::endl;
 	    mb-> prettyPrint(std::cout);
 	  }
 	  return false;
@@ -321,7 +326,7 @@ namespace fixrgraphiso {
     --*/
   bool IsoSubsumption::findCompatibleDataNodes() {
     nodes_t::const_iterator it, jt;
-
+    
     for (it = acdfg_b -> begin_nodes(); it != acdfg_b -> end_nodes(); ++it){
       // Iterate through all nodes in b
       if ((*it) -> get_type() == DATA_NODE){
@@ -411,7 +416,8 @@ namespace fixrgraphiso {
     }
 
     /*-
-      Every edge in B must be connected to exactly one edge in a
+      Every edge in B must be connected to at least one edge in A.
+      At most one edge is implied by the rest of the encoding.
       -*/
     for (const auto p: edges_b_to_a){
       edge_id_t edg_b = p.first;
@@ -421,7 +427,7 @@ namespace fixrgraphiso {
 	IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
 	var_pairs.push_back( var );
       }
-      e.exactlyOne(var_pairs);
+      e.atleastOne(var_pairs);
     }
 
     
@@ -429,8 +435,8 @@ namespace fixrgraphiso {
     
     
     /*-
-      Every edge in A must be connected to at most one edge in b.
-      -*/
+      // Every edge in A must be connected to at most one edge in b.
+      // Sriram: this is actually redundant.
 
     for (const auto p: edges_a_to_b){
       edge_id_t edg_a = p.first;
@@ -443,7 +449,7 @@ namespace fixrgraphiso {
       e.atmostOne(var_pairs);
     }
 
-    
+    -*/
 
     /*-
       If two method nodes are connected, then 

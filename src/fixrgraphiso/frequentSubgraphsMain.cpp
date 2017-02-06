@@ -8,8 +8,10 @@
 #include <unistd.h>
 #include "fixrgraphiso/proto_iso.pb.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
+#ifdef D__OLD_CODE
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
+#endif
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfgBin.h"
 namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
@@ -30,7 +32,8 @@ namespace fixrgraphiso{
   bool useApproximateIsomorphism=false;
   int minTargetSize = 3;
   int maxTargetSize = 50;
-  int maxEdgeSize = 150;
+  int maxEdgeSize = 500;
+  
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
@@ -96,6 +99,7 @@ namespace fixrgraphiso{
     }
   }
 
+#ifdef D__OLD_CODE
   void computeAllPairwiseIsos(vector<Acdfg*> & allACDFGs){
     int n = allACDFGs.size();
     if (debug){
@@ -206,6 +210,8 @@ namespace fixrgraphiso{
 
   }
 
+#endif
+  
   void dumpAllBins(std::vector<AcdfgBin*> &allBins, const std::string & infoFileName){
     std::ofstream out_file(infoFileName.c_str());
     out_file << "Num Bins = " << allBins.size() << endl;
@@ -221,7 +227,7 @@ namespace fixrgraphiso{
     }
     out_file.close();
   }
-
+#ifdef D__OLD_CODE
   void computePatternsThroughApproximateIsomorphism(vector<Acdfg*> & allACDFGs){
     computeAllPairwiseIsos(allACDFGs);
     vector<IsomorphismClass> aboveCutoff;
@@ -240,7 +246,7 @@ namespace fixrgraphiso{
     }
 
   }
-
+#endif
 
   void computePatternsThroughSlicing(vector<string> & filenames, vector<string> & methodnames){
     //1. Slice all the ACDFGs using the methods in the method names as the target
@@ -249,14 +255,24 @@ namespace fixrgraphiso{
       Acdfg * orig_acdfg = loadACDFGFromFilename(f);
       vector<MethodNode*> targets;
       orig_acdfg -> getMethodsFromName(methodnames, targets);
+      
       if (targets.size() < minTargetSize){
-	std::cerr << "Warning: filename = " << f << "Could not find 3 methods from the list of names you have provided me. Ignoring this file." << std::endl;
+	// File has too few methods, something is not correct.
+	std::cerr << "Warning: filename = " << f			\
+		  << "Could not find 3 methods from the list of method names" \
+		  << " -- Ignoring this file." << std::endl;
+	
       } else if (targets.size() >= maxTargetSize){
-	std::cerr << "Warning: filename = " << f << "too many matching methods found -- "<<  targets.size() <<" -- Ignoring this file." << std::endl;
+	std::cerr << "Warning: filename = " << f			\
+		  << "too many matching methods found -- "		\
+		  <<  targets.size()					\
+		  <<" -- Ignoring this file." << std::endl;
       } else {
 	Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets);
 	if (new_acdfg -> edge_count() >= maxEdgeSize){
-	  std::cerr << "Warning: Filename = " << f << "too many edges found -- " << new_acdfg -> edge_count() << "-- Ignorning this file." << std::endl;
+	  std::cerr << "Warning: Filename = " << f \
+		    << "too many edges found -- " << new_acdfg -> edge_count() \
+		    << "-- Ignorning this file." << std::endl;
 	  delete(new_acdfg);
 	} else {
 	  new_acdfg -> setName(f);
@@ -289,10 +305,7 @@ namespace fixrgraphiso{
 		return iso1 -> getFrequency() > iso2 -> getFrequency();
 	      });
 
-    dumpAllBins(allBins, info_file_name);
-	
-	
-	
+    dumpAllBins(allBins, info_file_name);	
   }
 
   void frequentSubgraphsMain(int argc, char * argv [] ){
@@ -300,97 +313,101 @@ namespace fixrgraphiso{
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
 
+#ifdef D__OLD_CODE
     if (useApproximateIsomorphism){
       vector<Acdfg*> allACDFGs;
       for (string s: filenames){
 	loadACDFGFromFilename(s, allACDFGs);
       }
       computePatternsThroughApproximateIsomorphism(allACDFGs);
-    } else {
-      computePatternsThroughSlicing(filenames, methodnames);
-    }
+    } else
+#endif
+      {
+	computePatternsThroughSlicing(filenames, methodnames);
+      }
 
   }
 
 
 }
 
-int old_main(int argc, char * argv[]){
+#ifdef D__OLD_CODE
+// int old_main(int argc, char * argv[]){
 
-  vector<string> filenames;
-  vector<string> methodNames;
-  vector<fixrgraphiso::IsomorphismClass> allIsos;
-  fixrgraphiso::processCommandLine(argc, argv, filenames, methodNames);
+//   vector<string> filenames;
+//   vector<string> methodNames;
+//   vector<fixrgraphiso::IsomorphismClass> allIsos;
+//   fixrgraphiso::processCommandLine(argc, argv, filenames, methodNames);
 
-  for (string fname: filenames){
-    fixrgraphiso::IsomorphismClass iso(fname);
-    allIsos.push_back(iso);
-  }
+//   for (string fname: filenames){
+//     fixrgraphiso::IsomorphismClass iso(fname);
+//     allIsos.push_back(iso);
+//   }
 
-  // for (auto iso1: allIsos){
-  //   for (auto iso2: allIsos){
-  //     if (iso1.getIsoFilename() != iso2.getIsoFilename()){
-  // 	cout << "Subsumption test: " << iso1.getIsoFilename() << " vs. " << iso2.getIsoFilename() << endl;
-  // 	iso1.subsumes(&iso2);
-  //     }
-  //   }
-  // }
-  vector<fixrgraphiso::IsomorphismClass> maximalIsos;
+//   // for (auto iso1: allIsos){
+//   //   for (auto iso2: allIsos){
+//   //     if (iso1.getIsoFilename() != iso2.getIsoFilename()){
+//   // 	cout << "Subsumption test: " << iso1.getIsoFilename() << " vs. " << iso2.getIsoFilename() << endl;
+//   // 	iso1.subsumes(&iso2);
+//   //     }
+//   //   }
+//   // }
+//   vector<fixrgraphiso::IsomorphismClass> maximalIsos;
 
 
-  for (auto iso1: allIsos){
-    bool is_subsumed = false;
-    int i;
-    vector<int> subsumedIsos;
-    int freq = 1;
-    for (i = maximalIsos.size()-1; i >= 0;  --i){
-      fixrgraphiso::IsomorphismClass & iso2 = maximalIsos[i];
-      if (iso2.subsumes(&iso1)){
-	iso2.incrFrequency();
-	is_subsumed = true;
-	break;
-      }
-      if (iso1.subsumes(&iso2)){
-	subsumedIsos.push_back(i);
-	freq = freq + iso2.getFrequency();
-      }
-    }
+//   for (auto iso1: allIsos){
+//     bool is_subsumed = false;
+//     int i;
+//     vector<int> subsumedIsos;
+//     int freq = 1;
+//     for (i = maximalIsos.size()-1; i >= 0;  --i){
+//       fixrgraphiso::IsomorphismClass & iso2 = maximalIsos[i];
+//       if (iso2.subsumes(&iso1)){
+// 	iso2.incrFrequency();
+// 	is_subsumed = true;
+// 	break;
+//       }
+//       if (iso1.subsumes(&iso2)){
+// 	subsumedIsos.push_back(i);
+// 	freq = freq + iso2.getFrequency();
+//       }
+//     }
 
-    if (!is_subsumed){
-      iso1.setFrequency(freq);
-      maximalIsos.push_back(iso1);
-    }
-    for (int j: subsumedIsos){
-      assert (!is_subsumed);
-      maximalIsos.erase(maximalIsos.begin() + j);
-    }
+//     if (!is_subsumed){
+//       iso1.setFrequency(freq);
+//       maximalIsos.push_back(iso1);
+//     }
+//     for (int j: subsumedIsos){
+//       assert (!is_subsumed);
+//       maximalIsos.erase(maximalIsos.begin() + j);
+//     }
 
-  }
-  // Sort the maximal Isos according to the frequencies
-  std::sort(maximalIsos.begin(), maximalIsos.end(),
-	    [](const fixrgraphiso::IsomorphismClass  & iso1, const fixrgraphiso::IsomorphismClass & iso2){
-	      return iso1.getFrequency() > iso2.getFrequency();
-	    });
+//   }
+//   // Sort the maximal Isos according to the frequencies
+//   std::sort(maximalIsos.begin(), maximalIsos.end(),
+// 	    [](const fixrgraphiso::IsomorphismClass  & iso1, const fixrgraphiso::IsomorphismClass & iso2){
+// 	      return iso1.getFrequency() > iso2.getFrequency();
+// 	    });
 
-  cout << "# Maximal Isos: " << maximalIsos.size() << endl;
-  int count = 0;
-  for (int k = 0; k < maximalIsos.size(); ++k){
-    fixrgraphiso::IsomorphismClass & iso = maximalIsos[k];
-    cout << iso.getIsoFilename () << endl;
-    cout << "Freq = " << iso.getFrequency() << endl;
-    string fname = string("iso_")+std::to_string(count)+".dot";
-    std::ofstream out_file(fname.c_str());
-    (iso.get_acdfg()) -> dumpToDot( out_file);
-    out_file.close();
-    count ++;
-  }
-  for (auto iso:allIsos){
-    delete(iso.get_acdfg());
-  }
+//   cout << "# Maximal Isos: " << maximalIsos.size() << endl;
+//   int count = 0;
+//   for (int k = 0; k < maximalIsos.size(); ++k){
+//     fixrgraphiso::IsomorphismClass & iso = maximalIsos[k];
+//     cout << iso.getIsoFilename () << endl;
+//     cout << "Freq = " << iso.getFrequency() << endl;
+//     string fname = string("iso_")+std::to_string(count)+".dot";
+//     std::ofstream out_file(fname.c_str());
+//     (iso.get_acdfg()) -> dumpToDot( out_file);
+//     out_file.close();
+//     count ++;
+//   }
+//   for (auto iso:allIsos){
+//     delete(iso.get_acdfg());
+//   }
 
-  return 1;
-}
-
+//   return 1;
+// }
+#endif
 
 int main(int argc, char * argv[]){
   fixrgraphiso::frequentSubgraphsMain(argc, argv);
