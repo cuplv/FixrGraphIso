@@ -290,8 +290,9 @@ namespace fixrgraphiso {
 	    std::cerr << "Warning: NULL argument found in method node. " ;
 	    mb -> prettyPrint(std::cerr);
 	    std::cerr << std::endl;
-	  }
 	    return false;
+	  }
+	  
 	}
 	
 	/* Find all compatible method nodes by iterating through graph a*/
