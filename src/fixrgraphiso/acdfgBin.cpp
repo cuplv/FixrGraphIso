@@ -44,12 +44,17 @@ namespace fixrgraphiso {
     return true;
   }
 
-  void AcdfgBin::printInfo(std::ostream & out) const {
-    out << "\t Frequency = " << getPopularity() <<  endl;
+  void AcdfgBin::printInfo(std::ostream & out, bool printPopularity) const {
+    if (printPopularity)
+      out << "\t Frequency = " << getPopularity() <<  endl;
     for (const Acdfg * a : acdfgs){
       out << a -> getName() << endl;
     }
-
+    
+    for (const AcdfgBin * b : subsumingBins){
+      b-> printInfo(out, false);
+    }
+    
   }
 
   void AcdfgBin::dumpToDot(string fileName) const{

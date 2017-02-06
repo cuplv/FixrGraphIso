@@ -50,7 +50,7 @@ namespace fixrgraphiso{
       return *(acdfgs.begin());
     }
 
-    void printInfo(std::ostream & out) const;
+    void printInfo(std::ostream & out, bool printPopularity = true) const;
 
     void dumpToDot(string fileName) const;
 
