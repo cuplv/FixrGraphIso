@@ -88,7 +88,7 @@ class GenerateIndexPage:
                 for pat in pattern_list:
                     pat.printToHTML(f)
                 self.printClusterTrailer(f, clusterID)
-                self.clusterPages[clusterID] = fName
+                self.clusterPages[clusterID] = 'cluster_%d.html'%(clusterID)
                 f.close()
             except IOError:
                 print('Could not open file for writing %s'%(fName), file=sys.stderr)
