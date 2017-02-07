@@ -48,7 +48,7 @@ namespace fixrgraphiso {
     set<int> & get_int_set_ref() { return s_int; }
     set<ItemRecord*> & get_idx_record_ref() { return idx_record;}
     bool hasBeenMerged() const {return mergedInto; }
-    bool mergeCompatible(FreqItemSet & what);
+    bool mergeCompatible(FreqItemSet & what, int min_size_cutoff);
     void setMergedInto() { mergedInto = true;}
     int getFrequency() const { return idx_record.size(); }
     void addItemRecord(ItemRecord * it){ idx_record.insert(it); }

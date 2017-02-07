@@ -69,9 +69,25 @@ namespace fixrgraphiso {
     what.mergedInto = true;
   }
   
-  bool FreqItemSet::mergeCompatible(FreqItemSet & what)  {
+  bool FreqItemSet::mergeCompatible(FreqItemSet & what, int min_size_cutoff)  {
+
+    // Merge item sets when they have at least 3 methods in common
+    int common_count = 0;
+    set<int> & what_s_int = what.get_int_set_ref();
+    for (int t: what_s_int){
+      if (s_int.find(t) != s_int.end())
+	common_count++;
+    }
+
+    if (common_count < min_size_cutoff){
+      return false;
+    }
+
+    // And they have at least cutoff_percentage of graphs in common
     
-    int count1=0;
+    int count1 = 0;
+    
+    
     set<ItemRecord*> & what_idx_record = what.get_idx_record_ref();
     for (ItemRecord * it : what_idx_record){
       if (idx_record.find(it) != idx_record.end())
@@ -256,7 +272,7 @@ namespace fixrgraphiso {
     // Merge frequent item sets according to merge criteria
     int n = result.size();
 
-    addRemainingRecordsToFrequentItemSets(result);
+    //addRemainingRecordsToFrequentItemSets(result);
     
     for (int i = 0; i < n-1; ++i){
       FreqItemSet & item_i = result[i];
@@ -264,7 +280,7 @@ namespace fixrgraphiso {
 	for (int j  = i+1; j < n; ++j){
 	  FreqItemSet & item_j = result[j];
 	  if (!item_j.hasBeenMerged())
-	    item_i.mergeCompatible(item_j);
+	    item_i.mergeCompatible(item_j, min_size_cutoff);
 	 
 	}
       }
