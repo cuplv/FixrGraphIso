@@ -21,8 +21,8 @@ class MinedPattern:
         methods_str = '\n<br>'.join(self.listOfMethods)
 
         s1 = """ <h2> %s Pattern %d </h2> """%(patternType, self.patternID)
-        s2 = """ <img src=\"%s\" alt=\"DOT Image\" style=\"width:80%\;\"> """%(self.imageName)
-        s3 = """ <div style=\"width: 200px; height: 100px; background-color:lightblue; overflow-y: scroll;\" class = \"listNameBlock\"> <span id =\"cluster_%d_pattern_%d\">
+        s2 = """ <img src=\"%s\" alt=\"DOT Image\" style=\"width:100%%;border:2px solid black;\"> """%(self.imageName)
+        s3 = """ <p><p><div style=\"width: 800px; height: 300px; background-color:lightblue; overflow-y: scroll;\" class = \"listNameBlock\"> <span id =\"cluster_%d_pattern_%d\">
                   %s
               </span> </div>"""%(self.clusterID, self.patternID, methods_str)
         print(s1, file = f)
@@ -37,6 +37,7 @@ class GenerateIndexPage:
         self.minedPatternsByClusterID = {}
         self.clusterMethods = {}
         self.clusterPages = {}
+        self.runDotLocally = False
 
     def printClusterHeader(self, f, clusterID, cluster_methods):
         cluster_method_str = '</b>, <b> '.join(cluster_methods)
@@ -78,6 +79,7 @@ class GenerateIndexPage:
     def loadMethodsFile(self, clusterID):
         fName = '%s/cluster_%d/methods_%d.txt'%(self.outputRootDir,clusterID, clusterID)
         try:
+            methodNames= []
             f = open(fName, 'r')
             for line in f:
                 line = line.strip()
@@ -93,9 +95,14 @@ class GenerateIndexPage:
         #1. Convert the dot_file to a png file
         stem = os.path.splitext(dot_file_name)[0]
         png_file_name='cluster_%d_%s.png'%(clusterID,stem)
-        cmd = 'dot -Tpng %s/cluster_%d/%s -o %s/%s'%(self.outputRootDir, clusterID, dot_file_name, self.htmlOutputDir, png_file_name)
-        print('Running ', cmd)
-        os.system(cmd)
+        if self.runDotLocally:
+            cmd = 'dot -Tpng %s/cluster_%d/%s -o %s/%s'%(self.outputRootDir, clusterID, dot_file_name, self.htmlOutputDir, png_file_name)
+            print('Running ', cmd)
+            os.system(cmd)
+        else:
+            tgt_dot_file ='cluster_%d_%s.dot'%(clusterID, stem)
+            cmd = 'cp %s/cluster_%d/%s %s/%s'%(self.outputRootDir, clusterID, dot_file_name, self.htmlOutputDir, tgt_dot_file)
+            os.system(cmd)
         #2. Add a link to that PNG file
         pat = MinedPattern(clusterID, png_file_name, patternList, patternID,  isPopular)
         if clusterID in self.minedPatternsByClusterID:
@@ -124,6 +131,13 @@ class GenerateIndexPage:
 
                 m = re.match(r'Anomalous\s*Bins:',line)
                 if m:
+                    if (patternID >= 0):
+                        # register the previous pattern
+                        self.registerPattern(clusterID, dotFileName, patternList,
+                                             patternID, popularPattern)
+                        patternList=[]
+                        dotFileName = None
+                        patternID = -1
                     popularPattern = False
                     continue
 
@@ -152,7 +166,7 @@ class GenerateIndexPage:
 
 def main(argv):
     start_range = 1
-    end_range = 20
+    end_range = 65
     outputRootName = 'new_clusters'
     htmlOutputDir = 'html_files'
     g = GenerateIndexPage(outputRootName, htmlOutputDir)
