@@ -287,7 +287,7 @@ namespace fixrgraphiso {
   string MethodNode::getDotLabel() const {
     ostringstream ss;
     assert(get_type() == METHOD_NODE);
-    ss << " label=\" MethodNode #" <<get_id()<< ": " << get_name() << "[";
+    ss << " shape=box, style=filled, color=lightgray, label=\" " << get_name() << "[";
     const DataNode* r = get_receiver();
     if (r != NULL){
       ss << "#"<< r-> get_id();
@@ -371,6 +371,7 @@ namespace fixrgraphiso {
   std::string Edge::get_edge_dot_style() const{
     switch (this -> get_type()){
     case USE_EDGE:
+      return string("[color=green, penwidth=2]");
     case DEF_EDGE:
       return string("[color=blue, penwidth=2]");
     case EXCEPTIONAL_EDGE:
@@ -378,7 +379,7 @@ namespace fixrgraphiso {
     case CONTROL_EDGE:
       return string("[color=black, penwidth=3]");
     case TRANSITIVE_EDGE:
-      return string("[color=black, penwidth=3]");
+      return string("[color=gray, penwidth=2]");
     default:
       return string("");
 
@@ -726,7 +727,11 @@ namespace fixrgraphiso {
 	Node * srcNode = retG -> getNodeFromID(srcID);
 	Node * destNode = retG -> getNodeFromID(destID);
 	switch(e -> get_type()){
-	case CONTROL_EDGE:
+	case CONTROL_EDGE: {
+	  ControlEdge * nEdge = new ControlEdge(e-> get_id(), srcNode, destNode);
+	  retG -> add_edge(nEdge);
+	}
+	  break;
 	case TRANSITIVE_EDGE: {
 	  TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
 	  retG -> add_edge(nEdge);

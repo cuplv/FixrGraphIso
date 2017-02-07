@@ -27,13 +27,14 @@ using std::ofstream;
 
 namespace fixrgraphiso{
   bool debug = false;
-  int freq_cutoff=10;
+  int freq_cutoff=20;
   double gurobi_timeout = 30.0;
   string info_file_name = "cluster-info.txt";
   bool useApproximateIsomorphism=false;
   int minTargetSize = 2;
   int maxTargetSize = 50;
   int maxEdgeSize = 400;
+  int anomalyCutOff = 5;
 
   using std::ifstream;
 
@@ -369,7 +370,7 @@ namespace fixrgraphiso{
 
 
      for (AcdfgBin* a: anomalyCandidates){
-       if (!a -> isSubsuming())
+       if (!a -> isSubsuming() && a -> getPopularity() < anomalyCutOff)
 	 a -> setAnomalous();
      }
 

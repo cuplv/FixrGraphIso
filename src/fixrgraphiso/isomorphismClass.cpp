@@ -342,6 +342,11 @@ namespace fixrgraphiso {
     return true;
   }
 
+  bool compatibleEdgeTypes(edge_type_t a, edge_type_t b){
+    if ( a== b) return true;
+    if ( (a == CONTROL_EDGE || a == TRANSITIVE_EDGE) && (b == CONTROL_EDGE || b == TRANSITIVE_EDGE)) return true;
+    return false;
+  }
   /*-- 
     Iterate through pairs of edges and make sure to match up pairs of compatible edges.
     This method should only be called after we have computed compatible nodes.
@@ -364,7 +369,7 @@ namespace fixrgraphiso {
       bool something_compatible = false;
       for (it = acdfg_a -> begin_edges(); it != acdfg_a -> end_edges(); ++it){
 	Edge * ea = (*it);
-	if (ea -> get_type() == eb -> get_type()){
+	if (compatibleEdgeTypes(ea -> get_type(), eb -> get_type())){
 	  const Node * src_a = ea -> get_src();
 	  const Node * dst_a = ea -> get_dst();
 	  if (this -> isCompatibleNodePair(src_a, src_b) &&	\
