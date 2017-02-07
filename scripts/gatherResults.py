@@ -4,7 +4,7 @@ import re
 import sys
 import os
 import os.path
-
+import getopt
 class MinedPattern:
     def __init__ (self, clusterID, image, listOfMethods, patternID, isPopular):
         self.clusterID = clusterID
@@ -20,8 +20,8 @@ class MinedPattern:
             patternType = 'Anomalous'
         listOfMethods1 = [s.replace('<','\<')  for s in self.listOfMethods]
         listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
-        listOfMethods3 = ['<h3>'+s+'</h3>' for s in listOfMethods2]
-        methods_str = '<br>'.join(listOfMethods3)
+        listOfMethods3 = ['<b>'+s+'</b>' for s in listOfMethods2]
+        methods_str = ', '.join(listOfMethods3)
 
         s1 = """ <h2> %s Pattern %d </h2> """%(patternType, self.patternID)
         s2 = """ <img src=\"%s\" alt=\"DOT Image\" style=\"width:100%%;border:2px solid black;\"> """%(self.imageName)
@@ -50,7 +50,7 @@ class GenerateIndexPage:
                 cluster_pg = self.clusterPages[cID]
                 listOfMethods1 = [s.replace('<','\<')  for s in mList]
                 listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
-                listOfMethods3 = ['<h3>'+s+'</h3>' for s in listOfMethods2]
+                listOfMethods3 = ['<b>'+s+'</b>' for s in listOfMethods2]
                 methods_str = ', '.join(listOfMethods3)
                 s = '<li>  %s <a href=\"%s\"> page </a>'%(methods_str, cluster_pg)
                 print(s,file=f)
@@ -182,11 +182,37 @@ class GenerateIndexPage:
         except IOError:
             print('Error: could not open file --', filename)
 
+def help_message(self):
+    print ("gatherResults.py [options]")
+    print ("\t -a | --start <starting cluster id> default: 1")
+    print ("\t -b | --end <ending cluster id> default: 65")
+    print ("\t -d | -o | --output-dir <output dir name> default: html_files")
+    print ("\t -i | --input-dir <output dir name> default: new_clusters")
+
+
 def main(argv):
     start_range = 1
     end_range = 65
     outputRootName = 'new_clusters'
     htmlOutputDir = 'html_files'
+    try:
+        opts, args = getopt.getopt(argv[1:],"a:b:hd:i:o:",["fixr-path=","nocopy","start=","end=","help","cluster-file-name=","output-dir=", "freq="])
+    except getopt.GetoptError:
+        help_message()
+        sys.exit(2)
+    for (o,a) in opts:
+        print (o,a)
+        if o in ("-a","--start"):
+            start_range = int(a)
+        if o in ("-b","--end"):
+            end_range = int(a)
+        if o in ("-o","-d","--output-dir"):
+            htmlOutputDir = a
+        if o in ("-i","--input-dir"):
+            outputRootName = a
+        if o in ("-h","--help"):
+            help_message()
+            sys.exit(1)
     g = GenerateIndexPage(outputRootName, htmlOutputDir)
     for id in range(start_range, end_range+1):
         g.parseInfoFile(id)
