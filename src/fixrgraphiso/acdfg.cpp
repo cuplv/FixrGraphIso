@@ -10,6 +10,7 @@
 #include "fixrgraphiso/acdfg.h"
 #include <sstream>
 #include <set>
+
 namespace fixrgraphiso {
 
   using std::ostringstream;
@@ -20,6 +21,7 @@ namespace fixrgraphiso {
   // Match the types of data nodes to be compatible
   bool typeMatchDataNode = false;
   bool varConstMatchDataNode = true;
+  bool treatControlEdgesSeparately = false;
   //------------------------------------------------------------------------------
   // Implementation of the nodes
   //------------------------------------------------------------------------------
@@ -141,7 +143,7 @@ namespace fixrgraphiso {
   string DataNode::getDotLabel() const {
     ostringstream ss;
     assert(get_type() == DATA_NODE);
-    ss << "shape=ellipse,label=\"DataNode #"<<get_id()<<": " << get_data_type() << "  " << my_escape(get_name())<<"\"" ;
+    ss << "shape=ellipse,color=red,style=dashed,label=\"DataNode #"<<get_id()<<": " << get_data_type() << "  " << my_escape(get_name())<<"\"" ;
     return ss.str();
   }
 
@@ -379,7 +381,7 @@ namespace fixrgraphiso {
     case CONTROL_EDGE:
       return string("[color=black, penwidth=3]");
     case TRANSITIVE_EDGE:
-      return string("[color=gray, penwidth=2]");
+      return string("[color=black, penwidth=3]");
     default:
       return string("");
 
@@ -727,10 +729,15 @@ namespace fixrgraphiso {
 	Node * srcNode = retG -> getNodeFromID(srcID);
 	Node * destNode = retG -> getNodeFromID(destID);
 	switch(e -> get_type()){
-	case CONTROL_EDGE: {
-	  ControlEdge * nEdge = new ControlEdge(e-> get_id(), srcNode, destNode);
-	  retG -> add_edge(nEdge);
-	}
+	case CONTROL_EDGE:
+	  if (treatControlEdgesSeparately) {
+	    ControlEdge * nEdge = new ControlEdge(e-> get_id(), srcNode, destNode);
+	    retG -> add_edge(nEdge);
+	  } else {
+	    TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
+	    retG -> add_edge(nEdge);
+	  }
+
 	  break;
 	case TRANSITIVE_EDGE: {
 	  TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
@@ -907,10 +914,12 @@ namespace fixrgraphiso {
   }
 
 
-  void Acdfg::dumpToDot(std::ostream & out) const  {
+  void Acdfg::dumpToDot(std::ostream & out, bool transitiveReduce) const  {
+    TransitiveReduceAcdfg trRed(this);
+    if (transitiveReduce)
+      trRed.performTransitiveReduction();
     out << "digraph isoX {" << endl;
-    out << "rankdir=LR;\n\
- node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n	\
+    out << " node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n	\
  edge[ arrowhead=onormal,penwidth=2.0,]; \n" <<endl;
     for (auto pt = begin_nodes(); pt != end_nodes(); ++pt){
       const Node * na = *pt;
@@ -920,11 +929,80 @@ namespace fixrgraphiso {
 
     for (auto rt = begin_edges(); rt != end_edges(); ++rt){
       const Edge * e = *rt;
-      out << "\"n_"<< e -> get_src_id() << "\" -> \"n_"<< e -> get_dst_id() << "\""<< e-> get_edge_dot_style() << ";" << endl; 
+      if (e -> get_type() != TRANSITIVE_EDGE || !transitiveReduce || trRed.hasEdge(e -> get_src_id(), e -> get_dst_id())){
+	out << "\"n_"<< e -> get_src_id() << "\" -> \"n_"<< e -> get_dst_id() << "\""<< e-> get_edge_dot_style() << ";" << endl;
+      }
     }
 
     out << " } " << endl;
   }
+
+
+  
+  
+  
+  void TransitiveReduceAcdfg::extractDataFromACDFG(){
+    // Extract all methods nodes
+    for (auto it = a -> begin_nodes(); it != a -> end_nodes(); ++it){
+      Node * n = *it;
+      if (n -> get_type() == METHOD_NODE){
+	vertexIDs.insert(n -> get_id());
+      }
+    }
+
+    for (auto jt = a -> begin_edges(); jt != a -> end_edges(); ++jt){
+      Edge * e = *jt;
+      if (vertexIDs.find(e -> get_src_id()) != vertexIDs.end()){
+	if (vertexIDs.find(e -> get_dst_id()) != vertexIDs.end()){
+	  // Insert it two ways
+	  std::pair<long,long> q(e-> get_src_id(), e -> get_dst_id());
+	  edges_src_dest[q] = e->get_id();
+	}
+      }
+    }
+
+    
+  }
+
+  bool TransitiveReduceAcdfg::hasEdge(long srcID, long destID){
+    std::pair<long,long> q(srcID, destID);
+    auto it = edges_src_dest.find(q);
+    if (it != edges_src_dest.end()){
+      return true;
+    }
+
+    return false;
+  }
+
+  void TransitiveReduceAcdfg::deleteEdge(long srcID, long destID){
+    std::pair<long,long> q(srcID, destID);
+    auto it = edges_src_dest.find(q);
+    if (it != edges_src_dest.end()){
+      edges_src_dest.erase(it);
+    }
+  }
+  
+  void TransitiveReduceAcdfg::performTransitiveReduction() {
+    // We will implement the n^3 algorithm because anything else is going to be a pain
+    // to debug in a short period of time.
+
+    for (long id1: vertexIDs){
+      for (long id2: vertexIDs){
+	if (id1 != id2){
+	  for (long id3: vertexIDs){
+	    if (id2 != id3 && id1 != id3){
+	      if (hasEdge(id1, id2) && hasEdge(id2, id3)){
+		deleteEdge(id1, id3);
+	      }
+	    }	    
+	  }
+	}
+      }
+    }
+  }
+
+
+  
   
 } // namespace fixrgraphiso
 

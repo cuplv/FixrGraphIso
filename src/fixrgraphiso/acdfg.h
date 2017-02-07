@@ -6,7 +6,7 @@
 //
 
 #ifndef ACDFG_H_INCLUDED
-#define ACDFG_H_INCLUDED
+#define ACDFG_H_INCLUDED 1
 
 #include <vector>
 #include <map>
@@ -14,11 +14,15 @@
 #include <ostream>
 #include <cassert>
 #include <iostream>
+#include <set>
+#include <map>
 namespace fixrgraphiso {
 
   using std::vector;
   using std::string;
-
+  using std::set;
+  using std::map;
+  
   typedef enum { REGULAR_NODE, DATA_NODE, METHOD_NODE } node_type_t;
   typedef enum { DATA_NODE_CONST, DATA_NODE_VAR, DATA_NODE_UNKNOWN } data_node_type_t;
   
@@ -330,7 +334,7 @@ namespace fixrgraphiso {
       return this -> name_;
     }
 
-    void dumpToDot(std::ostream & os) const;
+    void dumpToDot(std::ostream & os, bool transitiveReduce=true) const;
 
     Acdfg * extractSubgraphWithFrequencyCutoff(int freqCutoff) const;
 
@@ -350,7 +354,21 @@ namespace fixrgraphiso {
     void ensureEdge(edge_type_t eType, Node * src, Node * dest);
   };
 
-
+ 
+  class TransitiveReduceAcdfg {
+  protected:
+    const Acdfg * a;
+    std::set<long> vertexIDs;
+    std::map< std::pair<long, long>, long > edges_src_dest;
+    
+    void deleteEdge(long srcID, long destID);
+    void extractDataFromACDFG();
+    
+  public:
+    TransitiveReduceAcdfg(const Acdfg * acdfg_a):a(acdfg_a){ extractDataFromACDFG(); }
+    void performTransitiveReduction();
+    bool hasEdge(long srcID, long destID);
+  };
   
   
 } // namespace fixrgraphiso
