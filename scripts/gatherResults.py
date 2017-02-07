@@ -18,10 +18,10 @@ class MinedPattern:
             patternType = 'Popular'
         else:
             patternType = 'Anomalous'
-        listOfMethods1 = [s.replace('<','\<')  for s in listOfMethods]
+        listOfMethods1 = [s.replace('<','\<')  for s in self.listOfMethods]
         listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
         listOfMethods3 = ['<h3>'+s+'</h3>' for s in listOfMethods2]
-        methods_str = '<br>'.join(self.listOfMethods3)
+        methods_str = '<br>'.join(listOfMethods3)
 
         s1 = """ <h2> %s Pattern %d </h2> """%(patternType, self.patternID)
         s2 = """ <img src=\"%s\" alt=\"DOT Image\" style=\"width:100%%;border:2px solid black;\"> """%(self.imageName)
@@ -45,16 +45,16 @@ class GenerateIndexPage:
     def makeIndexFile(self):
         f = open('%s/index.html'%(self.htmlOutputDir), 'w')
         print('<html><body> <h1> Cluster Index Page </h1>\n<ul>\n', file = f)
-        for (cID,mList) in clusterMethods.items():
-            assert(cID in clusterPages)
-            cluster_pg = clusterPages[cID]
-            listOfMethods1 = [s.replace('<','\<')  for s in listOfMethods]
-            listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
-            listOfMethods3 = ['<h3>'+s+'</h3>' for s in listOfMethods2]
-            methods_str = ', '.join(self.listOfMethods3)
-            s = '<li>  %s <a href=\"%s\"> page </a>'%(methods_str, cluster_pg)
-            print(s,file=f)
-        print('</ul></body></html>')
+        for (cID,mList) in self.clusterMethods.items():
+            if (cID in self.clusterPages):
+                cluster_pg = self.clusterPages[cID]
+                listOfMethods1 = [s.replace('<','\<')  for s in mList]
+                listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
+                listOfMethods3 = ['<h3>'+s+'</h3>' for s in listOfMethods2]
+                methods_str = ', '.join(listOfMethods3)
+                s = '<li>  %s <a href=\"%s\"> page </a>'%(methods_str, cluster_pg)
+                print(s,file=f)
+        print('</ul></body></html>', file = f)
         f.close()
 
     def printClusterHeader(self, f, clusterID, cluster_methods):
