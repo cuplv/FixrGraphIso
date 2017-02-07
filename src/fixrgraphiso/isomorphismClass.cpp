@@ -15,6 +15,13 @@ namespace fixrgraphiso {
     Constructor for IsoEncoder 
     --*/
   extern bool debug;
+
+  bool compatibleEdgeTypes(edge_type_t a, edge_type_t b){
+    if ( a== b) return true;
+    if ( (a == CONTROL_EDGE || a == TRANSITIVE_EDGE) && (b == CONTROL_EDGE || b == TRANSITIVE_EDGE)) return true;
+    return false;
+  }
+
   
   IsoEncoder::IsoEncoder():  ctx(), s(ctx), alreadySolved(false), satisfiable(false){}
 
@@ -257,7 +264,7 @@ namespace fixrgraphiso {
   void IsoSubsumption::addCompatibleEdgePair(Edge * ea, Edge * eb){
     edge_id_t id_a = ea -> get_id();
     edge_id_t id_b = eb -> get_id();
-    assert(ea -> get_type() == eb -> get_type());
+    assert(compatibleEdgeTypes(ea -> get_type(), eb -> get_type()));
     add_id_pair_to_map_pair(id_a, id_b, edges_a_to_b, edges_b_to_a);
   }
 
@@ -342,11 +349,6 @@ namespace fixrgraphiso {
     return true;
   }
 
-  bool compatibleEdgeTypes(edge_type_t a, edge_type_t b){
-    if ( a== b) return true;
-    if ( (a == CONTROL_EDGE || a == TRANSITIVE_EDGE) && (b == CONTROL_EDGE || b == TRANSITIVE_EDGE)) return true;
-    return false;
-  }
   /*-- 
     Iterate through pairs of edges and make sure to match up pairs of compatible edges.
     This method should only be called after we have computed compatible nodes.
