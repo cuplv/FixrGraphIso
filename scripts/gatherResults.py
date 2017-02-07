@@ -18,7 +18,10 @@ class MinedPattern:
             patternType = 'Popular'
         else:
             patternType = 'Anomalous'
-        methods_str = '\n<br>'.join(self.listOfMethods)
+        listOfMethods1 = [s.replace('<','\<')  for s in listOfMethods]
+        listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
+        listOfMethods3 = ['<h3>'+s+'</h3>' for s in listOfMethods2]
+        methods_str = '<br>'.join(self.listOfMethods3)
 
         s1 = """ <h2> %s Pattern %d </h2> """%(patternType, self.patternID)
         s2 = """ <img src=\"%s\" alt=\"DOT Image\" style=\"width:100%%;border:2px solid black;\"> """%(self.imageName)
@@ -38,6 +41,21 @@ class GenerateIndexPage:
         self.clusterMethods = {}
         self.clusterPages = {}
         self.runDotLocally = False
+
+    def makeIndexFile(self):
+        f = open('%s/index.html'%(self.htmlOutputDir), 'w')
+        print('<html><body> <h1> Cluster Index Page </h1>\n<ul>\n', file = f)
+        for (cID,mList) in clusterMethods.items():
+            assert(cID in clusterPages)
+            cluster_pg = clusterPages[cID]
+            listOfMethods1 = [s.replace('<','\<')  for s in listOfMethods]
+            listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
+            listOfMethods3 = ['<h3>'+s+'</h3>' for s in listOfMethods2]
+            methods_str = ', '.join(self.listOfMethods3)
+            s = '<li>  %s <a href=\"%s\"> page </a>'%(methods_str, cluster_pg)
+            print(s,file=f)
+        print('</ul></body></html>')
+        f.close()
 
     def printClusterHeader(self, f, clusterID, cluster_methods):
         cluster_method_str = '</b>, <b> '.join(cluster_methods)
@@ -173,6 +191,7 @@ def main(argv):
     for id in range(start_range, end_range+1):
         g.parseInfoFile(id)
         g.generatePageForCluster(id)
+    g.makeIndexFile()
 
 
 if __name__ == '__main__':
