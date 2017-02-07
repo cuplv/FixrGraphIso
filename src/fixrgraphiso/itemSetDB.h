@@ -75,7 +75,7 @@ namespace fixrgraphiso {
     void addIndex(int j, ItemRecord * i_rec);
     void convertToStringSet(set<int> const & s, set<string> & res);
     bool is_excluded (string const & s) const;
-    void addRemainingRecordsToFrequentItemSets(vector<FreqItemSet> & result);
+    void addRemainingRecordsToFrequentItemSets(vector<FreqItemSet> & result, int min_size_cutoff);
     
   public:
     

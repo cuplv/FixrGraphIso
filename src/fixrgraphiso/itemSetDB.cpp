@@ -252,12 +252,12 @@ namespace fixrgraphiso {
     return false;
   }
 
-  void ItemSetDB::addRemainingRecordsToFrequentItemSets(vector<FreqItemSet> & result){
+  void ItemSetDB::addRemainingRecordsToFrequentItemSets(vector<FreqItemSet> & result, int min_cutoff){
     for (ItemRecord * i_rec: records){
       for (FreqItemSet & f : result){
 	if (!f.hasBeenMerged()){
 	  set<int> & itemSet = f.get_int_set_ref();
-	  if (i_rec -> numberOfCommonItems(itemSet) >= itemSet.size() -1 ){
+	  if (i_rec -> numberOfCommonItems(itemSet) >= min_cutoff ){
 	    f.addItemRecord(i_rec);
 	  }
 	}
@@ -272,7 +272,7 @@ namespace fixrgraphiso {
     // Merge frequent item sets according to merge criteria
     int n = result.size();
 
-    //addRemainingRecordsToFrequentItemSets(result);
+    addRemainingRecordsToFrequentItemSets(result, min_size_cutoff);
     
     for (int i = 0; i < n-1; ++i){
       FreqItemSet & item_i = result[i];
