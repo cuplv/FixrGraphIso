@@ -76,7 +76,7 @@ class ClusterProcessor:
 
     def main(self,argv):
         self.start_range = 1
-        self.end_range = 426
+        self.end_range = 100000
         self.run_cluster_copy = True
         self.fixr_root_directory='/Users/macuser/Projects/git/FixrGraphIso'
         self.cluster_file_name = 'clusters.txt'
@@ -108,8 +108,8 @@ class ClusterProcessor:
                 sys.exit(1)
 
         clusters = self.processClusterFile()
-        if (self.end_range > self.start_range):
-            for (cid, fun_names) in clusters:
+        for (cid, fun_names) in clusters:
+            if (cid >= self.start_range and cid <= self.end_range):
                 self.runForCluster(cid, fun_names)
         else:
             print( 'start range (%d) must be less than end range (%d) '%(self.start_range, self.end_range))
