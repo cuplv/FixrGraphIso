@@ -31,7 +31,7 @@ namespace fixrgraphiso{
   double gurobi_timeout = 30.0;
   string info_file_name = "cluster-info.txt";
   bool useApproximateIsomorphism=false;
-  int minTargetSize = 2;
+  int minTargetSize = 3;
   int maxTargetSize = 100;
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
