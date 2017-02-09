@@ -11,8 +11,9 @@
 #include "fixrgraphiso/proto_iso.pb.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
 #include "fixrgraphiso/collectStats.h"
+#include "fixrgraphiso/isomorphismClass.h"
 #ifdef D__OLD_CODE
-// #include "fixrgraphiso/isomorphismClass.h"
+// 
 // #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 #endif
 #include "fixrgraphiso/serialization.h"
@@ -36,7 +37,7 @@ namespace fixrgraphiso{
   int maxTargetSize = 100;
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
-
+  bool runTestOfSubsumption = true;
   stats_struct all_stats;
 
 
@@ -455,7 +456,7 @@ namespace fixrgraphiso{
   void computePatternsThroughSlicing(vector<string> & filenames, vector<string> & methodnames){
     //1. Slice all the ACDFGs using the methods in the method names as the target
     vector<Acdfg*> allSlicedACDFGs;
-	auto start = std::chrono::steady_clock::now();
+    auto start = std::chrono::steady_clock::now();
     for (string f: filenames){
       Acdfg * orig_acdfg = loadACDFGFromFilename(f);
       vector<MethodNode*> targets;
@@ -520,6 +521,31 @@ namespace fixrgraphiso{
     dumpAllBins(popular, anomalous, isolated, time_taken, info_file_name);
   }
 
+  void testPairwiseSubsumption(std::vector<string> & filenames, std::vector<string> & methodnames){
+    vector<Acdfg * > allACDFGs;
+    
+    for (string f: filenames){
+      Acdfg * orig_acdfg = loadACDFGFromFilename(f);
+      vector<MethodNode*> targets;
+      orig_acdfg -> getMethodsFromName(methodnames, targets);
+      Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets);
+      new_acdfg -> setName(f);
+      allACDFGs.push_back(new_acdfg);
+    }
+
+    for (Acdfg * a : allACDFGs){
+      for (Acdfg * b : allACDFGs){
+	if (a == b) continue;
+	IsoSubsumption isoSub(a, b);
+	if (isoSub.check()){
+	  std:: cout << a -> getName() << " subsumes " << b -> getName() << endl;
+	} 
+      }
+    }
+    return ;
+  }
+
+  
   void frequentSubgraphsMain(int argc, char * argv [] ){
 
     vector<string> filenames;
@@ -536,9 +562,11 @@ namespace fixrgraphiso{
 //       computePatternsThroughApproximateIsomorphism(allACDFGs);
 //     } else
 // #endif
-      {
-	computePatternsThroughSlicing(filenames, methodnames);
-      }
+    if (runTestOfSubsumption){
+      testPairwiseSubsumption(filenames, methodnames);
+    } else {
+      computePatternsThroughSlicing(filenames, methodnames);
+    }
 
   }
 
