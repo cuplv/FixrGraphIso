@@ -82,7 +82,7 @@ namespace fixrgraphiso {
     
     
   public:
-    IsoSubsumption();
+    IsoSubsumption(Acdfg * a, Acdfg * b);
     ~IsoSubsumption(){}
     
     

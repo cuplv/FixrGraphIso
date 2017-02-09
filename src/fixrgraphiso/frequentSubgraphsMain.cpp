@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include "fixrgraphiso/proto_iso.pb.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
+#include "fixrgraphiso/collectStats.h"
 #ifdef D__OLD_CODE
 // #include "fixrgraphiso/isomorphismClass.h"
 // #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
@@ -35,6 +36,12 @@ namespace fixrgraphiso{
   int maxTargetSize = 100;
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
+
+  
+  int numSATCalls;
+  int numSubsumptionChecks;
+  std::chrono::milliseconds satSolverTime(0);
+
 
   using std::ifstream;
 
@@ -276,6 +283,7 @@ namespace fixrgraphiso{
       count ++;
      }
 
+    printStats(out_file);
     out_file.close();
   }
 #ifdef D__OLD_CODE
@@ -510,10 +518,12 @@ namespace fixrgraphiso{
   }
 
   void frequentSubgraphsMain(int argc, char * argv [] ){
+    
     vector<string> filenames;
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
-
+    initializeStats();
+    
 // #ifdef D__OLD_CODE
 //     if (useApproximateIsomorphism){
 //       vector<Acdfg*> allACDFGs;
