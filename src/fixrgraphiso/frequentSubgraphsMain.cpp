@@ -37,10 +37,7 @@ namespace fixrgraphiso{
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
 
-  
-  int numSATCalls;
-  int numSubsumptionChecks;
-  std::chrono::milliseconds satSolverTime(0);
+  stats_struct all_stats;
 
 
   using std::ifstream;
@@ -522,7 +519,7 @@ namespace fixrgraphiso{
     vector<string> filenames;
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
-    initializeStats();
+    
     
 // #ifdef D__OLD_CODE
 //     if (useApproximateIsomorphism){
