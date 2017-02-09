@@ -8,6 +8,13 @@
 namespace fixrgraphiso {
 
   bool AcdfgBin::isACDFGBinSubsuming( AcdfgBin * b){
+    // First check the graph so far
+    for (AcdfgBin * c : incomingEdges){
+      if (c -> hasSubsumingBin(b)){
+	return true;
+      }
+    }
+    
     Acdfg * repr_a = getRepresentative();
     Acdfg * repr_b = b -> getRepresentative();
 
