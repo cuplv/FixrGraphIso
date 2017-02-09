@@ -54,18 +54,20 @@ namespace fixrgraphiso {
     return f;
   }
 
-  void AcdfgBin::printInfo(std::ostream & out) const {
+  void AcdfgBin::printInfo(std::ostream & out, bool printAbove) const {
     
     out << "\t Frequency = " << getPopularity() <<  endl;
 
     for (const Acdfg * a : acdfgs){
       out << a -> getName() << endl;
     }
+    if (printAbove){
     
-    for (const AcdfgBin * b : subsumingBins){
-      const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
-      for (const Acdfg * a: sub_acdfgs){
-	out << a -> getName() << endl;
+      for (const AcdfgBin * b : subsumingBins){
+	const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
+	for (const Acdfg * a: sub_acdfgs){
+	  out << a -> getName() << endl;
+	}
       }
     }
     
@@ -102,10 +104,10 @@ namespace fixrgraphiso {
     if (f < freq_cutoff) return false;
     bool hasUnpopularParent = false;
     for (const AcdfgBin * b: immediateSubsumingBins){
-      if (b -> getPopularity() < freq_cutoff)
-	return true;
+      if (b -> getPopularity() >= freq_cutoff)
+	return false;
     }
-    return false;
+    return true;
   }
 
   void AcdfgBin::setPopular() {

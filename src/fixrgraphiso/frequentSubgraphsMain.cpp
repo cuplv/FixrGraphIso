@@ -245,7 +245,7 @@ namespace fixrgraphiso{
       assert (a -> isPopular());
       iso_file_name = string("pop_")+std::to_string(count)+".dot";
       out_file << "Popular Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name;
+      out_file << "Dot: " << iso_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
       a -> dumpToDot(iso_file_name);
       a -> printInfo(out_file);
@@ -258,10 +258,10 @@ namespace fixrgraphiso{
       assert(a -> isAnomalous());
       iso_file_name = string("anom_")+std::to_string(count)+".dot";
       out_file << "Anomalous Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name;
-      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency()<< std::endl;
       a -> dumpToDot(iso_file_name);
-      a -> printInfo(out_file);
+      a -> printInfo(out_file, false);
       count ++;
      }
 
@@ -269,10 +269,10 @@ namespace fixrgraphiso{
     for (AcdfgBin * a: isolated){
       iso_file_name = string("isol_")+std::to_string(count)+".dot";
       out_file << "Isolated Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name;
-      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency() ;
       a -> dumpToDot(iso_file_name);
-      a -> printInfo(out_file);
+      a -> printInfo(out_file, false);
       count ++;
      }
 
