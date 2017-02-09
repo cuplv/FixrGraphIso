@@ -1,5 +1,7 @@
 #include <ostream>
 #include <fstream>
+#include <algorithm>
+#include <iterator>
 #include "acdfgBin.h"
 #include "fixrgraphiso/isomorphismClass.h"
 
@@ -76,4 +78,52 @@ namespace fixrgraphiso {
     repr -> dumpToDot(dot_out);
     dot_out.close();
   }
+
+  void AcdfgBin::addSubsumingBinsToSet(set<AcdfgBin*> & what) {
+    for (AcdfgBin* b: subsumingBins){
+      assert(b != this);
+      what.insert(b);
+    }
+  }
+
+  void AcdfgBin::computeImmediatelySubsumingBins(){
+    set<AcdfgBin*> transitivelySubsuming;
+    for (AcdfgBin * b : subsumingBins){
+      b -> addSubsumingBinsToSet(transitivelySubsuming);
+    }
+    std::set_difference(subsumingBins.begin(), subsumingBins.end(),	\
+			transitivelySubsuming.begin(), transitivelySubsuming.end(), \
+			std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
+    
+  }
+
+  bool AcdfgBin::isAtFrontierOfPopularity(int freq_cutoff) const {
+    int f = this -> getPopularity();
+    if (f < freq_cutoff) return false;
+    bool hasUnpopularParent = false;
+    for (const AcdfgBin * b: immediateSubsumingBins){
+      if (b -> getPopularity() < freq_cutoff)
+	return true;
+    }
+    return false;
+  }
+
+  void AcdfgBin::setPopular() {
+    assert(! this -> subsuming);
+    this -> popular = true;
+    for (AcdfgBin * b: subsumingBins){
+      b -> popular = false;
+      b -> subsuming = true;
+    }
+    
+  }
+
+  bool AcdfgBin::hasPopularAncestor() const{
+    for (const AcdfgBin* b: subsumingBins){
+      if (b -> isPopular())
+	return true;
+    }
+    return false;
+  }
+  
 }

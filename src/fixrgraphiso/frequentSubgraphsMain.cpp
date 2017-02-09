@@ -234,33 +234,48 @@ namespace fixrgraphiso{
 
 #endif
 
-  void dumpAllBins(std::vector<AcdfgBin*> &allBins, const std::string & infoFileName){
+  void dumpAllBins(std::vector<AcdfgBin*> & popular,
+		   std::vector<AcdfgBin*> & anomalous,
+		   std::vector<AcdfgBin*> & isolated, const std::string & infoFileName){
     std::ofstream out_file(infoFileName.c_str());
     int count = 1;
     string iso_file_name;
     out_file << "Popular Bins: " << endl;
-    for (AcdfgBin * a: allBins){
-      if (a -> isPopular()){
-	iso_file_name = string("pop_")+std::to_string(count)+".dot";
-	out_file << "Bin # " << count << endl;
-	out_file << "Dot: " << iso_file_name;
-	a -> dumpToDot(iso_file_name);
-	a -> printInfo(out_file);
-	count ++;
-      }
+    for (AcdfgBin * a: popular){
+      assert (a -> isPopular());
+      iso_file_name = string("pop_")+std::to_string(count)+".dot";
+      out_file << "Popular Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name;
+      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      a -> dumpToDot(iso_file_name);
+      a -> printInfo(out_file);
+      count ++;	
     }
 
-    out_file << "Anomalous Bins:  " << endl;
-     for (AcdfgBin * a: allBins){
-      if (a -> isAnomalous()){
-	iso_file_name = string("anom_")+std::to_string(count)+".dot";
-	out_file << "Bin # " << count << endl;
-	out_file << "Dot: " << iso_file_name;
-	a -> dumpToDot(iso_file_name);
-	a -> printInfo(out_file);
-	count ++;
-      }
+    count = 1;
+
+    for (AcdfgBin * a: anomalous){
+      assert(a -> isAnomalous());
+      iso_file_name = string("anom_")+std::to_string(count)+".dot";
+      out_file << "Anomalous Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name;
+      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      a -> dumpToDot(iso_file_name);
+      a -> printInfo(out_file);
+      count ++;
      }
+
+    count = 1;
+    for (AcdfgBin * a: isolated){
+      iso_file_name = string("isol_")+std::to_string(count)+".dot";
+      out_file << "Isolated Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name;
+      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      a -> dumpToDot(iso_file_name);
+      a -> printInfo(out_file);
+      count ++;
+     }
+
     out_file.close();
   }
 #ifdef D__OLD_CODE
@@ -284,7 +299,55 @@ namespace fixrgraphiso{
   // }
 #endif
 
-  void analyzeAnomalies(std::vector<AcdfgBin*> & allBins){
+  void calculateLatticeGraph(std::vector<AcdfgBin*> & allBins){
+    for (auto it = allBins.begin(); it != allBins.end(); ++it){
+      AcdfgBin * a = *it;
+      for (auto jt = allBins.begin(); jt != allBins.end(); ++jt){
+	AcdfgBin * b = *jt;
+	if (a == b) continue;
+	if (a -> isACDFGBinSubsuming(b)){
+	  a -> addSubsumingBin(b);
+	}
+      }
+    }
+  }
+  
+  void classifyBins(std::vector<AcdfgBin*> & allBins, std::vector<AcdfgBin*> & popular,
+		    std::vector<AcdfgBin*> & anomalous, std::vector<AcdfgBin*> & isolated){
+
+    calculateLatticeGraph(allBins);
+    // 1. Calculate the transitive reduction for each node and use it to judge popularity
+    for (AcdfgBin * a: allBins){
+      a -> computeImmediatelySubsumingBins();
+      if (a -> isSubsuming()) continue;
+      if (a -> isAtFrontierOfPopularity(freq_cutoff)){
+	a -> setPopular();
+	if (debug){
+	  std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
+	}
+      }
+    }
+
+    // 2. Now calculate the anomalous patterns
+    for (AcdfgBin * a: allBins){
+      if (a -> isSubsuming()) continue;
+      if (a -> isPopular()) {
+	popular.push_back(a);
+	
+      } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
+	a -> setAnomalous();
+	anomalous.push_back(a);
+	
+      } else if (a -> getFrequency() <= anomalyCutOff){
+	isolated.push_back(a);
+      }
+    }
+    
+    return;
+    
+  }
+  
+  void analyzeAnomaliesOLD(std::vector<AcdfgBin*> & allBins){
     // Anomaly detection routine
     // First popular bins are those which have >= frequency cutoff equivalents
     // Next, after collecting all popular bins,
@@ -440,8 +503,10 @@ namespace fixrgraphiso{
 		return iso1 -> getFrequency() > iso2 -> getFrequency();
 	      });
 
-    analyzeAnomalies(allBins);
-    dumpAllBins(allBins, info_file_name);
+    //analyzeAnomalies(allBins);
+    std::vector<AcdfgBin*> popular, anomalous, isolated;
+    classifyBins(allBins,popular,anomalous,isolated);
+    dumpAllBins(popular, anomalous, isolated, info_file_name);
   }
 
   void frequentSubgraphsMain(int argc, char * argv [] ){
