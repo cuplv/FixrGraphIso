@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include "fixrgraphiso/proto_iso.pb.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
+#include "fixrgraphiso/collectStats.h"
 #ifdef D__OLD_CODE
 // #include "fixrgraphiso/isomorphismClass.h"
 // #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
@@ -35,6 +36,12 @@ namespace fixrgraphiso{
   int maxTargetSize = 100;
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
+
+  
+  int numSATCalls;
+  int numSubsumptionChecks;
+  std::chrono::milliseconds satSolverTime(0);
+
 
   using std::ifstream;
 
@@ -245,7 +252,7 @@ namespace fixrgraphiso{
       assert (a -> isPopular());
       iso_file_name = string("pop_")+std::to_string(count)+".dot";
       out_file << "Popular Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name;
+      out_file << "Dot: " << iso_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
       a -> dumpToDot(iso_file_name);
       a -> printInfo(out_file);
@@ -258,10 +265,10 @@ namespace fixrgraphiso{
       assert(a -> isAnomalous());
       iso_file_name = string("anom_")+std::to_string(count)+".dot";
       out_file << "Anomalous Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name;
-      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency()<< std::endl;
       a -> dumpToDot(iso_file_name);
-      a -> printInfo(out_file);
+      a -> printInfo(out_file, false);
       count ++;
      }
 
@@ -269,13 +276,14 @@ namespace fixrgraphiso{
     for (AcdfgBin * a: isolated){
       iso_file_name = string("isol_")+std::to_string(count)+".dot";
       out_file << "Isolated Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name;
-      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency() ;
       a -> dumpToDot(iso_file_name);
-      a -> printInfo(out_file);
+      a -> printInfo(out_file, false);
       count ++;
      }
 
+    printStats(out_file);
     out_file.close();
   }
 #ifdef D__OLD_CODE
@@ -508,10 +516,12 @@ namespace fixrgraphiso{
   }
 
   void frequentSubgraphsMain(int argc, char * argv [] ){
+    
     vector<string> filenames;
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
-
+    initializeStats();
+    
 // #ifdef D__OLD_CODE
 //     if (useApproximateIsomorphism){
 //       vector<Acdfg*> allACDFGs;

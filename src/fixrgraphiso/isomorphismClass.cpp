@@ -2,7 +2,7 @@
 #include <algorithm>
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serialization.h"
-
+#include "fixrgraphiso/collectStats.h"
 
 using std::cout;
 using std::endl;
@@ -50,6 +50,12 @@ namespace fixrgraphiso {
     return it -> second;
   }
 
+  
+  IsoSubsumption::IsoSubsumption(Acdfg * a, Acdfg * b):acdfg_a(a), acdfg_b(b)
+  {
+    addSubsumptionCheck();
+  }
+  
   /*-
     Create all variables needed for the encoding
     -*/
@@ -566,9 +572,12 @@ namespace fixrgraphiso {
     }
 
     makeEncoding();
-    
+    auto start = std::chrono::high_resolution_clock::now();
     e.solve();
-    return e.isSat();
+    bool retVal = e.isSat();
+    auto end = std::chrono::high_resolution_clock::now();
+    addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+    return retVal;
   }
   
   /*--
