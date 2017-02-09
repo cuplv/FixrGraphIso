@@ -9,7 +9,7 @@ namespace fixrgraphiso {
 
   bool AcdfgBin::isACDFGBinSubsuming( AcdfgBin * b){
     // First check the graph so far
-    for (AcdfgBin * c : incomingEdges){
+    for (AcdfgBin * c : subsumingBins){
       if (c -> hasSubsumingBin(b)){
 	return true;
       }
