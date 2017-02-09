@@ -239,8 +239,9 @@ namespace fixrgraphiso{
 #endif
 
   void dumpAllBins(std::vector<AcdfgBin*> & popular,
-		   std::vector<AcdfgBin*> & anomalous,
-		   std::vector<AcdfgBin*> & isolated, const std::string & infoFileName){
+				   std::vector<AcdfgBin*> & anomalous,
+				   std::vector<AcdfgBin*> & isolated, std::chrono::seconds time_taken,
+				   const std::string & infoFileName){
     std::ofstream out_file(infoFileName.c_str());
     int count = 1;
     string iso_file_name;
@@ -253,7 +254,7 @@ namespace fixrgraphiso{
       out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
       a -> dumpToDot(iso_file_name);
       a -> printInfo(out_file);
-      count ++;	
+      count ++;
     }
 
     count = 1;
@@ -279,8 +280,9 @@ namespace fixrgraphiso{
       a -> printInfo(out_file, false);
       count ++;
      }
-
+	out_file << "Total Time (s): " << time_taken.count()<< endl;
     printStats(out_file);
+
     out_file.close();
   }
 #ifdef D__OLD_CODE
@@ -316,7 +318,7 @@ namespace fixrgraphiso{
       }
     }
   }
-  
+
   void classifyBins(std::vector<AcdfgBin*> & allBins, std::vector<AcdfgBin*> & popular,
 		    std::vector<AcdfgBin*> & anomalous, std::vector<AcdfgBin*> & isolated){
 
@@ -338,20 +340,20 @@ namespace fixrgraphiso{
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
 	popular.push_back(a);
-	
+
       } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
 	a -> setAnomalous();
 	anomalous.push_back(a);
-	
+
       } else if (a -> getFrequency() <= anomalyCutOff){
 	isolated.push_back(a);
       }
     }
-    
+
     return;
-    
+
   }
-  
+
   void analyzeAnomaliesOLD(std::vector<AcdfgBin*> & allBins){
     // Anomaly detection routine
     // First popular bins are those which have >= frequency cutoff equivalents
@@ -453,6 +455,7 @@ namespace fixrgraphiso{
   void computePatternsThroughSlicing(vector<string> & filenames, vector<string> & methodnames){
     //1. Slice all the ACDFGs using the methods in the method names as the target
     vector<Acdfg*> allSlicedACDFGs;
+	auto start = std::chrono::steady_clock::now();
     for (string f: filenames){
       Acdfg * orig_acdfg = loadACDFGFromFilename(f);
       vector<MethodNode*> targets;
@@ -479,6 +482,7 @@ namespace fixrgraphiso{
 	  delete(new_acdfg);
 	} else {
 	  new_acdfg -> setName(f);
+	  addGraphStats(new_acdfg -> node_count(), new_acdfg-> edge_count());
 	  allSlicedACDFGs.push_back(new_acdfg);
 	}
       }
@@ -511,16 +515,18 @@ namespace fixrgraphiso{
     //analyzeAnomalies(allBins);
     std::vector<AcdfgBin*> popular, anomalous, isolated;
     classifyBins(allBins,popular,anomalous,isolated);
-    dumpAllBins(popular, anomalous, isolated, info_file_name);
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::seconds time_taken = std::chrono::duration_cast<std::chrono::seconds>(end -start);
+    dumpAllBins(popular, anomalous, isolated, time_taken, info_file_name);
   }
 
   void frequentSubgraphsMain(int argc, char * argv [] ){
-    
+
     vector<string> filenames;
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
-    
-    
+
+
 // #ifdef D__OLD_CODE
 //     if (useApproximateIsomorphism){
 //       vector<Acdfg*> allACDFGs;
