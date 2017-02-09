@@ -31,7 +31,7 @@ namespace fixrgraphiso{
   double gurobi_timeout = 30.0;
   string info_file_name = "cluster-info.txt";
   bool useApproximateIsomorphism=false;
-  int minTargetSize = 3;
+  int minTargetSize = 2;
   int maxTargetSize = 100;
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
@@ -333,11 +333,9 @@ namespace fixrgraphiso{
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
 	popular.push_back(a);
-	
       } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
 	a -> setAnomalous();
 	anomalous.push_back(a);
-	
       } else if (a -> getFrequency() <= anomalyCutOff){
 	isolated.push_back(a);
       }
