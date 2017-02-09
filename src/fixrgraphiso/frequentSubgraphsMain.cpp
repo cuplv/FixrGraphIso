@@ -81,13 +81,16 @@ namespace fixrgraphiso{
 
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:"))!= -1){
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:z"))!= -1){
       switch (c){
       case 'm': {
 		string methodNamesFile = optarg;
 		cout << "Loading methods" << endl;
 		loadNamesFromFile(methodNamesFile, methodNames);
       }
+	break;
+      case 'z':
+	runTestOfSubsumption = true;
 	break;
       case 'd':
 	fixrgraphiso::debug = true;
@@ -341,7 +344,7 @@ namespace fixrgraphiso{
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
 	popular.push_back(a);
-
+	
       } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
 	a -> setAnomalous();
 	anomalous.push_back(a);
