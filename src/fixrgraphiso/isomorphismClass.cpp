@@ -443,7 +443,7 @@ namespace fixrgraphiso {
 	IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
 	var_pairs.push_back( var );
       }
-      e.atleastOne(var_pairs);
+      e.exactlyOne(var_pairs);
     }
 
 
@@ -454,16 +454,16 @@ namespace fixrgraphiso {
     // Every edge in A must be connected to at most one edge in b.
     // Sriram: this is actually redundant.
 
-    // for (const auto p: edges_a_to_b){
-    //   edge_id_t edg_a = p.first;
-    //   vector<edge_id_t> const & v = p.second;
-    //   vector<IsoEncoder::var_t > var_pairs;
-    //   for (edge_id_t edg_b: v){
-    // 	IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
-    // 	var_pairs.push_back(var);
-    //   }
-    //   e.atmostOne(var_pairs);
-    // }
+    for (const auto p: edges_a_to_b){
+      edge_id_t edg_a = p.first;
+      vector<edge_id_t> const & v = p.second;
+      vector<IsoEncoder::var_t > var_pairs;
+      for (edge_id_t edg_b: v){
+    	IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
+    	var_pairs.push_back(var);
+      }
+      e.atmostOne(var_pairs);
+    }
 
 
 
@@ -574,6 +574,7 @@ namespace fixrgraphiso {
     makeEncoding();
     auto start = std::chrono::high_resolution_clock::now();
     e.solve();
+    cout <<"Solving SAT" << endl;
     bool retVal = e.isSat();
     auto end = std::chrono::high_resolution_clock::now();
     addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
