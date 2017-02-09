@@ -12,6 +12,7 @@
 #include <ostream>
 #include <cassert>
 #include <iostream>
+#include <set>
 #include "fixrgraphiso/acdfg.h"
 
 namespace fixrgraphiso{
@@ -19,7 +20,7 @@ namespace fixrgraphiso{
   using std::string;
   using std::endl;
   using std::cout;
-
+  using std::set;
   class AcdfgBin {
   public:
 
@@ -52,8 +53,10 @@ namespace fixrgraphiso{
     bool isACDFGBinSubsuming(AcdfgBin * b);
 
     void addSubsumingBin(AcdfgBin * b){
-      subsumingBins.push_back(b);
+      subsumingBins.insert(b);
     }
+
+    void computeImmediatelySubsumingBins();
 
     bool isSubsuming() const { return subsuming; }
     void setSubsuming()  {subsuming = true; }
@@ -61,16 +64,19 @@ namespace fixrgraphiso{
     bool isAnomalous() const {return anomalous; }
     void setAnomalous() { anomalous = true; }
 
-    void setPopular() { popular = true;}
-    bool isPopular() { return popular;}
+    void setPopular() ;
+    bool isPopular() const { return popular;}
 
     const std::vector<Acdfg*>  & getACDFGs() const { return acdfgs; }
-    
-
+    bool isAtFrontierOfPopularity(int freq_cutoff) const;
+    bool hasPopularAncestor() const;
   protected:
 
+    void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
+    
     vector<Acdfg*> acdfgs;
-    vector<AcdfgBin*> subsumingBins;
+    set<AcdfgBin*> subsumingBins;
+    set<AcdfgBin*> immediateSubsumingBins;
     bool subsuming;
     bool anomalous;
     bool popular;
