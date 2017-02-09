@@ -129,6 +129,8 @@ int main (int argc, char *argv[]) {
 	cout << "Setting output file to : " << fixrgraphiso::outputFileName << endl;
 	break;
       default:
+	cout << "unknown option:" << c << endl;
+	optind++;
 	break;
       }
     } else {
@@ -147,7 +149,7 @@ int main (int argc, char *argv[]) {
   std::ifstream inp_file(fName);
   std::string line;
   fixrgraphiso::ItemSetDB allItems;
-  
+  int fcount = 0;
   while (std::getline(inp_file, line)){
     if (!line.empty() && line[line.length() -1] == '\n')
       line.erase(line.length() -1);
@@ -164,14 +166,20 @@ int main (int argc, char *argv[]) {
       // fixrgraphiso::captureItemSetFromIsomorphism(iso,line, &allItems);
 #endif
     }
+    if(fcount %1000 == 0)
+      cout << ".";
+    fcount++;
   }
+  cout << endl;
   
+  cout << "All files loaded " << std::endl;
   /* output should be a list of frequent item sets and corresponding
      list of the isomorphisms under those */
   ofstream out_file (fixrgraphiso::outputFileName.c_str());
-  cout << " Frequent Item Sets computed " << endl;
+
   vector< fixrgraphiso::FreqItemSet > result;
   allItems.computeFrequentItemSets(fixrgraphiso::freq,fixrgraphiso::min_size,result, out_file);
+  cout << " Frequent Item Sets computed " << endl;
   out_file.close();
   google::protobuf::ShutdownProtobufLibrary();
   return 1;

@@ -12,6 +12,7 @@
 #include <ostream>
 #include <cassert>
 #include <iostream>
+#include <set>
 #include "fixrgraphiso/acdfg.h"
 
 namespace fixrgraphiso{
@@ -19,11 +20,11 @@ namespace fixrgraphiso{
   using std::string;
   using std::endl;
   using std::cout;
-
+  using std::set;
   class AcdfgBin {
   public:
 
-  AcdfgBin(Acdfg* a):subsuming(false), anomalous(false), popular(false){
+    AcdfgBin(Acdfg* a):subsuming(false), anomalous(false), popular(false){
       acdfgs.push_back(a);
     }
     
@@ -40,20 +41,33 @@ namespace fixrgraphiso{
 
     int getPopularity() const;
 
+    const Acdfg* getRepresentative() const{
+      assert(acdfgs.size() > 0);
+      return *(acdfgs.begin());
+    }
+    
     Acdfg * getRepresentative(){
       assert(acdfgs.size() > 0);
       return *(acdfgs.begin());
     }
 
-    void printInfo(std::ostream & out) const;
+    void printInfo(std::ostream & out, bool printAbove = true) const;
 
     void dumpToDot(string fileName) const;
 
     bool isACDFGBinSubsuming(AcdfgBin * b);
-
-    void addSubsumingBin(AcdfgBin * b){
-      subsumingBins.push_back(b);
+    void insertIncomingEdge(AcdfgBin * c){
+      incomingEdges.insert(c);
     }
+    bool hasSubsumingBin(AcdfgBin* b){
+      return (subsumingBins.find(b) != subsumingBins.end());
+    }
+    void addSubsumingBin(AcdfgBin * b){
+      subsumingBins.insert(b);
+      b-> insertIncomingEdge(this);
+    }
+
+    void computeImmediatelySubsumingBins();
 
     bool isSubsuming() const { return subsuming; }
     void setSubsuming()  {subsuming = true; }
@@ -61,16 +75,21 @@ namespace fixrgraphiso{
     bool isAnomalous() const {return anomalous; }
     void setAnomalous() { anomalous = true; }
 
-    void setPopular() { popular = true;}
-    bool isPopular() { return popular;}
+    void setPopular() ;
+    bool isPopular() const { return popular;}
 
     const std::vector<Acdfg*>  & getACDFGs() const { return acdfgs; }
+    bool isAtFrontierOfPopularity(int freq_cutoff) const;
+    bool hasPopularAncestor() const;
     
-
   protected:
 
+    void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
+    
     vector<Acdfg*> acdfgs;
-    vector<AcdfgBin*> subsumingBins;
+    set<AcdfgBin*> subsumingBins;
+    set<AcdfgBin*> immediateSubsumingBins;
+    set<AcdfgBin*> incomingEdges;
     bool subsuming;
     bool anomalous;
     bool popular;

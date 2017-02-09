@@ -257,7 +257,7 @@ namespace fixrgraphiso {
       for (FreqItemSet & f : result){
 	if (!f.hasBeenMerged()){
 	  set<int> & itemSet = f.get_int_set_ref();
-	  if (i_rec -> numberOfCommonItems(itemSet) >= min_cutoff ){
+	  if (i_rec -> numberOfCommonItems(itemSet) >= min_cutoff-1 ){
 	    f.addItemRecord(i_rec);
 	  }
 	}

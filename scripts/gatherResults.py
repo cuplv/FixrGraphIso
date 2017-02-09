@@ -6,20 +6,23 @@ import os
 import os.path
 import getopt
 class MinedPattern:
-    def __init__ (self, clusterID, image, listOfMethods, patternID, isPopular):
+    def __init__ (self, clusterID, image, listOfMethods, patternID, patternType):
         self.clusterID = clusterID
         self.imageName = image
         self.listOfMethods = listOfMethods
-        self.isPopular = isPopular
+        self.isPopular = patternType
         self.patternID = patternID
 
     def printToHTML(self, f):
-        if self.isPopular:
+        if self.isPopular == 1:
             patternType = 'Popular'
-        else:
+        elif self.isPopular == 2:
             patternType = 'Anomalous'
-        listOfMethods1 = [s.replace('<','\<')  for s in self.listOfMethods]
-        listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
+        else:
+            patternType = 'Isolated'
+
+        listOfMethods1 = [s.replace('<','((')  for s in self.listOfMethods]
+        listOfMethods2 = [s.replace('>','))') for s in listOfMethods1]
         listOfMethods3 = ['<b>'+s+'</b>' for s in listOfMethods2]
         methods_str = ', '.join(listOfMethods3)
 
@@ -136,7 +139,7 @@ class GenerateIndexPage:
         try:
             f = open(filename, 'rt')
             patternList = []
-            popularPattern = True
+            patternType = 1
             patternID = -1
             patternFrequency = -1
             dotFilename = None
@@ -144,37 +147,39 @@ class GenerateIndexPage:
                 line = line.strip()
                 m = re.match(r'Popular\s*Bins:', line)
                 if m:
-                    popularPattern = True
                     continue
 
-                m = re.match(r'Anomalous\s*Bins:',line)
+                m = re.match(r'(\w+)\s*Bin\s*#\s*(\d+)', line)
                 if m:
                     if (patternID >= 0):
                         # register the previous pattern
                         self.registerPattern(clusterID, dotFileName, patternList,
-                                             patternID, popularPattern)
+                                             patternID, patternType)
                         patternList=[]
                         dotFileName = None
-                        patternID = -1
-                    popularPattern = False
+                        patternFrequency=None
+                    patternDescr = m.group(1)
+                    if (patternDescr == 'Popular'):
+                        patternType = 1
+                    elif (patternDescr == 'Anomalous'):
+                        patternType = 2
+                    else:
+                        patternType = 3
+                    patternID = int(m.group(2))
                     continue
-
-                m = re.match(r'Bin\s*#\s*(\d+)', line)
-                if m:
-                    if (patternID >= 0):
-                        # register the previous pattern
-                        self.registerPattern(clusterID, dotFileName, patternList,
-                                             patternID, popularPattern)
-                        patternList=[]
-                        dotFileName = None
-                    patternID = int(m.group(1))
-                    continue
-                m = re.match(r'Dot:\s*(.*.dot)\s*Frequency\s*=\s*(\d+)', line)
+                m = re.match(r'Dot:\s*(.*.dot)', line)
                 if m:
                     dotFileName = m.group(1)
-                    patternFrequency = m.group(2)
                     continue
                 # Otherwise it is a filename
+                m = re.match(r'Frequency\s*:\s*(\d+),\s*(\d+)', line)
+                if m:
+                    patternFrequency = int(m.group(2))
+                    continue
+                m = re.match(r'Frequency\s*:\s*(\d+)',line)
+                if m:
+                    patternFrequency = int(m.group(1))
+                    continue
                 patternList.append(line)
 
             f.close()

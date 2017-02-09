@@ -2,7 +2,7 @@
 #include <algorithm>
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serialization.h"
-
+#include "fixrgraphiso/collectStats.h"
 
 using std::cout;
 using std::endl;
@@ -12,7 +12,7 @@ using std::to_string;
 
 namespace fixrgraphiso {
   /*--
-    Constructor for IsoEncoder 
+    Constructor for IsoEncoder
     --*/
   extern bool debug;
 
@@ -22,20 +22,20 @@ namespace fixrgraphiso {
     return false;
   }
 
-  
+
   IsoEncoder::IsoEncoder():  ctx(), s(ctx), alreadySolved(false), satisfiable(false){}
 
   IsoEncoder::~IsoEncoder(){
-    
+
   }
 
   /*-
-    Create a boolean variable with a given name 
+    Create a boolean variable with a given name
     -*/
   IsoEncoder::var_t IsoEncoder::createBooleanVariable(const string & vName){
     return ctx.bool_const(vName.c_str());
   }
-  
+
   IsoEncoder::var_t  IsoSubsumption::getNodePairVar(node_id_t a, node_id_t b) const {
     id_pair_t ab (a,b);
     auto it = node_pairs_to_var.find(ab);
@@ -48,6 +48,12 @@ namespace fixrgraphiso {
     auto it = edge_pairs_to_var.find(ab);
     assert ( it != edge_pairs_to_var.end());
     return it -> second;
+  }
+
+
+  IsoSubsumption::IsoSubsumption(Acdfg * a, Acdfg * b):acdfg_a(a), acdfg_b(b)
+  {
+    addSubsumptionCheck();
   }
 
   /*-
@@ -81,7 +87,7 @@ namespace fixrgraphiso {
 	//	edge_pairs_to_var[ id_pair_t(edge_a, edge_b)] = v;
       }
     }
-    
+
   }
 
 
@@ -147,7 +153,7 @@ namespace fixrgraphiso {
       return false;
     }
   }
-  /*-- 
+  /*--
     Check for each type of node and edge, that graph b has no more
     than the number in graph a. If this fails, we directly conclude
     that no subsumption can exist and move on.
@@ -185,7 +191,7 @@ namespace fixrgraphiso {
   bool method_node_compatibility_check_assignee = false;
 
   /*--
-    Function to check if two method nodes are compatible 
+    Function to check if two method nodes are compatible
     --*/
   bool IsoSubsumption::staticCheckMethodNodeCompatible(MethodNode const * ma, MethodNode const * mb) const{
     /*--
@@ -195,10 +201,10 @@ namespace fixrgraphiso {
            No arguments in mb/ma can be null
        3. If ma has a non-null receiver then so must mb and vice-versa
        4. If ma has a non-null assignee then so must mb and vice-versa
-             ( SS: Is this needed? For the time being placing this under 
+             ( SS: Is this needed? For the time being placing this under
                   a switch method_node_compatibility_check_assignee)
        --*/
-    
+
     if (ma -> get_name() != mb -> get_name()) return false;
     if (ma -> get_num_arguments() != mb-> get_num_arguments()) return false;
     if (ma -> get_receiver() == NULL && mb -> get_receiver() != NULL) return false;
@@ -207,16 +213,16 @@ namespace fixrgraphiso {
     for (const DataNode* d: va){
       if (d == NULL) return false;
     }
-    
+
     /* This check below is not needed since we already have done this
        before calling the current method for the sake of
        efficiency. */
-    
+
     // const vector<DataNode*> & vb = mb -> get_arguments();
     // for (const DataNode * d: vb){
     //   if (d == NULL) return false;
     // }
-    
+
     if (method_node_compatibility_check_assignee){
       if (ma -> get_assignee() == NULL && mb -> get_assignee() != NULL) return false;
       if (ma -> get_assignee() != NULL && mb -> get_assignee() == NULL) return false;
@@ -242,16 +248,16 @@ namespace fixrgraphiso {
       vector<long> vB {id_a};
       b_to_a[id_b] = vB;
     } else {
-      vector<long> & vB = b_to_a[id_b];      
+      vector<long> & vB = b_to_a[id_b];
       auto it_b = std::find(vB.begin(), vB.end(), id_a);
       if (it_b == vB.end())
 	vB.push_back(id_a);
     }
-    
+
   }
-  
+
   /*--
-    Nodes na and nb are possible candidates for matching up. Let us 
+    Nodes na and nb are possible candidates for matching up. Let us
     mark them as such by adding them to our book keeping.
     --*/
   void IsoSubsumption::addCompatibleNodePair(Node * na, Node * nb){
@@ -270,20 +276,20 @@ namespace fixrgraphiso {
 
   /*--
     Check for each method node in b, that the corresponding compatible
-    node in a exists. Also collect nodes that could be compatible. 
+    node in a exists. Also collect nodes that could be compatible.
     If a node in b is found that is not compatible with any node in a,
-    we will have to declare that A does not subsume B and move on. 
+    we will have to declare that A does not subsume B and move on.
 
     Returns true if every method node in b has at least one compatible node in a.
             false otherwise
     --*/
   bool IsoSubsumption::findCompatibleMethodNodes() {
     /*-
-      For each method node in graph b, 
+      For each method node in graph b,
          For each method node in graph a,
               if (is_compatible..)
                  then add node pair
-         if no method node is compatible, then 
+         if no method node is compatible, then
             we cannot have a subsumption.
       -*/
     nodes_t::const_iterator it, jt;
@@ -301,16 +307,16 @@ namespace fixrgraphiso {
 	    std::cerr << std::endl;
 	    return false;
 	  }
-	  
+
 	}
-	
+
 	/* Find all compatible method nodes by iterating through graph a*/
 	bool something_compatible = false;
 	for (jt = acdfg_a -> begin_nodes(); jt != acdfg_a -> end_nodes(); ++jt){
 	  if ((*jt) -> get_type() == METHOD_NODE){
 	    Node * na = (*jt);
 	    MethodNode * ma = toMethodNode(na);
-	    
+
 	    if (this -> staticCheckMethodNodeCompatible(ma, mb)){
 	      something_compatible = true;
 	      this -> addCompatibleNodePair(ma, mb);
@@ -331,12 +337,12 @@ namespace fixrgraphiso {
 
   /*--
     Add pairs of data nodes that are compatible.
-    Since we do not have type checking or comparison on yet, 
+    Since we do not have type checking or comparison on yet,
     we will simply declare that every data node is compatible to every other.
     --*/
   bool IsoSubsumption::findCompatibleDataNodes() {
     nodes_t::const_iterator it, jt;
-    
+
     for (it = acdfg_b -> begin_nodes(); it != acdfg_b -> end_nodes(); ++it){
       // Iterate through all nodes in b
       if ((*it) -> get_type() == DATA_NODE){
@@ -345,11 +351,11 @@ namespace fixrgraphiso {
 	    this -> addCompatibleNodePair(*jt, *it);
       }
     }
-    
+
     return true;
   }
 
-  /*-- 
+  /*--
     Iterate through pairs of edges and make sure to match up pairs of compatible edges.
     This method should only be called after we have computed compatible nodes.
     Return true: all edges in b have at least one compatible edge in a
@@ -378,7 +384,7 @@ namespace fixrgraphiso {
 	      this -> isCompatibleNodePair(dst_a, dst_b)){
 	    something_compatible = true;
 	    addCompatibleEdgePair(ea, eb);
-	  } 
+	  }
 	}
       }
       if (!something_compatible){
@@ -392,7 +398,7 @@ namespace fixrgraphiso {
     return true;
   }
 
-  /*- 
+  /*-
     Create the encoding in Z3 but do not solve it yet.
     -*/
   void IsoSubsumption::makeEncoding(){
@@ -440,11 +446,11 @@ namespace fixrgraphiso {
       e.atleastOne(var_pairs);
     }
 
-    
 
-    
-    
-    
+
+
+
+
     // Every edge in A must be connected to at most one edge in b.
     // Sriram: this is actually redundant.
 
@@ -459,10 +465,10 @@ namespace fixrgraphiso {
     //   e.atmostOne(var_pairs);
     // }
 
-    
+
 
     /*-
-      If two method nodes are connected, then 
+      If two method nodes are connected, then
       their arguments, receiver and assignees should also be connected
       -*/
 
@@ -488,7 +494,7 @@ namespace fixrgraphiso {
 	    IsoEncoder::var_t  receiver_var = getNodePairVar(ra -> get_id(), rb -> get_id());
 	    e.addImplication(method_node_var, receiver_var);
 	  }
-	  
+
 	  const DataNode* asa = ma -> get_assignee();
 	  const DataNode* asb = mb -> get_assignee();
 	  if ( (asa != NULL) && (asb != NULL)){
@@ -515,7 +521,7 @@ namespace fixrgraphiso {
 
     /*-
       If two edges are connected then, the source and destinations must
-      also be connected 
+      also be connected
       -*/
 
     for (auto p: edges_a_to_b){
@@ -534,23 +540,23 @@ namespace fixrgraphiso {
 	IsoEncoder::var_t  srcs = getNodePairVar(srcA, srcB);
 	IsoEncoder::var_t dsts = getNodePairVar(dstA, dstB);
 	e.addImplication(edge_pair, srcs);
-	e.addImplication(edge_pair, dsts);	
+	e.addImplication(edge_pair, dsts);
       }
     }
-    
+
     /*-
       That's all folks!
       -*/
-    
+
   }
 
   bool IsoSubsumption::check(){
-    
+
     if (!checkNodeCounts()){
       if (debug) std::cout << "\t Node counts rule out subsumption" << endl;
       return false;
     }
-    
+
     if (! findCompatibleMethodNodes()){
       if (debug) std::cout << "\t Incompatible method node found. Subsumption ruled out" << endl;
       return false;
@@ -566,18 +572,21 @@ namespace fixrgraphiso {
     }
 
     makeEncoding();
-    
+    auto start = std::chrono::high_resolution_clock::now();
     e.solve();
-    return e.isSat();
+    bool retVal = e.isSat();
+    auto end = std::chrono::high_resolution_clock::now();
+    addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+    return retVal;
   }
-  
+
   /*--
     Constructors for IsomorphismClass.
     --*/
   IsomorphismClass::IsomorphismClass(Acdfg * what): iso_filename(what -> getName()), freq(1), acdfg(what){
     subsumingACDFGs.push_back(what -> getName());
   }
-  
+
   IsomorphismClass::IsomorphismClass(string const & fname):iso_filename(fname), freq(1){
     iso_protobuf::Iso iso;
     std::fstream inp_file (fname.c_str(), std::ios::in | std::ios::binary);
@@ -594,17 +603,17 @@ namespace fixrgraphiso {
   }
 
 
-  
-  
+
+
   bool IsomorphismClass::subsumes(IsomorphismClass const * b) const {
     /* -- Encode the precise subsumption of b in a. I.e, b is a subgraph of a.
-          This is different from the approximate embeddings that were computed for 
-          pairs of ACDFGs. 
+          This is different from the approximate embeddings that were computed for
+          pairs of ACDFGs.
 
            Here we are going to consider actual subgraph isomorphism,
            we will make some tradeoffs
           1. We will not match the types of the data nodes.
-          2. However, we will match the method nodes in terms of the type signature, arguments and 
+          2. However, we will match the method nodes in terms of the type signature, arguments and
 	     control flow edges between them.
 
           0. Tally the counts of number of nodes and edges of various types. For each node type in b,
@@ -622,8 +631,8 @@ namespace fixrgraphiso {
              2.1 Every node in <a> must be connected to at most one node in <b>
           3. Every edge in <b> must be isomoprhic to exactly one other edge in <a>.
              3.1 Every edge in <a> must be connected to at most one  edge in <b>.
-          4. If two method nodes are isomorphic, then 
-             4.1 they must have the same method call, same number of arguments, the arguments, 
+          4. If two method nodes are isomorphic, then
+             4.1 they must have the same method call, same number of arguments, the arguments,
                  assignee and receiver must be matched to each other.
           5. If two edges are isomorphic then their source and target nodes must be isomorphic to each other.
 	  ---*/
@@ -635,8 +644,8 @@ namespace fixrgraphiso {
     if (debug) cout << "\t SAT solver returned UNSAT!" << endl;
     return false;
   }
-  
 
-  
-  
+
+
+
 }

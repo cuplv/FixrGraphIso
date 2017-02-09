@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include "fixrgraphiso/proto_iso.pb.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
+#include "fixrgraphiso/collectStats.h"
 #ifdef D__OLD_CODE
 // #include "fixrgraphiso/isomorphismClass.h"
 // #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
@@ -35,6 +36,9 @@ namespace fixrgraphiso{
   int maxTargetSize = 100;
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
+
+  stats_struct all_stats;
+
 
   using std::ifstream;
 
@@ -234,33 +238,51 @@ namespace fixrgraphiso{
 
 #endif
 
-  void dumpAllBins(std::vector<AcdfgBin*> &allBins, const std::string & infoFileName){
+  void dumpAllBins(std::vector<AcdfgBin*> & popular,
+				   std::vector<AcdfgBin*> & anomalous,
+				   std::vector<AcdfgBin*> & isolated, std::chrono::seconds time_taken,
+				   const std::string & infoFileName){
     std::ofstream out_file(infoFileName.c_str());
     int count = 1;
     string iso_file_name;
     out_file << "Popular Bins: " << endl;
-    for (AcdfgBin * a: allBins){
-      if (a -> isPopular()){
-	iso_file_name = string("pop_")+std::to_string(count)+".dot";
-	out_file << "Bin # " << count << endl;
-	out_file << "Dot: " << iso_file_name;
-	a -> dumpToDot(iso_file_name);
-	a -> printInfo(out_file);
-	count ++;
-      }
+    for (AcdfgBin * a: popular){
+      assert (a -> isPopular());
+      iso_file_name = string("pop_")+std::to_string(count)+".dot";
+      out_file << "Popular Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
+      a -> dumpToDot(iso_file_name);
+      a -> printInfo(out_file);
+      count ++;
     }
 
-    out_file << "Anomalous Bins:  " << endl;
-     for (AcdfgBin * a: allBins){
-      if (a -> isAnomalous()){
-	iso_file_name = string("anom_")+std::to_string(count)+".dot";
-	out_file << "Bin # " << count << endl;
-	out_file << "Dot: " << iso_file_name;
-	a -> dumpToDot(iso_file_name);
-	a -> printInfo(out_file);
-	count ++;
-      }
+    count = 1;
+
+    for (AcdfgBin * a: anomalous){
+      assert(a -> isAnomalous());
+      iso_file_name = string("anom_")+std::to_string(count)+".dot";
+      out_file << "Anomalous Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency()<< std::endl;
+      a -> dumpToDot(iso_file_name);
+      a -> printInfo(out_file, false);
+      count ++;
      }
+
+    count = 1;
+    for (AcdfgBin * a: isolated){
+      iso_file_name = string("isol_")+std::to_string(count)+".dot";
+      out_file << "Isolated Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency() ;
+      a -> dumpToDot(iso_file_name);
+      a -> printInfo(out_file, false);
+      count ++;
+     }
+	out_file << "Total Time (s): " << time_taken.count()<< endl;
+    printStats(out_file);
+
     out_file.close();
   }
 #ifdef D__OLD_CODE
@@ -284,7 +306,55 @@ namespace fixrgraphiso{
   // }
 #endif
 
-  void analyzeAnomalies(std::vector<AcdfgBin*> & allBins){
+  void calculateLatticeGraph(std::vector<AcdfgBin*> & allBins){
+    for (auto it = allBins.begin(); it != allBins.end(); ++it){
+      AcdfgBin * a = *it;
+      for (auto jt = allBins.begin(); jt != allBins.end(); ++jt){
+	AcdfgBin * b = *jt;
+	if (a == b) continue;
+	if (a -> isACDFGBinSubsuming(b)){
+	  a -> addSubsumingBin(b);
+	}
+      }
+    }
+  }
+
+  void classifyBins(std::vector<AcdfgBin*> & allBins, std::vector<AcdfgBin*> & popular,
+		    std::vector<AcdfgBin*> & anomalous, std::vector<AcdfgBin*> & isolated){
+
+    calculateLatticeGraph(allBins);
+    // 1. Calculate the transitive reduction for each node and use it to judge popularity
+    for (AcdfgBin * a: allBins){
+      a -> computeImmediatelySubsumingBins();
+      if (a -> isSubsuming()) continue;
+      if (a -> isAtFrontierOfPopularity(freq_cutoff)){
+	a -> setPopular();
+	if (debug){
+	  std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
+	}
+      }
+    }
+
+    // 2. Now calculate the anomalous patterns
+    for (AcdfgBin * a: allBins){
+      if (a -> isSubsuming()) continue;
+      if (a -> isPopular()) {
+	popular.push_back(a);
+
+      } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
+	a -> setAnomalous();
+	anomalous.push_back(a);
+
+      } else if (a -> getFrequency() <= anomalyCutOff){
+	isolated.push_back(a);
+      }
+    }
+
+    return;
+
+  }
+
+  void analyzeAnomaliesOLD(std::vector<AcdfgBin*> & allBins){
     // Anomaly detection routine
     // First popular bins are those which have >= frequency cutoff equivalents
     // Next, after collecting all popular bins,
@@ -385,6 +455,7 @@ namespace fixrgraphiso{
   void computePatternsThroughSlicing(vector<string> & filenames, vector<string> & methodnames){
     //1. Slice all the ACDFGs using the methods in the method names as the target
     vector<Acdfg*> allSlicedACDFGs;
+	auto start = std::chrono::steady_clock::now();
     for (string f: filenames){
       Acdfg * orig_acdfg = loadACDFGFromFilename(f);
       vector<MethodNode*> targets;
@@ -411,6 +482,7 @@ namespace fixrgraphiso{
 	  delete(new_acdfg);
 	} else {
 	  new_acdfg -> setName(f);
+	  addGraphStats(new_acdfg -> node_count(), new_acdfg-> edge_count());
 	  allSlicedACDFGs.push_back(new_acdfg);
 	}
       }
@@ -440,14 +512,20 @@ namespace fixrgraphiso{
 		return iso1 -> getFrequency() > iso2 -> getFrequency();
 	      });
 
-    analyzeAnomalies(allBins);
-    dumpAllBins(allBins, info_file_name);
+    //analyzeAnomalies(allBins);
+    std::vector<AcdfgBin*> popular, anomalous, isolated;
+    classifyBins(allBins,popular,anomalous,isolated);
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::seconds time_taken = std::chrono::duration_cast<std::chrono::seconds>(end -start);
+    dumpAllBins(popular, anomalous, isolated, time_taken, info_file_name);
   }
 
   void frequentSubgraphsMain(int argc, char * argv [] ){
+
     vector<string> filenames;
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
+
 
 // #ifdef D__OLD_CODE
 //     if (useApproximateIsomorphism){
