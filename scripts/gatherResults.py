@@ -180,7 +180,6 @@ class GenerateIndexPage:
                 if m:
                     patternFrequency = int(m.group(1))
                     continue
-
                 patternList.append(line)
 
             f.close()

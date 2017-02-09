@@ -14,7 +14,7 @@ namespace fixrgraphiso {
 	return true;
       }
     }
-    
+
     Acdfg * repr_a = getRepresentative();
     Acdfg * repr_b = b -> getRepresentative();
 
@@ -22,7 +22,7 @@ namespace fixrgraphiso {
     return d.check();
   }
 
-  
+
 
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b){
     Acdfg * repr = *(acdfgs.begin());
@@ -40,7 +40,7 @@ namespace fixrgraphiso {
       }
       return false;
     }
-    
+
     if (!dir_b.check()){
       if (debug){
 	cout << "Subsumption b -> bin ruled out " << endl;
@@ -62,14 +62,14 @@ namespace fixrgraphiso {
   }
 
   void AcdfgBin::printInfo(std::ostream & out, bool printAbove) const {
-    
+
     out << "\t Frequency = " << getPopularity() <<  endl;
 
     for (const Acdfg * a : acdfgs){
       out << a -> getName() << endl;
     }
     if (printAbove){
-    
+
       for (const AcdfgBin * b : subsumingBins){
 	const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
 	for (const Acdfg * a: sub_acdfgs){
@@ -77,7 +77,7 @@ namespace fixrgraphiso {
 	}
       }
     }
-    
+
   }
 
   void AcdfgBin::dumpToDot(string fileName) const{
@@ -103,18 +103,15 @@ namespace fixrgraphiso {
     std::set_difference(subsumingBins.begin(), subsumingBins.end(),	\
 			transitivelySubsuming.begin(), transitivelySubsuming.end(), \
 			std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
-    
+
   }
 
   bool AcdfgBin::isAtFrontierOfPopularity(int freq_cutoff) const {
     int f = this -> getPopularity();
     if (f < freq_cutoff) return false;
-    const Acdfg * a = this -> getRepresentative();
-    if (a -> method_node_count() < 3) return false;
-    bool hasUnpopularParent = false;
     for (const AcdfgBin * b: immediateSubsumingBins){
       if (b -> getPopularity() >= freq_cutoff)
-	return false;
+		return false;
     }
     return true;
   }
@@ -126,7 +123,7 @@ namespace fixrgraphiso {
       b -> popular = false;
       b -> subsuming = true;
     }
-    
+
   }
 
   bool AcdfgBin::hasPopularAncestor() const{
@@ -136,5 +133,5 @@ namespace fixrgraphiso {
     }
     return false;
   }
-  
+
 }

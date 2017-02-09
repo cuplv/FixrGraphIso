@@ -52,12 +52,12 @@ namespace fixrgraphiso{
 
     out << "# Graphs : " << all_stats.totalGraphs << std::endl;
     if (all_stats.totalGraphs > 0){
-      out << "Average # of nodes: " << all_stats.totalNodes/all_stats.totalGraphs;
-      out << "Average # of edges: " << all_stats.totalEdges/all_stats.totalGraphs;
-      out << "Max. # of nodes : " << all_stats.maxNodes;
-      out << "Max. # of edges : " << all_stats.maxEdges;
+      out << "Average # of nodes: " << all_stats.totalNodes/all_stats.totalGraphs << std::endl;
+      out << "Average # of edges: " << all_stats.totalEdges/all_stats.totalGraphs << std::endl;
+      out << "Max. # of nodes : " << all_stats.maxNodes << std::endl;
+      out << "Max. # of edges : " << all_stats.maxEdges << std::endl;
     }
-    out << "# Subsumption checks: " << all_stats.numSubsumptionChecks << std::endl;
+    out << "# Subsumption checks: " << all_stats.numSubsumptionChecks << std::endl << std::endl;
 
     out << "# SAT calls: " << all_stats.numSATCalls << std::endl;
 
