@@ -109,6 +109,8 @@ namespace fixrgraphiso {
   bool AcdfgBin::isAtFrontierOfPopularity(int freq_cutoff) const {
     int f = this -> getPopularity();
     if (f < freq_cutoff) return false;
+    const Acdfg * a = this -> getRepresentative();
+    if (a -> method_node_count() < 3) return false;
     bool hasUnpopularParent = false;
     for (const AcdfgBin * b: immediateSubsumingBins){
       if (b -> getPopularity() >= freq_cutoff)

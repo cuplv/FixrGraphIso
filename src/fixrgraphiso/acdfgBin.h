@@ -41,6 +41,11 @@ namespace fixrgraphiso{
 
     int getPopularity() const;
 
+    const Acdfg* getRepresentative() const{
+      assert(acdfgs.size() > 0);
+      return *(acdfgs.begin());
+    }
+    
     Acdfg * getRepresentative(){
       assert(acdfgs.size() > 0);
       return *(acdfgs.begin());
