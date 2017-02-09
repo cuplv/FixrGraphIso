@@ -63,10 +63,8 @@ namespace fixrgraphiso {
 
   void AcdfgBin::printInfo(std::ostream & out, bool printAbove) const {
 
-    out << "\t Frequency = " << getPopularity() <<  endl;
-
     for (const Acdfg * a : acdfgs){
-      out << a -> getName() << endl;
+      out <<  a -> getName() << endl;
     }
     if (printAbove){
 
