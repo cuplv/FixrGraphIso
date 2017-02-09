@@ -37,7 +37,7 @@ namespace fixrgraphiso{
   int maxTargetSize = 100;
   int maxEdgeSize = 400;
   int anomalyCutOff = 5;
-  bool runTestOfSubsumption = true;
+  bool runTestOfSubsumption = false;
   stats_struct all_stats;
 
 

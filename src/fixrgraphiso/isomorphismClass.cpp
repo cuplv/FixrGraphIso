@@ -574,7 +574,6 @@ namespace fixrgraphiso {
     makeEncoding();
     auto start = std::chrono::high_resolution_clock::now();
     e.solve();
-    cout <<"Solving SAT" << endl;
     bool retVal = e.isSat();
     auto end = std::chrono::high_resolution_clock::now();
     addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
