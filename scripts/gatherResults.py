@@ -139,7 +139,7 @@ class GenerateIndexPage:
         try:
             f = open(filename, 'rt')
             patternList = []
-            popularType = 1
+            patternType = 1
             patternID = -1
             patternFrequency = -1
             dotFilename = None
@@ -154,7 +154,7 @@ class GenerateIndexPage:
                     if (patternID >= 0):
                         # register the previous pattern
                         self.registerPattern(clusterID, dotFileName, patternList,
-                                             patternID, popularType)
+                                             patternID, patternType)
                         patternList=[]
                         dotFileName = None
                         patternFrequency=None
