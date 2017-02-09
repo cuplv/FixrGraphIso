@@ -340,17 +340,11 @@ namespace fixrgraphiso{
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
 	popular.push_back(a);
-<<<<<<< HEAD
-      } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
-	a -> setAnomalous();
-	anomalous.push_back(a);
-=======
 
       } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
 	a -> setAnomalous();
 	anomalous.push_back(a);
 
->>>>>>> 174fe520e17bd6d2daeba47031f7ca305dc8f2cc
       } else if (a -> getFrequency() <= anomalyCutOff){
 	isolated.push_back(a);
       }
