@@ -1,5 +1,8 @@
 # Process the patterns obtained
 
+import os
+import re
+
 # Collect the statistics of a pattern
 class PatternStats:
     def __init__(self,
@@ -9,6 +12,13 @@ class PatternStats:
                  frequency,
                  method_bag,
                  files):
+        self.cluster_id = cluster_id
+        self.pattern_id = pattern_id
+        self.size = size
+        self.frequency = frequency
+        self.method_bag = method_bag
+        self.files = files
+
         # fully qualified name package.Class.methodName (list of method names)
         self.methods_bag = method_bag
         self.methods_bag.sort()
@@ -78,7 +88,6 @@ class PatternStats:
             line = line.strip()
             if (not line): continue
 
-
             m = re.match(r'/\* End a pattern \*/', line)
             if m:
                 pattern = PatternStats(cluster_id,
@@ -89,7 +98,6 @@ class PatternStats:
                                        files)
                 patterns.append(pattern)
 
-                patterns = []
                 pattern_id = -1
                 size = -1
                 frequency = -1
@@ -119,9 +127,9 @@ class PatternStats:
 
             m = re.match(r'\s*\d+\s*\d+([^\s]+)\s*([^\s]+)\s*([^\s]+)\s.*', line)
             if m:
-                method_name = "%s.%s" % (m.group(1) + m.group(3))
+                method_name = "%s.%s" % (m.group(1), m.group(3))
                 method_bag.append(method_name)
                 frequency = m.group(1)
                 continue
 
-        return pattens
+        return patterns
