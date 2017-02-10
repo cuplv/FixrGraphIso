@@ -111,8 +111,6 @@ class ClusterProcessor:
         for (cid, fun_names) in clusters:
             if (cid >= self.start_range and cid <= self.end_range):
                 self.runForCluster(cid, fun_names)
-        else:
-            print( 'start range (%d) must be less than end range (%d) '%(self.start_range, self.end_range))
 
 
 if __name__ == '__main__':
