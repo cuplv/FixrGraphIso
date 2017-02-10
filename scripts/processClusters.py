@@ -17,12 +17,12 @@ class ClusterProcessor:
         num_files = len([name for name in os.listdir('.') if os.path.isfile(name)])
         freq = self.freq_cutoff
         fun_list0 = [s.strip() for s in fun_names.split(',')]
-        fun_list1 = [s.replace('$','\$') for s in fun_list0]
-        fun_list2 = [s.replace('<','\<') for s in fun_list1]
-        fun_list3 = [s.replace('>','\>') for s in fun_list2]
+        #fun_list1 = [s.replace('$','\$') for s in fun_list0]
+        #fun_list2 = [s.replace('<','\<') for s in fun_list1]
+        #fun_list3 = [s.replace('>','\>') for s in fun_list2]
         method_file = 'methods_%d.txt'%(clusterID)
         fil = open(method_file, 'wt')
-        for s in fun_list3:
+        for s in fun_list0:
             print(s, file=fil)
         fil.close()
         cmd = '%s -f %d -o ./cluster_%d_info.txt -m %s *.acdfg.bin > ./run%d.out 2> ./run%d.err.out'%(cmd_name, freq,  clusterID, method_file, clusterID, clusterID)
