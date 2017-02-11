@@ -255,6 +255,25 @@ def count_stats(m1, m2):
                     res[rel].add(pg)
     return res
 
+
+def print_hist(patternmap, fname):
+    fout = open(fname, "w")
+
+    fout.write("size\n")
+    for k,l in patternmap.iteritems():
+        for pattern in l:
+            fout.write("%s\n" % str(pattern.size))
+    fout.close()
+
+    # binssize = {}
+    # for k,l in patternmap.iteritems():
+    #     for pattern in l:
+    #         size = pattern.size
+    #         if size not in binsize:
+    #             binsize[size] = 0
+    #         binsize[size] = binsize[size] + 1
+
+
 # TODO:
 # - read single dot
 # - read get all the dot_i_pat.dot
@@ -276,7 +295,7 @@ def main(argv):
     groum_patterns = {}
 
     # Gather the patterns
-    for id in range(1, 2):
+    for id in range(1, 50):
 
         # read the graphiso pattern
         graphiso_patterns[id] = read_graphiso_patterns(os.path.join(graph_iso_folder, "all_clusters"), id)
@@ -301,6 +320,9 @@ def main(argv):
 
 
     # 2. Print the histogram file
+    print_hist(graphiso_patterns, "pattern_iso")
+    print_hist(groum_patterns, "pattern_groum")
+
 
 if __name__ == '__main__':
     main(sys.argv)
