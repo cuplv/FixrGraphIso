@@ -17,8 +17,8 @@ class PatternStats:
                  files):
         self.cluster_id = cluster_id
         self.pattern_id = pattern_id
-        self.size = size
-        self.frequency = frequency
+        self.size = int(size)
+        self.frequency = int(frequency)
         self.method_bag = method_bag
         self.files = files
 
@@ -93,13 +93,14 @@ class PatternStats:
 
             m = re.match(r'/\* End a pattern \*/', line)
             if m:
-                pattern = PatternStats(cluster_id,
-                                       pattern_id,
-                                       size,
-                                       frequency,
-                                       method_bag,
-                                       files)
-                patterns.append(pattern)
+                if (int(frequency) >= 20):
+                    pattern = PatternStats(cluster_id,
+                                           pattern_id,
+                                           size,
+                                           frequency,
+                                           method_bag,
+                                           files)
+                    patterns.append(pattern)
 
                 pattern_id = -1
                 size = -1
@@ -113,14 +114,14 @@ class PatternStats:
                 pattern_id = m.group(1)
                 continue
 
-            m = re.match(r'Size:\s*(\d+)', line)
+            m = re.match(r'Size:\s*(\d+)\s*$', line)
             if m:
-                size = m.group(1)
+                size = int(m.group(1))
                 continue
 
-            m = re.match(r'Frequency:\s*(\d+)', line)
+            m = re.match(r'Frequency:\s*(\d+)\s*$', line)
             if m:
-                frequency = m.group(1)
+                frequency = int(m.group(1))
                 continue
 
             m = re.match(r'File:\s*(.*)', line)
@@ -134,7 +135,6 @@ class PatternStats:
             if (m):
                 method_name = "%s.%s" % (m.group(3),m.group(5))
                 method_bag.append(method_name)
-                frequency = m.group(1)
                 continue
 
         return patterns
@@ -156,7 +156,11 @@ def get_from_dot(dotFileName):
             if m:
                 method_name = m.group(1)
                 method_name = method_name.strip()
-                # TODO FIX INIT
+
+                if "<init>" in method_name:
+                    splitted = method_name.split(".")
+                    method_name = ".".join(splitted) + "." + splitted[-2]
+
                 method_bag.append(method_name)
 
 
@@ -245,34 +249,74 @@ def read_graphiso_patterns(folder, id):
 
 def count_stats(m1, m2):
     res = {}
+    tot = 0
+
+    mins = None
+    maxs = None
+
     for (g1,pglist) in m1.iteritems():
         for pg  in pglist:
+            if mins is None:
+                mins = pg.size
+            mins = min(mins,pg.size)
+            if maxs is None:
+                maxs = pg.size
+            maxs = max(maxs,pg.size)
+
+            tot = tot + 1
+
             for (g2,pilist) in m2.iteritems():
                 for pi in pilist:
                     rel = pg.get_containment_relation(pi)
                     if rel not in res:
                         res[rel] = set()
                     res[rel].add(pg)
-    return res
+
+    return (res, tot, mins, maxs, 0)
+
+def count_stats(m1, m2, filter_fun):
+    res = {}
+    tot = 0
+
+    mins = None
+    maxs = None
+
+    for (g1,pglist) in m1.iteritems():
+        for pg  in pglist:
+            if not filter_fun(pg): continue
+            if mins is None:
+                mins = pg.size
+            mins = min(mins,pg.size)
+            if maxs is None:
+                maxs = pg.size
+            maxs = max(maxs,pg.size)
+            tot = tot + 1
+
+            # local_res["EQUAL"] = 0
+            # local_res["CONTAINS ANOTHER"] = 0
+            # local_res["CONTAINED IN ANOTHER"] = 0
+            # local_res["INCOMPARABLE"] = 0
+
+            for (g2,pilist) in m2.iteritems():
+                for pi in pilist:
+                    if not filter_fun(pi): continue
+                    rel = pg.get_containment_relation(pi)
+                    if rel not in res:
+                        res[rel] = 0
+                    res[rel] = res[rel] + 1
+
+    return (res, tot, mins, maxs, 0)
 
 
 def print_hist(patternmap, fname):
     fout = open(fname, "w")
 
-    fout.write("size\n")
+    fout.write("size frequency\n")
     for k,l in patternmap.iteritems():
         for pattern in l:
-            fout.write("%s\n" % str(pattern.size))
+            assert pattern.frequency >= 20
+            fout.write("%s %s %s %s\n" % (str(pattern.size), str(pattern.frequency), str(pattern.cluster_id), str(pattern.pattern_id)))
     fout.close()
-
-    # binssize = {}
-    # for k,l in patternmap.iteritems():
-    #     for pattern in l:
-    #         size = pattern.size
-    #         if size not in binsize:
-    #             binsize[size] = 0
-    #         binsize[size] = binsize[size] + 1
-
 
 # TODO:
 # - read single dot
@@ -283,6 +327,24 @@ def print_hist(patternmap, fname):
 # -  - histogram of pattern sizes
 # -  - numbers for subsumptions
 #
+
+def filter_none(pattern):
+    return True
+
+def filter_by_meth(pattern, method_bag):
+    for a in method_bag:
+        if a not in pattern.method_bag:
+            return False
+    return True
+
+
+def filter_1_sql(pattern):
+    methods = ["android.database.sqlite.SQLiteDatabase.beginTransaction",
+               "android.database.sqlite.SQLiteDatabase.endTransaction",
+               "android.database.sqlite.SQLiteDatabase.setTransactionSuccessful"]
+
+    return filter_by_meth(pattern, methods)
+
 
 def main(argv):
 
@@ -295,7 +357,7 @@ def main(argv):
     groum_patterns = {}
 
     # Gather the patterns
-    for id in range(1, 50):
+    for id in range(1,195):
 
         # read the graphiso pattern
         graphiso_patterns[id] = read_graphiso_patterns(os.path.join(graph_iso_folder, "all_clusters"), id)
@@ -307,21 +369,33 @@ def main(argv):
         else:
             print "Missing file %s" % groum_f_name
 
-    # 1. Compare the patterns
-    res = count_stats(groum_patterns, graphiso_patterns)
-    print "GROUM vs ISO"
-    for (k,v) in res.iteritems():
-        print ("%s = %s " % (k ,len(v)))
 
-    res = count_stats(graphiso_patterns, groum_patterns)
-    print "ISO vs GROUM"
-    for (k,v) in res.iteritems():
-        print ("%s = %s " % (k ,len(v)))
+    filters = [("", filter_none), ("_01", filter_1_sql)]
+    #filters = [("01_", filter_1_sql)]
+    for (name,filt) in filters:
+        print "Filter " + name
+        # Compare the patterns
+        (res, tot, mins, maxs, avg) = count_stats(groum_patterns, graphiso_patterns, filt)
+        print "GROUM vs ISO"
+        for (k,v) in res.iteritems():
+            print ("%s = %s " % (k ,v))
+        print "Tot " + str(tot)
+        print "Min size " + str(mins)
+        print "Max size " + str(maxs)
+
+        (res, tot, mins, maxs, avg) = count_stats(graphiso_patterns, groum_patterns, filt)
+        print "ISO vs GROUM"
+        for (k,v) in res.iteritems():
+            print ("%s = %s " % (k ,v))
+        print "Tot " + str(tot)
+        print "Min size " + str(mins)
+        print "Max size " + str(maxs)
+
+        # 2. Print the histogram file
+        print_hist(graphiso_patterns, "%spattern_iso" % name)
+        print_hist(groum_patterns, "%spattern_groum" % name)
 
 
-    # 2. Print the histogram file
-    print_hist(graphiso_patterns, "pattern_iso")
-    print_hist(groum_patterns, "pattern_groum")
 
 
 if __name__ == '__main__':
