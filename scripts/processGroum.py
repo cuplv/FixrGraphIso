@@ -68,13 +68,13 @@ class PatternStats:
                 j = j + 1
 
         if el_self == 0 and el_other == 0:
-            return 0 # eq
+            return "EQUAL" # eq
         elif el_other == 0:
-            return 1
+            return "CONTAINS ANOTHER"
         elif el_self == 0:
-            return -1
+            return "CONTAINED IN ANOTHER"
         elif el_self > 0 and el_other > 0:
-            return 2 # eq
+            return "INCOMPARABLE" # eq
 
     @staticmethod
     def readFromGroums(fname, cluster_id):
@@ -128,9 +128,11 @@ class PatternStats:
                 files.append(m.group(1))
                 continue
 
-            m = re.match(r'\s*\d+\s*\d+([^\s]+)\s*([^\s]+)\s*([^\s]+)\s.*', line)
-            if m:
-                method_name = "%s.%s" % (m.group(1), m.group(3))
+
+            m = re.match(r'(\d+)\s+(\d+)\s+([a-zA-z.$_<>]+)\s+([a-zA-z.$_<>]+)\s*([a-zA-z.$_<>]+)\s+(\d+)\s+(\d+)', line)
+
+            if (m):
+                method_name = "%s.%s" % (m.group(3),m.group(5))
                 method_bag.append(method_name)
                 frequency = m.group(1)
                 continue
@@ -240,6 +242,19 @@ def read_graphiso_patterns(folder, id):
     return patterns
 
 
+
+def count_stats(m1, m2):
+    res = {}
+    for (g1,pglist) in m1.iteritems():
+        for pg  in pglist:
+            for (g2,pilist) in m2.iteritems():
+                for pi in pilist:
+                    rel = pg.get_containment_relation(pi)
+                    if rel not in res:
+                        res[rel] = set()
+                    res[rel].add(pg)
+    return res
+
 # TODO:
 # - read single dot
 # - read get all the dot_i_pat.dot
@@ -274,12 +289,18 @@ def main(argv):
             print "Missing file %s" % groum_f_name
 
     # 1. Compare the patterns
-    print groum_patterns
-    print graphiso_patterns
+    res = count_stats(groum_patterns, graphiso_patterns)
+    print "GROUM vs ISO"
+    for (k,v) in res.iteritems():
+        print ("%s = %s " % (k ,len(v)))
+
+    res = count_stats(graphiso_patterns, groum_patterns)
+    print "ISO vs GROUM"
+    for (k,v) in res.iteritems():
+        print ("%s = %s " % (k ,len(v)))
+
 
     # 2. Print the histogram file
-
-
 
 if __name__ == '__main__':
     main(sys.argv)
