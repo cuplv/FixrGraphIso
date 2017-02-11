@@ -370,7 +370,7 @@ def main(argv):
             print "Missing file %s" % groum_f_name
 
 
-    filters = [("", filter_none), ("_01", filter_1_sql)]
+    filters = [("", filter_none)]
     #filters = [("01_", filter_1_sql)]
     for (name,filt) in filters:
         print "Filter " + name
