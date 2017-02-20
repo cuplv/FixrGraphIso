@@ -311,7 +311,7 @@ def count_stats(m1, m2, filter_fun):
 def print_hist(patternmap, fname):
     fout = open(fname, "w")
 
-    fout.write("size frequency\n")
+    fout.write("size frequency clusterid patternid\n")
     for k,l in patternmap.iteritems():
         for pattern in l:
             assert pattern.frequency >= 20
