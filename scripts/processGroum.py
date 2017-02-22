@@ -15,6 +15,7 @@ from gatherResults import GenerateIndexPage
 from groum import Groum
 
 MIN_FREQUENCY = 20
+STATS_FILE_NAME = "patterns_stats"
 
 class PatternStats:
     """ keeps the statistics of the patterns
@@ -37,6 +38,8 @@ class PatternStats:
         self.files = files
 
         self.is_anomaly = is_anomaly
+        self.violated_pattern = violated_pattern
+        self.rareness = rareness
 
         # fully qualified name package.Class.methodName (list of method names)
         self.methods_bag = method_bag
@@ -463,34 +466,10 @@ def write_cluster_info(base_path,
 
 
 
-def count_stats(m1, m2):
-    res = {}
-    tot = 0
-
-    mins = None
-    maxs = None
-
-    for (g1,pglist) in m1.iteritems():
-        for pg  in pglist:
-            if mins is None:
-                mins = pg.size
-            mins = min(mins,pg.size)
-            if maxs is None:
-                maxs = pg.size
-            maxs = max(maxs,pg.size)
-
-            tot = tot + 1
-
-            for (g2,pilist) in m2.iteritems():
-                for pi in pilist:
-                    rel = pg.get_containment_relation(pi)
-                    if rel not in res:
-                        res[rel] = set()
-                    res[rel].add(pg)
-
-    return (res, tot, mins, maxs, 0)
-
-def count_stats(m1, m2, filter_fun):
+def count_stats_old(m1, m2, filter_fun):
+    """ Old function that also compares containment using the names of the methods in the graph.
+    Not currently used.
+    """
     res = {}
     tot = 0
 
@@ -523,6 +502,31 @@ def count_stats(m1, m2, filter_fun):
 
     return (res, tot, mins, maxs, 0)
 
+
+def write_stats(pattern_stats_list, out_file):
+    """ Write the statistics collected for the patterns and anomalies on file.
+
+    """
+    def _write_single_stat(pattern_stats, out_file):
+        out_file.write(("%d %s %d %d " %
+                        (pattern_stats.cluster_id,
+                         pattern_stats.pattern_id,
+                         pattern_stats.size,
+                         pattern_stats.frequency)) +
+                       ("%d %d %d %s " %
+                        (len(pattern_stats.method_bag),
+                         len(pattern_stats.files),
+                         pattern_stats.is_anomaly,
+                         pattern_stats.violated_pattern)) +
+                       "%f\n" % pattern_stats.rareness)
+
+    # write header
+    out_file.write("cluster_id pattern_id nodes frequency " +
+                   "meth_bag_size files_in_patterns is_anmoaly violated_pattern " +
+                   "rareness\n")
+
+    for pattern_stat in pattern_stats_list:
+        _write_single_stat(pattern_stat, out_file)
 
 def print_hist(patternmap, fname):
     fout = open(fname, "w")
@@ -567,10 +571,14 @@ def main(argv):
 
     print "IGNORING GROUMS WITH FREQUENCY < %d..." % MIN_FREQUENCY
 
-    # Gather the patterns
+    # Gather the patterns and the statistics
     for id in range(1,195):
         # read the graphiso pattern
         graphiso_patterns[id] = read_graphiso_patterns(os.path.join(graph_iso_folder, "all_clusters"), id)
+        graphiso_base_path = os.path.join(graph_iso_folder, "all_clusters", "cluster_%d"%id)
+        with open(os.path.join(graphiso_base_path, "%s_%d.txt" % (STATS_FILE_NAME, id)), 'w') as out_file:
+            write_stats(graphiso_patterns[id], out_file)
+            out_file.close()
 
         # read the grouminer patterns
         groum_base_path = os.path.join(groum_folder, "all_clusters", "cluster_%d"%id)
@@ -580,15 +588,34 @@ def main(argv):
             (patterns_stats, groums) = readFromGroums(groum_f_name, id)
             groum_patterns[id]  = patterns_stats
 
+            with open(os.path.join(groum_base_path, "%s_%d.txt" % (STATS_FILE_NAME, id)), 'w') as out_file:
+                write_stats(patterns_stats, out_file)
+                out_file.close()
+
             anomalies = []
             if (os.path.exists(groum_anomalies)):
                 (anomalies_stats, anomalies) = readFromGroums(groum_anomalies, id, True)
 
             # Write the dot and acdfg files on disk
             write_cluster_info(groum_base_path, id, groums, anomalies)
+
         else:
             print "Missing file %s" % groum_f_name
             continue
+
+    # Print the overall statistics for the cluster
+    with open(os.path.join(groum_folder, "all_clusters", "%s.txt" % (STATS_FILE_NAME)), 'w') as out_file:
+        all_patterns = []
+        for value in groum_patterns.values(): all_patterns.extend(value)
+        write_stats(all_patterns, out_file)
+        out_file.close()
+
+    with open(os.path.join(graph_iso_folder, "all_clusters", "%s.txt" % (STATS_FILE_NAME)), 'w') as out_file:
+        all_patterns = []
+        for value in graphiso_patterns.values(): all_patterns.extend(value)
+        write_stats(all_patterns, out_file)
+        out_file.close()
+
 
 
     # filters = [("", filter_none)]
