@@ -1,13 +1,25 @@
-# Process the patterns obtained
+# The script does two things:
+#  - Process the GROUM patterns and anomalies.
+#    - It creates a dot file for the pattern/anomaly
+#    - It creates a ACDFG for each pattern/anomaly
+#    - It creates the cluster_n_info.txt for the pattenrs and anomalies
+#
+#  - Collects and prints the statistics for the patterns and the anomalies.
+#
 
 import os
 import re
 import sys
 
 from gatherResults import GenerateIndexPage
+from fixrgraph.annotator.protobuf.proto_acdfg_pb2 import Acdfg
+from groum import Groum
 
-# Collect the statistics of a pattern
+MIN_FREQUENCY = 20
+
 class PatternStats:
+    """ keeps the statistics of the patterns
+    """
     def __init__(self,
                  cluster_id,
                  pattern_id,
@@ -76,71 +88,139 @@ class PatternStats:
         elif el_self > 0 and el_other > 0:
             return "INCOMPARABLE" # eq
 
-    @staticmethod
-    def readFromGroums(fname, cluster_id):
-        f = open(fname, 'r')
+def readFromGroums(fname, cluster_id):
+    f = open(fname, 'r')
 
-        patterns = []
-        pattern_id = -1
-        size = -1
-        frequency = -1
-        method_bag = []
-        files = []
+    patterns = []
+    groums = []
+    pattern_id = -1
+    size = -1
+    frequency = -1
+    method_bag = []
+    files = []
 
-        for line in f.readlines():
-            line = line.strip()
-            if (not line): continue
+    read_adjacency_list = False
+    begin_pattern = False
+    groum = None
+    for line in f.readlines():
+        line = line.strip()
+        if (not line): continue
 
-            m = re.match(r'/\* End a pattern \*/', line)
-            if m:
-                if (int(frequency) >= 20):
-                    pattern = PatternStats(cluster_id,
-                                           pattern_id,
-                                           size,
-                                           frequency,
-                                           method_bag,
-                                           files)
-                    patterns.append(pattern)
+        if (line.startswith("Graph")):
+            read_adjacency_list = True
+            continue
+        if (line.startswith("/* Begin a pattern */")):
+            begin_pattern = True
+            continue
 
-                pattern_id = -1
-                size = -1
-                frequency = -1
-                method_bag = []
-                files = []
-                continue
+        if not begin_pattern:
+            continue
 
-            m = re.match(r'ID:\s*(\d+)', line)
-            if m:
-                pattern_id = m.group(1)
-                continue
+        m = re.match(r'/\* End a pattern \*/', line)
+        if m:
+            if (int(frequency) >= MIN_FREQUENCY):
+                pattern = PatternStats(cluster_id,
+                                       pattern_id,
+                                       size,
+                                       frequency,
+                                       method_bag,
+                                       files)
+                patterns.append(pattern)
+                groums.append(groum)
 
-            m = re.match(r'Size:\s*(\d+)\s*$', line)
-            if m:
-                size = int(m.group(1))
-                continue
-
-            m = re.match(r'Frequency:\s*(\d+)\s*$', line)
-            if m:
-                frequency = int(m.group(1))
-                continue
-
-            m = re.match(r'File:\s*(.*)', line)
-            if m:
-                files.append(m.group(1))
-                continue
+            pattern_id = -1
+            size = -1
+            frequency = -1
+            method_bag = []
+            files = []
+            groum = None
+            read_adjacency_list = False
+            begin_pattern = False
+            continue
 
 
-            m = re.match(r'(\d+)\s+(\d+)\s+([a-zA-z.$_<>]+)\s+([a-zA-z.$_<>]+)\s*([a-zA-z.$_<>]+)\s+(\d+)\s+(\d+)', line)
+        m = re.match(r'ID:\s*(\d+)', line)
+        if m:
+            pattern_id = m.group(1)
+            continue
 
-            if (m):
-                method_name = "%s.%s" % (m.group(3),m.group(5))
-                method_bag.append(method_name)
-                continue
+        m = re.match(r'Size:\s*(\d+)\s*$', line)
+        if m:
+            size = int(m.group(1))
+            continue
 
-        return patterns
+        m = re.match(r'Frequency:\s*(\d+)\s*$', line)
+        if m:
+            assert pattern_id > -1
+            frequency = int(m.group(1))
+
+            groum = Groum(pattern_id, frequency)
+
+            continue
+
+        m = re.match(r'File:\s*(.*)', line)
+        if m:
+            fpath = m.group(1)
+            files.append(fpath)
+
+            assert None != groum
+            groum.add_file(fpath)
+
+            continue
+
+        # if line.startswith("Nodes: "):
+        #     line = line.replace("Nodes: ","")
+        #     nodes_ids = line.split(" ")
+        #     for id in nodes_id:
+        #         groum.add_node_id()
+
+        # Example
+        # 49603	1	android.view.ViewGroup	mDashboardContainer	addView	32	32 
+        m = re.match(r'(\d+)\s+(\d+)\s+([a-zA-z.$_<>]+)\s+([a-zA-z.$_<>]+)\s*([a-zA-z.$_<>]+)\s+(\d+)\s+(\d+)', line)
+
+        if (m):
+            node_id = m.group(1)
+            node_type = m.group(2)
+            class_name = m.group(3)
+            object_name = m.group(4)
+            method_name = m.group(5)
+            start_line = m.group(6)
+            end_line = m.group(7)
+
+            node = Groum.GroumNode(node_id, node_type, class_name, object_name,
+                                   method_name, start_line, end_line)
+            assert groum is not None
+            groum.add_node(node)
+
+            method_name = "%s.%s" % (class_name, method_name)
+            method_bag.append(method_name)
+            continue
+
+        if (read_adjacency_list):
+            assert groum is not None
+            node_list = line.split(" ")
+            assert(len(node_list) > 0)
+            m = re.match(r'(\d+)', node_list[0])
+            assert m
+            src_node_id = m.group(1)
+
+            for i in range(len(node_list) - 1):
+                m = re.match(r'(\d+)', node_list[i+1])
+                assert m
+                dst_node_id = m.group(1)
+
+                if (groum.has_node(dst_node_id) and
+                    groum.has_node(src_node_id)):
+                    groum.add_edge(src_node_id, dst_node_id)
+
+
+    return (patterns, groums)
 
 
 def get_from_dot(dotFileName):
+    """ Get the statistics of the patterns/anomalies that we compute
+    from the dot representation.
+    """
     f = open(dotFileName, "rt")
 
     size = 0
@@ -174,6 +254,9 @@ def get_from_dot(dotFileName):
     return (size, method_bag)
 
 def parseInfoFile(cluster_folder, clusterID, type=1):
+    """ Parse the cluster_n_info.txt file to thet statistics on the
+    produced patterns.
+    """
     filename = '%s/cluster_%d/cluster_%d_info.txt'%(cluster_folder, clusterID, clusterID)
 
     patterns = []
@@ -239,11 +322,67 @@ def parseInfoFile(cluster_folder, clusterID, type=1):
 
     return patterns
 
-
 def read_graphiso_patterns(folder, id):
+    """ Read the statistics for the graphiso patterns and anomalies
+    """
     patterns = parseInfoFile(folder, id)
-
     return patterns
+
+
+def write_cluster_info(base_path,
+                       cluster_id,
+                       groums_patterns,
+                       groums_anomalies):
+    """ Writes the cluster info file from groum
+    Given the base path where cluster_<cluster_id>_info.txt must be created,
+    the id of the cluster, a list of groums patters, a list of groums anomalies,
+    writes the correspondent cluster file.
+    """
+
+    def write_list(base_path,
+                   cluster_file,
+                   map_file,
+                   prefix,
+                   description,
+                   groums):
+        # writes the popular groums
+        bin_id = 0
+        for groum in groums:
+            bin_id = bin_id + 1
+            map_file.write("%d %s\n" % (bin_id, groum.pattern_id))
+            cluster_file.write("%s # %d\n" % (description, bin_id))
+            cluster_file.write("Dot: %s_%d.dot\n" % (prefix, bin_id))
+            cluster_file.write("Frequency: %d, %d\n" % (groum.frequency, len(groum.files)))
+            for f in groum.files:
+                cluster_file.write("%s\n" % f)
+
+            dot_file_name = os.path.join(base_path, "%s_%d.dot" % (prefix,bin_id))
+            with open(dot_file_name, 'wt') as dot_file:
+                groum.to_dot(dot_file)
+                dot_file.close()
+
+            acdfg_file = "%s_%d.acdfg.bin" % (prefix, bin_id)
+            acdfg = groum.to_acdfg(acdfg_file)
+            f = open(acdfg_file, "wb")
+            f.write(acdfg.SerializeToString())
+            f.close()
+
+    cluster_info_file_path = os.path.join(base_path, "cluster_%d_info.txt" % cluster_id)
+    cluster_file = open(cluster_info_file_path, "wt")
+    map_file = open(os.path.join(base_path, "patterns_ids_to_groum_id_%d.txt" % cluster_id), "wt")
+
+    cluster_file.write("Popualar Bins:\n")
+    map_file.write("Popualar Bins:\n")
+    write_list(base_path,cluster_file, map_file, "pop",
+               "Popualar Bins", groums_patterns)
+
+    map_file.write("Anomalous Bin:\n")
+    write_list(base_path, cluster_file, map_file,
+               "anom", "Anomalous Bin", groums_patterns)
+
+    cluster_file.close()
+    map_file.close()
+
 
 
 
@@ -318,16 +457,6 @@ def print_hist(patternmap, fname):
             fout.write("%s %s %s %s\n" % (str(pattern.size), str(pattern.frequency), str(pattern.cluster_id), str(pattern.pattern_id)))
     fout.close()
 
-# TODO:
-# - read single dot
-# - read get all the dot_i_pat.dot
-# - get_all the patterns4graphs
-#
-# - DUMP:
-# -  - histogram of pattern sizes
-# -  - numbers for subsumptions
-#
-
 def filter_none(pattern):
     return True
 
@@ -351,49 +480,59 @@ def main(argv):
     # hardcode everything
     graph_iso_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/msr_results/graphiso"
     groum_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/msr_results/grouminer"
+    groum_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/GROUM_test"
 
     "Map from cluster id to pattern list"
     graphiso_patterns = {}
     groum_patterns = {}
+    groums = {}
+
+
+    print "IGNORING GROUMS WITH FREQUENCY < %d..." % MIN_FREQUENCY
 
     # Gather the patterns
     for id in range(1,195):
-
         # read the graphiso pattern
         graphiso_patterns[id] = read_graphiso_patterns(os.path.join(graph_iso_folder, "all_clusters"), id)
 
-        # read the grouminer data
-        groum_f_name = os.path.join(groum_folder, "all_clusters", "cluster_%d"%id, "patterns4graph.txt")
+        # read the grouminer patterns
+        groum_base_path = os.path.join(groum_folder, "all_clusters", "cluster_%d"%id)
+        groum_f_name = os.path.join(groum_base_path, "patterns4graph.txt")
         if (os.path.exists(groum_f_name)):
-            groum_patterns[id]  = PatternStats.readFromGroums(groum_f_name, id)
+            (patterns_stats, groums) = readFromGroums(groum_f_name, id)
+            groum_patterns[id]  = patterns_stats
+
+            # Write the dot and acdfg files on disk
+            write_cluster_info(groum_base_path, id, groums, [])
         else:
             print "Missing file %s" % groum_f_name
+            continue
 
 
-    filters = [("", filter_none)]
-    #filters = [("01_", filter_1_sql)]
-    for (name,filt) in filters:
-        print "Filter " + name
-        # Compare the patterns
-        (res, tot, mins, maxs, avg) = count_stats(groum_patterns, graphiso_patterns, filt)
-        print "GROUM vs ISO"
-        for (k,v) in res.iteritems():
-            print ("%s = %s " % (k ,v))
-        print "Tot " + str(tot)
-        print "Min size " + str(mins)
-        print "Max size " + str(maxs)
+    # filters = [("", filter_none)]
+    # #filters = [("01_", filter_1_sql)]
+    # for (name,filt) in filters:
+    #     print "Filter " + name
+    #     # Compare the patterns
+    #     (res, tot, mins, maxs, avg) = count_stats(groum_patterns, graphiso_patterns, filt)
+    #     print "GROUM vs ISO"
+    #     for (k,v) in res.iteritems():
+    #         print ("%s = %s " % (k ,v))
+    #     print "Tot " + str(tot)
+    #     print "Min size " + str(mins)
+    #     print "Max size " + str(maxs)
 
-        (res, tot, mins, maxs, avg) = count_stats(graphiso_patterns, groum_patterns, filt)
-        print "ISO vs GROUM"
-        for (k,v) in res.iteritems():
-            print ("%s = %s " % (k ,v))
-        print "Tot " + str(tot)
-        print "Min size " + str(mins)
-        print "Max size " + str(maxs)
+    #     (res, tot, mins, maxs, avg) = count_stats(graphiso_patterns, groum_patterns, filt)
+    #     print "ISO vs GROUM"
+    #     for (k,v) in res.iteritems():
+    #         print ("%s = %s " % (k ,v))
+    #     print "Tot " + str(tot)
+    #     print "Min size " + str(mins)
+    #     print "Max size " + str(maxs)
 
-        # 2. Print the histogram file
-        print_hist(graphiso_patterns, "%spattern_iso" % name)
-        print_hist(groum_patterns, "%spattern_groum" % name)
+    #     # 2. Print the histogram file
+    #     print_hist(graphiso_patterns, "%spattern_iso" % name)
+    #     print_hist(groum_patterns, "%spattern_groum" % name)
 
 
 
