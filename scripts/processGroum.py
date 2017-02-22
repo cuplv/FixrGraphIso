@@ -12,7 +12,6 @@ import re
 import sys
 
 from gatherResults import GenerateIndexPage
-from fixrgraph.annotator.protobuf.proto_acdfg_pb2 import Acdfg
 from groum import Groum
 
 MIN_FREQUENCY = 20
@@ -26,13 +25,18 @@ class PatternStats:
                  size,
                  frequency,
                  method_bag,
-                 files):
+                 files,
+                 is_anomaly = False,
+                 violated_pattern = False,
+                 rareness = -1):
         self.cluster_id = cluster_id
         self.pattern_id = pattern_id
         self.size = int(size)
         self.frequency = int(frequency)
         self.method_bag = method_bag
         self.files = files
+
+        self.is_anomaly = is_anomaly
 
         # fully qualified name package.Class.methodName (list of method names)
         self.methods_bag = method_bag
@@ -88,7 +92,7 @@ class PatternStats:
         elif el_self > 0 and el_other > 0:
             return "INCOMPARABLE" # eq
 
-def readFromGroums(fname, cluster_id):
+def readFromGroums(fname, cluster_id, is_anomaly=False):
     f = open(fname, 'r')
 
     patterns = []
@@ -96,6 +100,8 @@ def readFromGroums(fname, cluster_id):
     pattern_id = -1
     size = -1
     frequency = -1
+    violated_pattern = -1
+    rareness = -1
     method_bag = []
     files = []
 
@@ -104,27 +110,50 @@ def readFromGroums(fname, cluster_id):
     groum = None
     for line in f.readlines():
         line = line.strip()
-        if (not line): continue
+        if (not line):
+            if (is_anomaly and read_adjacency_list):
+                read_adjacency_list = False
+            continue
 
-        if (line.startswith("Graph")):
+        if ((not is_anomaly) and line.startswith("Graph")):
             read_adjacency_list = True
             continue
-        if (line.startswith("/* Begin a pattern */")):
+        if (is_anomaly and line.startswith("Edges:")):
+            read_adjacency_list = True
+            continue
+        if ((not is_anomaly) and line.startswith("/* Begin a pattern */")):
             begin_pattern = True
+            continue
+        if (is_anomaly and line.startswith("Anomalies in pattern ")):
+            m = re.match(r'Anomalies\sin\spattern\s(\d+)\srareness:\s(\d+.\d+)', line)
+            assert m
+            pattern_id = m.group(1)
+            rareness = float(m.group(2))
+            begin_pattern = True
+            groum = Groum(pattern_id, frequency)
             continue
 
         if not begin_pattern:
             continue
 
-        m = re.match(r'/\* End a pattern \*/', line)
+        if (not is_anomaly):
+            m = re.match(r'/\* End a pattern \*/', line)
+        else:
+            m = re.match(r'According to pattern (\d+)', line)
         if m:
-            if (int(frequency) >= MIN_FREQUENCY):
+            if is_anomaly:
+                violated_pattern = m.group(1)
+
+            if (is_anomaly or int(frequency) >= MIN_FREQUENCY):
                 pattern = PatternStats(cluster_id,
                                        pattern_id,
                                        size,
                                        frequency,
                                        method_bag,
-                                       files)
+                                       files,
+                                       is_anomaly,
+                                       violated_pattern,
+                                       rareness)
                 patterns.append(pattern)
                 groums.append(groum)
 
@@ -139,25 +168,6 @@ def readFromGroums(fname, cluster_id):
             continue
 
 
-        m = re.match(r'ID:\s*(\d+)', line)
-        if m:
-            pattern_id = m.group(1)
-            continue
-
-        m = re.match(r'Size:\s*(\d+)\s*$', line)
-        if m:
-            size = int(m.group(1))
-            continue
-
-        m = re.match(r'Frequency:\s*(\d+)\s*$', line)
-        if m:
-            assert pattern_id > -1
-            frequency = int(m.group(1))
-
-            groum = Groum(pattern_id, frequency)
-
-            continue
-
         m = re.match(r'File:\s*(.*)', line)
         if m:
             fpath = m.group(1)
@@ -168,50 +178,117 @@ def readFromGroums(fname, cluster_id):
 
             continue
 
-        # if line.startswith("Nodes: "):
-        #     line = line.replace("Nodes: ","")
-        #     nodes_ids = line.split(" ")
-        #     for id in nodes_id:
-        #         groum.add_node_id()
+        if (not is_anomaly):
+            m = re.match(r'ID:\s*(\d+)', line)
+            if m:
+                pattern_id = m.group(1)
+                continue
 
-        # Example
-        # 49603	1	android.view.ViewGroup	mDashboardContainer	addView	32	32 
-        m = re.match(r'(\d+)\s+(\d+)\s+([a-zA-z.$_<>]+)\s+([a-zA-z.$_<>]+)\s*([a-zA-z.$_<>]+)\s+(\d+)\s+(\d+)', line)
+            m = re.match(r'Size:\s*(\d+)\s*$', line)
+            if m:
+                size = int(m.group(1))
+                continue
 
-        if (m):
-            node_id = m.group(1)
-            node_type = m.group(2)
-            class_name = m.group(3)
-            object_name = m.group(4)
-            method_name = m.group(5)
-            start_line = m.group(6)
-            end_line = m.group(7)
+            m = re.match(r'Frequency:\s*(\d+)\s*$', line)
+            if m:
+                assert pattern_id > -1
+                frequency = int(m.group(1))
 
-            node = Groum.GroumNode(node_id, node_type, class_name, object_name,
-                                   method_name, start_line, end_line)
-            assert groum is not None
-            groum.add_node(node)
+                groum = Groum(pattern_id, frequency)
 
-            method_name = "%s.%s" % (class_name, method_name)
-            method_bag.append(method_name)
-            continue
+                continue
 
-        if (read_adjacency_list):
-            assert groum is not None
-            node_list = line.split(" ")
-            assert(len(node_list) > 0)
-            m = re.match(r'(\d+)', node_list[0])
-            assert m
-            src_node_id = m.group(1)
+            # Example
+            # 49603	1	android.view.ViewGroup	mDashboardContainer	addView	32	32 
+            m = re.match(r'(\d+)\s+(\d+)\s+([a-zA-z.$_<>]+)\s+([a-zA-z.$_<>]+)\s*([a-zA-z.$_<>]+)\s+(\d+)\s+(\d+)', line)
+            if (m):
+                node_id = m.group(1)
+                node_type = m.group(2)
+                class_name = m.group(3)
+                object_name = m.group(4)
+                method_name = m.group(5)
+                start_line = m.group(6)
+                end_line = m.group(7)
 
-            for i in range(len(node_list) - 1):
-                m = re.match(r'(\d+)', node_list[i+1])
+                node = Groum.GroumNode(node_id, node_type, class_name, object_name,
+                                       method_name, start_line, end_line)
+                assert groum is not None
+                groum.add_node(node)
+
+                method_name = "%s.%s" % (class_name, method_name)
+                method_bag.append(method_name)
+                continue
+
+            if read_adjacency_list:
+                assert groum is not None
+                node_list = line.split(" ")
+                assert(len(node_list) > 0)
+                m = re.match(r'(\d+)', node_list[0])
                 assert m
-                dst_node_id = m.group(1)
+                src_node_id = m.group(1)
 
-                if (groum.has_node(dst_node_id) and
-                    groum.has_node(src_node_id)):
-                    groum.add_edge(src_node_id, dst_node_id)
+                for i in range(len(node_list) - 1):
+                    m = re.match(r'(\d+)', node_list[i+1])
+                    assert m
+                    dst_node_id = m.group(1)
+
+                    if (groum.has_node(dst_node_id) and
+                        groum.has_node(src_node_id)):
+                        groum.add_edge(src_node_id, dst_node_id)
+        else:
+            assert is_anomaly
+            m = re.match(r'(\d+)\sNode:\s.*', line)
+            if m:
+                size = int(m.group(1))
+                continue
+
+            # TODO FIX
+            # Node: 333430 - Label: PSIActivity.this.findViewById - 102	Lines: 186-->186
+            m = re.match(r'Node:\s(\d+)\s-\sLabel:\s([a-zA-z.$_<>]+)\s-\s(\d+)\s.*', line)
+            if (m):
+                node_id = m.group(1)
+                node_label = m.group(2)
+
+                # non correct - no other info now
+                node_type = Groum.METHOD_TYPE
+                class_name = ".".join(node_label.split(".")[:-2])
+                object_name = ".".join(node_label.split(".")[-2])
+                method_name = ".".join(node_label.split(".")[-1])
+
+                # hack for init
+                # OnItemClickListener.OnItemClickListener.new
+                # android.widget.ListView.lv.setOnItemClickListener
+                if (method_name == "new"):
+                    method_name = object_name
+                    object_name = ""
+
+                start_line = -1
+                end_line = -1
+
+                node = Groum.GroumNode(node_id, node_type, class_name, object_name,
+                                       method_name, start_line, end_line)
+                assert groum is not None
+                groum.add_node(node)
+
+                method_name = "%s.%s" % (class_name, method_name)
+                method_bag.append(method_name)
+                continue
+
+            if read_adjacency_list:
+                assert groum is not None
+                node_list = line.split(" ")
+                assert(len(node_list) > 0)
+
+                for elem in node_list:
+                    m = re.match(r'(\d+)<--(\d+)', elem)
+                    assert m
+                    src_node_id = m.group(1)
+                    dst_node_id = m.group(2)
+
+                    if (groum.has_node(dst_node_id) and
+                        groum.has_node(src_node_id)):
+                        groum.add_edge(src_node_id, dst_node_id)
+                read_adjacency_list = False
 
 
     return (patterns, groums)
@@ -361,7 +438,7 @@ def write_cluster_info(base_path,
                 groum.to_dot(dot_file)
                 dot_file.close()
 
-            acdfg_file = "%s_%d.acdfg.bin" % (prefix, bin_id)
+            acdfg_file = os.path.join(base_path, "%s_%d.acdfg.bin" % (prefix, bin_id))
             acdfg = groum.to_acdfg(acdfg_file)
             f = open(acdfg_file, "wb")
             f.write(acdfg.SerializeToString())
@@ -378,7 +455,7 @@ def write_cluster_info(base_path,
 
     map_file.write("Anomalous Bin:\n")
     write_list(base_path, cluster_file, map_file,
-               "anom", "Anomalous Bin", groums_patterns)
+               "anom", "Anomalous Bin", groums_anomalies)
 
     cluster_file.close()
     map_file.close()
@@ -498,12 +575,17 @@ def main(argv):
         # read the grouminer patterns
         groum_base_path = os.path.join(groum_folder, "all_clusters", "cluster_%d"%id)
         groum_f_name = os.path.join(groum_base_path, "patterns4graph.txt")
+        groum_anomalies = os.path.join(groum_base_path, "rankedAnomalies_6_-1.txt")
         if (os.path.exists(groum_f_name)):
             (patterns_stats, groums) = readFromGroums(groum_f_name, id)
             groum_patterns[id]  = patterns_stats
 
+            anomalies = []
+            if (os.path.exists(groum_anomalies)):
+                (anomalies_stats, anomalies) = readFromGroums(groum_anomalies, id, True)
+
             # Write the dot and acdfg files on disk
-            write_cluster_info(groum_base_path, id, groums, [])
+            write_cluster_info(groum_base_path, id, groums, anomalies)
         else:
             print "Missing file %s" % groum_f_name
             continue
