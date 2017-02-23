@@ -463,7 +463,94 @@ def write_cluster_info(base_path,
     cluster_file.close()
     map_file.close()
 
+def read_data(stats, key, prefix, line):
+    if (line.startswith(prefix)):
+        new_prefix = prefix.replace("(","\(")
+        new_prefix = new_prefix.replace(")","\)")
 
+        m = re.match(r'%s\s(\d+)' % new_prefix, line)
+        if m:
+            stats[key] = int(m.group(1))
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def read_graphiso_times(in_file):
+    stats = {}
+    for line in in_file:
+        line = line.strip()
+        if line is None: continue
+
+        if read_data(stats, "time", "Total Time (s):", line): continue
+        if read_data(stats, "graphs", "# Graphs :", line): continue
+        if read_data(stats, "avg_nodes", "Average # of nodes:", line): continue
+        if read_data(stats, "avg_edges", "Average # of edges:", line): continue
+        if read_data(stats, "max_nodes", "Max. # of nodes :", line): continue
+        if read_data(stats, "max_edges", "Max. # of edges :", line): continue
+        if read_data(stats, "subs", "# Subsumption checks:", line): continue
+        if read_data(stats, "sat", "# SAT calls:", line): continue
+        if read_data(stats, "sat_time", "# satSolverTime (ms):", line): continue
+
+    return stats
+
+def get_stat_val(stats, key):
+    if key in stats:
+        return stats[key]
+    else:
+        return "NA"
+
+def write_times_graph(all_stats, out_file):
+    out_file.write("cluster_id time graphs avg_nodes avg_edges max_nodes max_edges subs sat sat_time\n")
+
+    for (cluster_id, stats) in all_stats.iteritems():
+        out_file.write("%d " % cluster_id +
+                       "%d " % get_stat_val(stats,"time") +
+                       "%d " % get_stat_val(stats,"graphs") +
+                       "%d " % get_stat_val(stats,"avg_nodes") +
+                       "%d " % get_stat_val(stats,"avg_edges") +
+                       "%d " % get_stat_val(stats,"max_nodes") +
+                       "%d " % get_stat_val(stats,"max_edges") +
+                       "%d " % get_stat_val(stats,"subs") +
+                       "%d " % get_stat_val(stats,"sat") +
+                       "%d\n" % get_stat_val(stats,"sat_time"))
+
+def read_groum_times(in_file):
+    stats = {}
+    for line in in_file:
+        line = line.strip()
+        if line is None: continue
+
+        if read_data(stats, "mining_time", "Finish mining", line): continue
+        if read_data(stats, "filtering_time", "Finish filtering", line): continue
+        if read_data(stats, "files", "Number of files:", line): continue
+        if read_data(stats, "methods", "Number of methods:", line): continue
+        if read_data(stats, "groums", "Number of groums:", line): continue
+        if read_data(stats, "max_nodes", "Maximum groum size:", line): continue
+        if read_data(stats, "avg_nodes", "Average groum size:", line): continue
+        if read_data(stats, "tot_patterns", "Total number of patterns:", line): continue
+        if read_data(stats, "max_patterns_nodes", "Maximum pattern size:", line): continue
+        if read_data(stats, "max_patterns_nodes", "Average pattern size:", line): continue
+        if read_data(stats, "time", "Running time", line): continue
+
+    return stats
+
+def write_times_groum(all_stats, out_file):
+    out_file.write("cluster_id time mining_time filtering_time files methods groums max_nodes avg_nodes tot_patterns max_patterns_nodes max_patterns_nodes\n")
+    for (cluster_id, stats) in all_stats.iteritems():
+        out_file.write("%d " % cluster_id +
+                       "%d " % get_stat_val(stats,"time") +
+                       "%d " % get_stat_val(stats,"mining_time") +
+                       "%d " % get_stat_val(stats,"filtering_time") +
+                       "%d " % get_stat_val(stats,"files") +
+                       "%d " % get_stat_val(stats,"methods") +
+                       "%d " % get_stat_val(stats,"groums") +
+                       "%d " % get_stat_val(stats,"max_nodes") +
+                       "%d " % get_stat_val(stats,"avg_nodes") +
+                       "%d " % get_stat_val(stats,"tot_patterns") +
+                       "%d " % get_stat_val(stats,"max_patterns_nodes") +
+                       "%d\n" % get_stat_val(stats,"max_patterns_nodes"))
 
 
 def count_stats_old(m1, m2, filter_fun):
@@ -528,6 +615,7 @@ def write_stats(pattern_stats_list, out_file):
     for pattern_stat in pattern_stats_list:
         _write_single_stat(pattern_stat, out_file)
 
+
 def print_hist(patternmap, fname):
     fout = open(fname, "w")
 
@@ -568,6 +656,8 @@ def main(argv):
     groum_patterns = {}
     groums = {}
 
+    groum_time_stats = {}
+    graphiso_time_stats = {}
 
     print "IGNORING GROUMS WITH FREQUENCY < %d..." % MIN_FREQUENCY
 
@@ -576,28 +666,40 @@ def main(argv):
         # read the graphiso pattern
         graphiso_patterns[id] = read_graphiso_patterns(os.path.join(graph_iso_folder, "all_clusters"), id)
         graphiso_base_path = os.path.join(graph_iso_folder, "all_clusters", "cluster_%d"%id)
+        # read the execution statistics
+        graphiso_cluster_info = os.path.join(graphiso_base_path, "cluster_%d_info.txt" % id)
+        with open(graphiso_cluster_info, 'r') as in_file:
+            graphiso_time_stats[id] = read_graphiso_times(in_file)
+        # Writes the pattern statistics
         with open(os.path.join(graphiso_base_path, "%s_%d.txt" % (STATS_FILE_NAME, id)), 'w') as out_file:
             write_stats(graphiso_patterns[id], out_file)
             out_file.close()
+
 
         # read the grouminer patterns
         groum_base_path = os.path.join(groum_folder, "all_clusters", "cluster_%d"%id)
         groum_f_name = os.path.join(groum_base_path, "patterns4graph.txt")
         groum_anomalies = os.path.join(groum_base_path, "rankedAnomalies_6_-1.txt")
         if (os.path.exists(groum_f_name)):
+            # read the patterns
             (patterns_stats, groums) = readFromGroums(groum_f_name, id)
             groum_patterns[id]  = patterns_stats
-
+            # writes the patterns
             with open(os.path.join(groum_base_path, "%s_%d.txt" % (STATS_FILE_NAME, id)), 'w') as out_file:
                 write_stats(patterns_stats, out_file)
                 out_file.close()
 
+            # read the anomalies
             anomalies = []
             if (os.path.exists(groum_anomalies)):
                 (anomalies_stats, anomalies) = readFromGroums(groum_anomalies, id, True)
-
             # Write the dot and acdfg files on disk
             write_cluster_info(groum_base_path, id, groums, anomalies)
+
+            # read the execution statistics
+            groum_cluster_info = os.path.join(groum_base_path, "log_6_-1.txt")
+            with open(groum_cluster_info, 'r') as in_file:
+                groum_time_stats[id] = read_groum_times(in_file)
 
         else:
             print "Missing file %s" % groum_f_name
@@ -610,39 +712,23 @@ def main(argv):
         write_stats(all_patterns, out_file)
         out_file.close()
 
+    # Print pattern stats for graphiso
     with open(os.path.join(graph_iso_folder, "all_clusters", "%s.txt" % (STATS_FILE_NAME)), 'w') as out_file:
         all_patterns = []
         for value in graphiso_patterns.values(): all_patterns.extend(value)
         write_stats(all_patterns, out_file)
         out_file.close()
 
+    # Print times for groum
+    with open(os.path.join(groum_folder, "all_clusters", "times.txt"), 'w') as out_file:
+        write_times_groum(groum_time_stats, out_file)
+        out_file.close()
 
 
-    # filters = [("", filter_none)]
-    # #filters = [("01_", filter_1_sql)]
-    # for (name,filt) in filters:
-    #     print "Filter " + name
-    #     # Compare the patterns
-    #     (res, tot, mins, maxs, avg) = count_stats(groum_patterns, graphiso_patterns, filt)
-    #     print "GROUM vs ISO"
-    #     for (k,v) in res.iteritems():
-    #         print ("%s = %s " % (k ,v))
-    #     print "Tot " + str(tot)
-    #     print "Min size " + str(mins)
-    #     print "Max size " + str(maxs)
-
-    #     (res, tot, mins, maxs, avg) = count_stats(graphiso_patterns, groum_patterns, filt)
-    #     print "ISO vs GROUM"
-    #     for (k,v) in res.iteritems():
-    #         print ("%s = %s " % (k ,v))
-    #     print "Tot " + str(tot)
-    #     print "Min size " + str(mins)
-    #     print "Max size " + str(maxs)
-
-    #     # 2. Print the histogram file
-    #     print_hist(graphiso_patterns, "%spattern_iso" % name)
-    #     print_hist(groum_patterns, "%spattern_groum" % name)
-
+    # Print times for graph iso
+    with open(os.path.join(graph_iso_folder, "all_clusters", "times.txt"), 'w') as out_file:
+        write_times_graph(graphiso_time_stats, out_file)
+        out_file.close()
 
 
 
