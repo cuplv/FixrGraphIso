@@ -53,6 +53,12 @@ class Groum(object):
     def add_file(self, fname):
         self.files.append(fname)
 
+    def get_tot_edges(self):
+        tot_edges = 0
+        for (k,l) in self.edges.iteritems():
+            tot_edges = tot_edges + len(l)
+        return tot_edges
+
     def to_dot(self, dot_file):
         dot_file.write("""digraph isoX {
   node[shape=box,style="filled,rounded",penwidth=2.0,fontsize=13,];
