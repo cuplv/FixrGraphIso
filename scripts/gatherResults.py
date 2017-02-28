@@ -44,7 +44,7 @@ class MinedPattern:
 
         # methods_str = ', '.join(listOfMethods3)
 
-        s1 = """ <h2> %s Pattern %d (Frequency %d) </h2> """%(patternType, self.patternID, self.patternFrequency)
+        s1 = """ <h2> %s Pattern %d (Frequency %d) </h2> """ % (patternType, self.patternID, self.patternFrequency)
         s2 = """ <img src=\"%s\" alt=\"DOT Image\" style=\"width:100%%;border:2px solid black;\"> """%(self.imageName)
         s3 = """ <p><p><div style=\"width: 800px; height: 300px; background-color:lightblue; overflow-y: scroll;\" class = \"listNameBlock\"> <span id =\"cluster_%d_pattern_%d\">
                   %s
@@ -181,6 +181,7 @@ class GenerateIndexPage:
                 if m:
                     if (patternID >= 0):
                         # register the previous pattern
+                        assert patternFrequency is not None
                         self.registerPattern(clusterID, dotFileName, patternList,
                                              patternID, patternType, patternFrequency)
                         patternList=[]
@@ -200,11 +201,11 @@ class GenerateIndexPage:
                     dotFileName = m.group(1)
                     continue
                 # Otherwise it is a filename
-                m = re.match(r'Frequency\s*:\s*(\d+),\s*(\d+)', line)
+                m = re.match(r'Frequency\s*:\s*([-]*\d+),\s*(\d+)', line)
                 if m:
                     patternFrequency = int(m.group(1)) + int(m.group(2))
                     continue
-                m = re.match(r'Frequency\s*:\s*(\d+)(.*)$',line)
+                m = re.match(r'Frequency\s*:\s*([-]*\d+)(.*)$',line)
                 if m:
                     patternFrequency = int(m.group(1))
                     patternList.append(m.group(2))
@@ -230,6 +231,7 @@ def main(argv):
     outputRootName = 'new_clusters'
     htmlOutputDir = 'html_files'
     sourceCodePath = None
+    acdfg_map = None
     try:
         opts, args = getopt.getopt(argv[1:],"a:b:hd:i:o:s:m:",["fixr-path=","nocopy","start=","end=","help","cluster-file-name=","output-dir=", "freq="])
     except getopt.GetoptError:
