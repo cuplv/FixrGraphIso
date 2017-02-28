@@ -17,6 +17,8 @@ from groum import Groum
 MIN_FREQUENCY = 20
 STATS_FILE_NAME = "patterns_stats"
 
+groum2pop_map = {}
+
 class PatternStats:
     """ keeps the statistics of the patterns
     """
@@ -27,6 +29,8 @@ class PatternStats:
                  frequency,
                  method_bag,
                  files,
+                 tot_nodes,
+                 tot_edges,
                  is_anomaly = False,
                  violated_pattern = False,
                  rareness = -1):
@@ -36,6 +40,9 @@ class PatternStats:
         self.frequency = int(frequency)
         self.method_bag = method_bag
         self.files = files
+
+        self.tot_nodes = tot_nodes
+        self.tot_edges = tot_edges
 
         self.is_anomaly = is_anomaly
         self.violated_pattern = violated_pattern
@@ -125,6 +132,7 @@ def readFromGroums(fname, cluster_id, is_anomaly=False):
             read_adjacency_list = True
             continue
         if ((not is_anomaly) and line.startswith("/* Begin a pattern */")):
+            assert not begin_pattern
             begin_pattern = True
             continue
         if (is_anomaly and line.startswith("Anomalies in pattern ")):
@@ -154,11 +162,16 @@ def readFromGroums(fname, cluster_id, is_anomaly=False):
                                        frequency,
                                        method_bag,
                                        files,
+                                       len(groum.nodes),
+                                       groum.get_tot_edges(),
                                        is_anomaly,
                                        violated_pattern,
                                        rareness)
                 patterns.append(pattern)
+                assert len(groum.nodes) > 0
                 groums.append(groum)
+            # else:
+            #     print "Skipping cluster_%d, %s pattern..." % (cluster_id, pattern_id)
 
             pattern_id = -1
             size = -1
@@ -203,7 +216,7 @@ def readFromGroums(fname, cluster_id, is_anomaly=False):
 
             # Example
             # 49603	1	android.view.ViewGroup	mDashboardContainer	addView	32	32 
-            m = re.match(r'(\d+)\s+(\d+)\s+([a-zA-z.$_<>]+)\s+([a-zA-z.$_<>]+)\s*([a-zA-z.$_<>]+)\s+(\d+)\s+(\d+)', line)
+            m = re.match(r'(\d+)\s+(\d+)\s+([0-9a-zA-z.$_<>\(\)\?]+)\s+([0-9a-zA-z.$_<>\(\)\?]+)\s*([0-9a-zA-z.$_<>\(\)\?]+)\s+(\d+)\s+(\d+)', line)
             if (m):
                 node_id = m.group(1)
                 node_type = m.group(2)
@@ -247,7 +260,8 @@ def readFromGroums(fname, cluster_id, is_anomaly=False):
 
             # TODO FIX
             # Node: 333430 - Label: PSIActivity.this.findViewById - 102	Lines: 186-->186
-            m = re.match(r'Node:\s(\d+)\s-\sLabel:\s([a-zA-z.$_<>]+)\s-\s(\d+)\s.*', line)
+            #Node: 12803 - Label: com.erakk.lnreader.task.AsyncTaskResult<?>.result.getResultType - 410
+            m = re.match(r'Node:\s(\d+)\s-\sLabel:\s([0-9a-zA-z.$_<>\(\)\?]+)\s-\s(\d+)\s.*', line)
             if (m):
                 node_id = m.group(1)
                 node_label = m.group(2)
@@ -300,9 +314,15 @@ def readFromGroums(fname, cluster_id, is_anomaly=False):
 def get_from_dot(dotFileName):
     """ Get the statistics of the patterns/anomalies that we compute
     from the dot representation.
+
+    The size are only the method nodes,
+    nodes are all the nodes
+    edges are all the edges
     """
     f = open(dotFileName, "rt")
 
+    num_nodes = 0
+    num_edges = 0
     size = 0
     method_bag = []
 
@@ -323,15 +343,17 @@ def get_from_dot(dotFileName):
 
                 method_bag.append(method_name)
 
-
         elif ("shape=ellipse" in line):
-            size = size + 1
+            num_nodes = num_nodes + 1
+
+        elif ("->" in line):
+            num_edges = num_edges + 1
 
         m = re.match(r':', line)
         if m:
             continue
 
-    return (size, method_bag)
+    return (size, num_nodes, num_edges,  method_bag)
 
 def parseInfoFile(cluster_folder, clusterID, type=1):
     """ Parse the cluster_n_info.txt file to thet statistics on the
@@ -359,13 +381,15 @@ def parseInfoFile(cluster_folder, clusterID, type=1):
                 if (patternID >= 0):
                     if (patternType == type):
                         dotfile = '%s/cluster_%d/%s'%(cluster_folder, clusterID, dotFileName)
-                        (size, method_bag) = get_from_dot(dotfile)
+                        (size, tot_nodes, tot_edges,  method_bag) = get_from_dot(dotfile)
 
                         pattern = PatternStats(clusterID, patternID,
                                                size,
                                                patternFrequency,
                                                method_bag,
-                                               patternList)
+                                               patternList,
+                                               tot_nodes,
+                                               tot_edges)
                         patterns.append(pattern)
                     patternList=[]
                     dotFileName = None
@@ -429,6 +453,10 @@ def write_cluster_info(base_path,
         bin_id = 0
         for groum in groums:
             bin_id = bin_id + 1
+
+            assert (groum.pattern_id,cluster_id) not in groum2pop_map
+            groum2pop_map[(groum.pattern_id, cluster_id)] = bin_id
+
             map_file.write("%d %s\n" % (bin_id, groum.pattern_id))
             cluster_file.write("%s # %d\n" % (description, bin_id))
             cluster_file.write("Dot: %s_%d.dot\n" % (prefix, bin_id))
@@ -451,10 +479,10 @@ def write_cluster_info(base_path,
     cluster_file = open(cluster_info_file_path, "wt")
     map_file = open(os.path.join(base_path, "patterns_ids_to_groum_id_%d.txt" % cluster_id), "wt")
 
-    cluster_file.write("Popualar Bins:\n")
-    map_file.write("Popualar Bins:\n")
+    cluster_file.write("Popular Bins: \n")
+    map_file.write("Popular Bins: \n")
     write_list(base_path,cluster_file, map_file, "pop",
-               "Popualar Bins", groums_patterns)
+               "Popular Bin", groums_patterns)
 
     map_file.write("Anomalous Bin:\n")
     write_list(base_path, cluster_file, map_file,
@@ -497,7 +525,9 @@ def read_graphiso_times(in_file):
 
 def get_stat_val(stats, key):
     if key in stats:
-        return stats[key]
+        res = stats[key]
+        res = "%s" %res
+        return res
     else:
         return "NA"
 
@@ -506,15 +536,15 @@ def write_times_graph(all_stats, out_file):
 
     for (cluster_id, stats) in all_stats.iteritems():
         out_file.write("%d " % cluster_id +
-                       "%d " % get_stat_val(stats,"time") +
-                       "%d " % get_stat_val(stats,"graphs") +
-                       "%d " % get_stat_val(stats,"avg_nodes") +
-                       "%d " % get_stat_val(stats,"avg_edges") +
-                       "%d " % get_stat_val(stats,"max_nodes") +
-                       "%d " % get_stat_val(stats,"max_edges") +
-                       "%d " % get_stat_val(stats,"subs") +
-                       "%d " % get_stat_val(stats,"sat") +
-                       "%d\n" % get_stat_val(stats,"sat_time"))
+                       "%s " % get_stat_val(stats,"time") +
+                       "%s " % get_stat_val(stats,"graphs") +
+                       "%s " % get_stat_val(stats,"avg_nodes") +
+                       "%s " % get_stat_val(stats,"avg_edges") +
+                       "%s " % get_stat_val(stats,"max_nodes") +
+                       "%s " % get_stat_val(stats,"max_edges") +
+                       "%s " % get_stat_val(stats,"subs") +
+                       "%s " % get_stat_val(stats,"sat") +
+                       "%s\n" % get_stat_val(stats,"sat_time"))
 
 def read_groum_times(in_file):
     stats = {}
@@ -540,17 +570,17 @@ def write_times_groum(all_stats, out_file):
     out_file.write("cluster_id time mining_time filtering_time files methods groums max_nodes avg_nodes tot_patterns max_patterns_nodes max_patterns_nodes\n")
     for (cluster_id, stats) in all_stats.iteritems():
         out_file.write("%d " % cluster_id +
-                       "%d " % get_stat_val(stats,"time") +
-                       "%d " % get_stat_val(stats,"mining_time") +
-                       "%d " % get_stat_val(stats,"filtering_time") +
-                       "%d " % get_stat_val(stats,"files") +
-                       "%d " % get_stat_val(stats,"methods") +
-                       "%d " % get_stat_val(stats,"groums") +
-                       "%d " % get_stat_val(stats,"max_nodes") +
-                       "%d " % get_stat_val(stats,"avg_nodes") +
-                       "%d " % get_stat_val(stats,"tot_patterns") +
-                       "%d " % get_stat_val(stats,"max_patterns_nodes") +
-                       "%d\n" % get_stat_val(stats,"max_patterns_nodes"))
+                       "%s " % get_stat_val(stats,"time") +
+                       "%s " % get_stat_val(stats,"mining_time") +
+                       "%s " % get_stat_val(stats,"filtering_time") +
+                       "%s " % get_stat_val(stats,"files") +
+                       "%s " % get_stat_val(stats,"methods") +
+                       "%s " % get_stat_val(stats,"groums") +
+                       "%s " % get_stat_val(stats,"max_nodes") +
+                       "%s " % get_stat_val(stats,"avg_nodes") +
+                       "%s " % get_stat_val(stats,"tot_patterns") +
+                       "%s " % get_stat_val(stats,"max_patterns_nodes") +
+                       "%s\n" % get_stat_val(stats,"max_patterns_nodes"))
 
 
 def count_stats_old(m1, m2, filter_fun):
@@ -605,12 +635,15 @@ def write_stats(pattern_stats_list, out_file):
                          len(pattern_stats.files),
                          pattern_stats.is_anomaly,
                          pattern_stats.violated_pattern)) +
-                       "%f\n" % pattern_stats.rareness)
+                       "%f " % pattern_stats.rareness + 
+                       ("%d %d\n" % (pattern_stats.tot_nodes,
+                                     pattern_stats.tot_edges)))
 
     # write header
     out_file.write("cluster_id pattern_id nodes frequency " +
                    "meth_bag_size files_in_patterns is_anmoaly violated_pattern " +
-                   "rareness\n")
+                   "rareness " +
+                   "tot_nodes tot_edges\n")
 
     for pattern_stat in pattern_stats_list:
         _write_single_stat(pattern_stat, out_file)
@@ -649,7 +682,6 @@ def main(argv):
     # hardcode everything
     graph_iso_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/msr_results/graphiso"
     groum_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/msr_results/grouminer"
-    groum_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/GROUM_test"
 
     "Map from cluster id to pattern list"
     graphiso_patterns = {}
@@ -695,15 +727,15 @@ def main(argv):
                 (anomalies_stats, anomalies) = readFromGroums(groum_anomalies, id, True)
             # Write the dot and acdfg files on disk
             write_cluster_info(groum_base_path, id, groums, anomalies)
-
-            # read the execution statistics
-            groum_cluster_info = os.path.join(groum_base_path, "log_6_-1.txt")
-            with open(groum_cluster_info, 'r') as in_file:
-                groum_time_stats[id] = read_groum_times(in_file)
-
         else:
             print "Missing file %s" % groum_f_name
-            continue
+
+        # read the execution statistics
+        groum_cluster_info = os.path.join(groum_base_path, "log_6_-1.txt")
+        print groum_cluster_info
+        if (os.path.exists(groum_cluster_info)):
+            with open(groum_cluster_info, 'r') as in_file:
+                groum_time_stats[id] = read_groum_times(in_file)
 
     # Print the overall statistics for the cluster
     with open(os.path.join(groum_folder, "all_clusters", "%s.txt" % (STATS_FILE_NAME)), 'w') as out_file:
@@ -724,12 +756,47 @@ def main(argv):
         write_times_groum(groum_time_stats, out_file)
         out_file.close()
 
-
     # Print times for graph iso
     with open(os.path.join(graph_iso_folder, "all_clusters", "times.txt"), 'w') as out_file:
         write_times_graph(graphiso_time_stats, out_file)
         out_file.close()
 
+
+    method2grouminerpattern = {}
+    method2graphisopattern = {}
+    for id in range(1,195):
+        for pattern in graphiso_patterns[id]:
+            for f in pattern.files:
+                key = os.path.basename(f)
+                key = key.replace(".acdfg.bin", "")
+
+                if key in method2graphisopattern:
+                    l = method2graphisopattern[key]
+                else:
+                    l = set()
+                    method2graphisopattern[key] = set()
+                l.add(pattern)
+
+    for id in range(1,195):
+        if id not in groum_patterns:
+            continue
+        for pattern in groum_patterns[id]:
+
+            for f in pattern.files:
+                key = os.path.basename(f)
+                key = key.replace(".java", "")
+
+                if key not in method2graphisopattern:
+                    print "GroumPattern: %s %s" % (pattern.cluster_id, pattern.pattern_id)
+                    bin_id = groum2pop_map[(pattern.pattern_id, pattern.cluster_id)]
+                    print "Cannot find file %s (%d)" % (f,bin_id)
+
+
+    hist_pop = open("hist_pop.txt","w")
+    hist_pop.write("clustet_id number_of_popular\n")
+    for id in range(1,195):
+        hist_pop.write("%d %d\n" % (id, len(graphiso_patterns[id])))
+    hist_pop.close()
 
 
 if __name__ == '__main__':
