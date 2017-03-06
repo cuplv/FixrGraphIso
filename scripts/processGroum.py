@@ -680,8 +680,8 @@ def filter_1_sql(pattern):
 def main(argv):
 
     # hardcode everything
-    graph_iso_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/msr_results/graphiso"
-    groum_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/msr_results/grouminer"
+    graph_iso_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/tmp/msr_results/graphiso"
+    groum_folder="/home/sergio/works/projects/muse/repos/FixrGraph_experiments/tmp/msr_results/grouminer"
 
     "Map from cluster id to pattern list"
     graphiso_patterns = {}
@@ -793,7 +793,7 @@ def main(argv):
 
 
     hist_pop = open("hist_pop.txt","w")
-    hist_pop.write("clustet_id number_of_popular\n")
+    hist_pop.write("cluster_id number_of_popular\n")
     for id in range(1,195):
         hist_pop.write("%d %d\n" % (id, len(graphiso_patterns[id])))
     hist_pop.close()
