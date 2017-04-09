@@ -35,12 +35,15 @@ class ClusterProcessor:
         filename = filename.strip()
         (path, acdfgname) = os.path.split(filename)
         newfile = '%s/cluster_%d/%s'%(self.outputRootName, clusterID, acdfgname)
-        cmd = 'cp %s %s'%(filename, newfile)
-        print(cmd)
-        os.system(cmd)
+
+        if (not os.path.exists(newfile)):
+            # just create a link
+            os.symlink(filename, newfile)
 
     def makeDirectory(self, clusterID):
-        os.system('mkdir %s/cluster_%d'%(self.outputRootName,clusterID))
+        dir_name= "%s/cluster_%d" % (self.outputRootName,clusterID)
+        if (not os.path.exists(dir_name)):
+            os.makedirs(dir_name)
 
     def processClusterFile(self):
         fname = self.cluster_file_name
@@ -52,12 +55,10 @@ class ClusterProcessor:
             if m:
                 count = count + 1
                 functionNames = m.group(1)
-                print (functionNames)
                 self.makeDirectory(count)
                 list_of_clusters.append((count, functionNames))
             m = re.match(r'F:\s*([\S\$]*)$', line)
             if m:
-                print (m.group(1))
                 file_old = m.group(1)
                 file_new = file_old.replace('$','\$')
                 if (self.run_cluster_copy):
@@ -88,7 +89,6 @@ class ClusterProcessor:
             self.help_message()
             sys.exit(2)
         for (o,a) in opts:
-            print (o,a)
             if o in ("-a","--start"):
                 self.start_range = int(a)
             if o in ("-b","--end"):
