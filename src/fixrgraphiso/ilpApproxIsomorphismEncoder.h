@@ -36,6 +36,7 @@ namespace fixrgraphiso {
     void prettyPrintEncodingResultInDot(ostream & out);
     bool computeILPEncoding();
     void populateResults(IsomorphismResults & res);
+    void printResults(ostream &out);
     void populateFrequencies();
 
   private:
