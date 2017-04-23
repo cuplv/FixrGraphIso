@@ -348,7 +348,7 @@ namespace fixrgraphiso {
 
     void dumpToDot(std::ostream & os, bool transitiveReduce=true) const;
 
-    void dumpToAcdfgProto(std::ostream & out, bool transitiveReduce=true) const;
+    void dumpToAcdfgProto(std::ostream & out, bool transitiveReduce=false) const;
 
     Acdfg * extractSubgraphWithFrequencyCutoff(int freqCutoff) const;
 
