@@ -10,9 +10,9 @@
 #include "fixrgraphiso/acdfg.h"
 #include <sstream>
 #include <set>
+#include "fixrgraphiso/proto_acdfg.pb.h"
 
 namespace fixrgraphiso {
-
   using std::ostringstream;
   using std::string;
   using std::cout;
@@ -26,33 +26,33 @@ namespace fixrgraphiso {
   // Implementation of the nodes
   //------------------------------------------------------------------------------
 
-  
+
   Node::Node(long id, node_type_t typ): id_(id), nType_(typ), match_frequency(0){}
 
   Node::Node(const Node& node):id_(node.id_), nType_(node.nType_), match_frequency(node.match_frequency){}
-  
-  
+
+
 
   void Node::prettyPrint(std::ostream & stream) const {
     stream << "Node id: " << id_ << "\n";
   }
 
-  
+
   string Node::getDotLabel() const {
     assert(get_type() == REGULAR_NODE);
     ostringstream ss;
     ss << "label=\"#"<<get_id()<<"\"";
     return ss.str();
   }
-  
 
-  
+
+
   std::ostream& operator<<(std::ostream& stream, const Node& node)
   {
     node.prettyPrint(stream);
     return stream;
   }
-  
+
 
   DataNode::DataNode(long id, const string& name, const string& data_type, data_node_type_t dtype):
     Node(id, DATA_NODE),
@@ -61,13 +61,13 @@ namespace fixrgraphiso {
     data_node_type_(dtype) {
   }
 
-  
+
   DataNode::DataNode(const DataNode& node): Node(node.get_id(), DATA_NODE),
-					    name_(node.name_),
-					    data_type_(node.data_type_),
-					    data_node_type_(node.data_node_type_){
+                        name_(node.name_),
+                        data_type_(node.data_type_),
+                        data_node_type_(node.data_node_type_){
   }
-  
+
   DataNode * DataNode::clone() const{
     DataNode * n_node = new DataNode(*this);
     return n_node;
@@ -86,8 +86,8 @@ namespace fixrgraphiso {
     return w;
   }
 
-  
-  
+
+
   bool DataNode::isCompatible(DataNode const * n) const {
     bool typeMatches = true;
     if (typeMatchDataNode){
@@ -100,13 +100,13 @@ namespace fixrgraphiso {
 
     return (typeMatches && varConstMatches);
   }
-  
+
   const string& DataNode::get_name() const
   {
     return name_;
   }
 
-  
+
   const string& DataNode::get_data_type() const
   {
     return data_type_;
@@ -124,14 +124,14 @@ namespace fixrgraphiso {
     return this -> data_node_type_ == DATA_NODE_VAR;
   }
   void DataNode::prettyPrint(std::ostream & stream) const {
-    
+
     stream << "Data node id: " << (get_id()) <<
       "\n\t\tname: " << get_name() <<
       "\n\t\ttype: " << get_data_type() << endl;
-    
+
   }
 
-  
+
   string my_escape(string  arg){
     string a = "\"";
     string b = "\\\'";
@@ -147,32 +147,32 @@ namespace fixrgraphiso {
     return ss.str();
   }
 
-  
+
   std::ostream& operator<<(std::ostream& stream, const DataNode& node)
   {
-    
+
     node.prettyPrint(stream);
     return stream;
   }
 
 
-  
+
   MethodNode::MethodNode(long id, const string& name,
-			 DataNode* receiver,
-			 std::vector<DataNode*> arguments,
-			 DataNode* assignee): CommandNode(id,METHOD_NODE),
-					      name_(name),
-					      receiver_(receiver),
-					      arguments_(arguments),
-					      assignee_(assignee)
+             DataNode* receiver,
+             std::vector<DataNode*> arguments,
+             DataNode* assignee): CommandNode(id,METHOD_NODE),
+                          name_(name),
+                          receiver_(receiver),
+                          arguments_(arguments),
+                          assignee_(assignee)
   {
-    
+
   }
 
   MethodNode::MethodNode(const MethodNode& node) : CommandNode(node.id_, METHOD_NODE),
-						   receiver_(NULL),
-						   name_(node.name_),
-						   assignee_(NULL)
+                           receiver_(NULL),
+                           name_(node.name_),
+                           assignee_(NULL)
   {
     if (node.receiver_ != NULL){
       receiver_ = new DataNode(*(node.receiver_));
@@ -180,11 +180,11 @@ namespace fixrgraphiso {
       receiver_ = NULL;
     }
 
-    
-    
+
+
     for (std::vector<DataNode*>::const_iterator it = node.arguments_.begin();
-	 it != node.arguments_.end();
-	 ++it){
+     it != node.arguments_.end();
+     ++it){
       DataNode * n_node = new DataNode (*(*it));
       arguments_.push_back(n_node);
     }
@@ -203,30 +203,30 @@ namespace fixrgraphiso {
       a = this -> get_receiver();
       b = node -> get_receiver();
       if (a != NULL && b != NULL){
-	w += a -> compatibilityWeight(b);
+    w += a -> compatibilityWeight(b);
       }
       a = this -> get_assignee();
       b = node -> get_assignee();
       if (a != NULL && b != NULL){
-	w += a -> compatibilityWeight(b);
+    w += a -> compatibilityWeight(b);
       }
       std::vector<DataNode*> const & myArgs = this -> get_arguments();
       std::vector<DataNode*> const & nodeArgs = node -> get_arguments();
       if (myArgs.size() == nodeArgs.size()){
-	w += 1.0; /*-- for the two nodes agreeing in the number of arguments --*/
-	std::vector<DataNode*>::const_iterator it_a = myArgs.begin(), it_b = nodeArgs.begin();
-	for (; it_a != myArgs.end(); ++it_a, ++it_b){
-	  w += (*it_a) -> compatibilityWeight((*it_b));
-	}
+    w += 1.0; /*-- for the two nodes agreeing in the number of arguments --*/
+    std::vector<DataNode*>::const_iterator it_a = myArgs.begin(), it_b = nodeArgs.begin();
+    for (; it_a != myArgs.end(); ++it_a, ++it_b){
+      w += (*it_a) -> compatibilityWeight((*it_b));
+    }
       }
     }
     return w;
   }
-  
+
   bool MethodNode::isCompatible(const MethodNode * node) const {
     return (this -> name_ == node -> name_);
   }
-  
+
 
   const string& MethodNode::get_name() const
   {
@@ -236,7 +236,7 @@ namespace fixrgraphiso {
   DataNode * MethodNode::get_receiver() {
     return receiver_;
   }
-  
+
   const DataNode* MethodNode::get_receiver() const
   {
     return receiver_;
@@ -245,7 +245,7 @@ namespace fixrgraphiso {
   int MethodNode::get_num_arguments() const {
     return (int) arguments_.size();
   }
-  
+
   const std::vector<DataNode*> & MethodNode::get_arguments() const
   {
     return arguments_;
@@ -259,31 +259,31 @@ namespace fixrgraphiso {
     return assignee_;
   }
 
-  
+
   bool MethodNode::isSpecialMethod() const {
     std::set<std::string> special_methods {"EQ", "NEQ", "GT", "LT", "LE", "GE"};
     return (special_methods.find(get_name() ) != special_methods.end());
   }
-  
+
   void MethodNode::prettyPrint(std::ostream & stream) const {
-    
+
     stream << "Method Node id: " << get_id() << "\n";
     if (NULL != get_receiver()) {
       stream << "\t\t" << get_receiver()-> get_name() << ":" << get_receiver()->get_id() << ".";
     }
-    
+
     stream << "\t\t " << get_name() << "(";
     for (std::vector<DataNode*>::const_iterator it =  arguments_.begin();
-	 it != arguments_.end();
-	 ++it) {
+     it != arguments_.end();
+     ++it) {
       if (it != arguments_.begin()) stream << ",";
       if ((*it) != NULL)
-	stream << (*it)->get_name() << ":" << (*it)->get_id();
+    stream << (*it)->get_name() << ":" << (*it)->get_id();
       else
-	stream << "NULL:NULL";
+    stream << "NULL:NULL";
     }
     stream << ")" << endl;
-    
+
   }
 
   string MethodNode::getDotLabel() const {
@@ -297,22 +297,22 @@ namespace fixrgraphiso {
     ss << "](";
     string sep="";
     for (std::vector<DataNode*>::const_iterator it =  arguments_.begin();
-	 it != arguments_.end();
-	 ++it) {
+     it != arguments_.end();
+     ++it) {
       ss << sep << "#"<< (*it) -> get_id() ;
       sep = ", ";
     }
     ss << ")\"";
     return ss.str();
   }
-  
+
   std::ostream& operator<<(std::ostream& stream, const MethodNode& node)
   {
     node.prettyPrint(stream);
     return stream;
   }
 
-  
+
   MethodNode * toMethodNode(Node * n){
     assert (n -> get_type() == METHOD_NODE);
     MethodNode* m = dynamic_cast<MethodNode*> (n);
@@ -340,14 +340,14 @@ namespace fixrgraphiso {
     assert( d!= NULL);
     return d;
   }
-  
-  
+
+
   //------------------------------------------------------------------------------
   // Implementation of the edges
   //------------------------------------------------------------------------------
 
-  
-  
+
+
   Edge::Edge(const Edge& edge)
   {
     id_ = edge.id_;
@@ -356,20 +356,20 @@ namespace fixrgraphiso {
     dst_ = edge.dst_;
     match_frequency = edge.match_frequency;
   }
-  
+
   const long Edge::get_id() const {return id_;}
   const Node* Edge::get_src() const {return src_;}
   const Node* Edge::get_dst() const {return dst_;}
-  
+
   std::ostream& operator<<(std::ostream& stream, const Edge& edge)
   {
-    stream << "Id: (" << edge.get_id() << ") Src -> Dst := " << 
+    stream << "Id: (" << edge.get_id() << ") Src -> Dst := " <<
       edge.get_src()->get_id() << " -> " <<
       edge.get_dst()->get_id() << endl;
     return stream;
   }
 
-  
+
   std::string Edge::get_edge_dot_style() const{
     switch (this -> get_type()){
     case USE_EDGE:
@@ -386,9 +386,9 @@ namespace fixrgraphiso {
       return string("");
 
     }
-    
+
   }
-  
+
   double Edge::compatibilityWeight(Edge * eB) const {
     double w =0.0;
     switch (this -> get_type()){
@@ -397,43 +397,43 @@ namespace fixrgraphiso {
       return (eB -> get_type() == this->get_type())? 1.0 : 0.0;
     case EXCEPTIONAL_EDGE:
       if (eB -> get_type() == this -> get_type()){
-	// Calculate how many exceptions are in common
-	w = 1.0;
-	std::vector<std::string> :: const_iterator it_a;
-	std::vector<std::string> :: const_iterator it_b;
-	for (it_a = this -> exceptList_.begin(); it_a != this -> exceptList_.end(); ++it_a){
-	  for (it_b = eB -> exceptList_.begin(); it_b != eB -> exceptList_.end(); ++it_b){
-	    if ((*it_a) == (*it_b)) {
-	      w = w + 1.0;
-	      break;
-	    }
-	  }
-	}	
+    // Calculate how many exceptions are in common
+    w = 1.0;
+    std::vector<std::string> :: const_iterator it_a;
+    std::vector<std::string> :: const_iterator it_b;
+    for (it_a = this -> exceptList_.begin(); it_a != this -> exceptList_.end(); ++it_a){
+      for (it_b = eB -> exceptList_.begin(); it_b != eB -> exceptList_.end(); ++it_b){
+        if ((*it_a) == (*it_b)) {
+          w = w + 1.0;
+          break;
+        }
+      }
+    }
       }
       break;
     case CONTROL_EDGE:
     case TRANSITIVE_EDGE:
       if (eB -> get_type() == CONTROL_EDGE || eB -> get_type() == TRANSITIVE_EDGE){
-	// Calculate how many edge labels are in common
-	w = 1.0;
-	std::vector<edge_label_t> :: const_iterator jt_a, jt_b;
-	for (jt_a = this -> eLabels_.begin(); jt_a != this -> eLabels_.end(); ++jt_a){
-	  for (jt_b = eB -> eLabels_.begin(); jt_b != eB -> eLabels_.end(); ++jt_b){
-	    if ((*jt_a) == (*jt_b)) {
-	      w = w + 1.0;
-	      break;
-	    }
-	  }
-	}	
-      
+    // Calculate how many edge labels are in common
+    w = 1.0;
+    std::vector<edge_label_t> :: const_iterator jt_a, jt_b;
+    for (jt_a = this -> eLabels_.begin(); jt_a != this -> eLabels_.end(); ++jt_a){
+      for (jt_b = eB -> eLabels_.begin(); jt_b != eB -> eLabels_.end(); ++jt_b){
+        if ((*jt_a) == (*jt_b)) {
+          w = w + 1.0;
+          break;
+        }
+      }
+    }
+
       }
       break;
-      
+
     }
-    
+
     return w;
   }
-  
+
   //------------------------------------------------------------------------------
   // Implementation of the graph
   //------------------------------------------------------------------------------
@@ -441,17 +441,17 @@ namespace fixrgraphiso {
   Acdfg::~Acdfg()
   {
     for (nodes_t::const_iterator it =  nodes_.begin();
-	 it != nodes_.end(); ++it)  delete *(it);
-    
+     it != nodes_.end(); ++it)  delete *(it);
+
 
     for (edges_t::const_iterator it =  edges_.begin();
-	 it != edges_.end(); ++it) delete *(it);
+     it != edges_.end(); ++it) delete *(it);
   }
 
-  
+
   Node* Acdfg::add_node(Node * node)
   {
-  
+
     nodes_.push_back(node);
     assert(nMap_.find(node -> get_id()) == nMap_.end());
     nMap_[node->get_id()] = node;
@@ -466,7 +466,7 @@ namespace fixrgraphiso {
     assert (eMap_.find(eID) == eMap_.end());
     eMap_[eID] = new_edge;
 
-  
+
     // Add the edge ID to the source node's list of outgoing edges
     const Node * n = new_edge -> get_src();
     long src_id = n -> get_id();
@@ -484,7 +484,7 @@ namespace fixrgraphiso {
     return new_edge;
   }
 
-  
+
   void Acdfg::ensureEdge(edge_type_t eType, Node * src, Node * dest){
     node_id_t srcID = src -> get_id();
     node_id_t destID = dest -> get_id();
@@ -494,12 +494,12 @@ namespace fixrgraphiso {
       const Edge * e = *jt;
 
       if (e -> get_id() > new_edge_id)
-	new_edge_id = e -> get_id();
-      
+    new_edge_id = e -> get_id();
+
       if (e -> get_src_id() == srcID && e -> get_dst_id() == destID && e -> get_type() == eType)
-	return;
+    return;
     }
-    
+
     new_edge_id++;
     switch (eType){
     case USE_EDGE: {
@@ -520,21 +520,21 @@ namespace fixrgraphiso {
 
 
   void Acdfg::fixMissingUseDefEdges(){
-    /*-- For every method node, 
+    /*-- For every method node,
       ensure there is a use edge from receiver to the node,
-      ensure there is a def edge from assignee to the node. 
+      ensure there is a def edge from assignee to the node.
       --*/
     nodes_t::const_iterator it;
     for (it = begin_nodes(); it != end_nodes(); ++it){
       Node * n = *it;
       if (n -> get_type() == METHOD_NODE){
-	MethodNode * mNode = toMethodNode(n);
-	DataNode * rcv = mNode -> get_receiver();
-	DataNode * assg = mNode -> get_assignee();
-	if (rcv)
-	  ensureEdge(USE_EDGE, rcv, mNode);
-	if (assg)
-	  ensureEdge( DEF_EDGE, mNode, assg);
+    MethodNode * mNode = toMethodNode(n);
+    DataNode * rcv = mNode -> get_receiver();
+    DataNode * assg = mNode -> get_assignee();
+    if (rcv)
+      ensureEdge(USE_EDGE, rcv, mNode);
+    if (assg)
+      ensureEdge( DEF_EDGE, mNode, assg);
       }
     }
   }
@@ -564,7 +564,7 @@ namespace fixrgraphiso {
     if (nMap_.end() == it){
       assert(false); // No such id exists
       return NULL; // DEAD CODE
-    } 
+    }
 
     return it -> second;
   }
@@ -576,16 +576,16 @@ namespace fixrgraphiso {
   bool Acdfg::hasEdge( edge_id_t id) const {
     return eMap_.find(id) != eMap_.end();
   }
-  
+
   const Node* Acdfg::getNodeFromID( long id) const {
     node_id_to_ptr_map_t::const_iterator it = nMap_.find(id);
     if (nMap_.end() == it){
       assert(false); // No such id exists
       return NULL; // DEAD CODE
-    } 
+    }
 
     return it -> second;
-  
+
   }
 
 
@@ -594,10 +594,10 @@ namespace fixrgraphiso {
     if (eMap_.end() == it){
       assert(false); // No such id exists
       return NULL; // DEAD CODE
-    } 
+    }
 
     return it -> second;
-  
+
   }
 
   Edge * Acdfg::getEdgeFromID( long id) {
@@ -605,7 +605,7 @@ namespace fixrgraphiso {
     if (eMap_.end() == it){
       assert(false); // No such id exists
       return NULL; // DEAD CODE
-    } 
+    }
 
     return it -> second;
   }
@@ -620,17 +620,17 @@ namespace fixrgraphiso {
 
     case DATA_NODE:
       {
-	DataNode * dNode = dynamic_cast<DataNode*> (node);
-	assert(dNode != NULL);
-	dNode -> prettyPrint(stream);
+    DataNode * dNode = dynamic_cast<DataNode*> (node);
+    assert(dNode != NULL);
+    dNode -> prettyPrint(stream);
       }
       break;
 
     case METHOD_NODE:
       {
-	MethodNode * mNode= dynamic_cast<MethodNode*> (node);
-	assert(mNode != NULL);
-	mNode -> prettyPrint(stream);
+    MethodNode * mNode= dynamic_cast<MethodNode*> (node);
+    assert(mNode != NULL);
+    mNode -> prettyPrint(stream);
       }
       break;
     default:
@@ -649,15 +649,15 @@ namespace fixrgraphiso {
     if (d != NULL){
       node_id_t id = d -> get_id();
       if (addedNodes.find(id) != addedNodes.end()){
-	/*-- If yes, fetch it from the old acdfg --*/
-	Node * tmp = a-> getNodeFromID(id);
-	assert(tmp && tmp -> get_type() == DATA_NODE) ;
-	new_rcv = toDataNode(tmp);
+    /*-- If yes, fetch it from the old acdfg --*/
+    Node * tmp = a-> getNodeFromID(id);
+    assert(tmp && tmp -> get_type() == DATA_NODE) ;
+    new_rcv = toDataNode(tmp);
       } else {
-	/*-- does not already exist, clone --*/
-	new_rcv = d -> clone();
-	addedNodes.insert( id );
-	a -> add_node(new_rcv);
+    /*-- does not already exist, clone --*/
+    new_rcv = d -> clone();
+    addedNodes.insert( id );
+    a -> add_node(new_rcv);
       }
     }
     return new_rcv;
@@ -673,18 +673,18 @@ namespace fixrgraphiso {
     for (auto it = this -> begin_nodes(); it != this -> end_nodes(); ++it){
       Node * n = *it;
       if (n -> get_type() == METHOD_NODE){
-	MethodNode * mNode = toMethodNode(n);
-	std::string node_name = mNode -> get_name();
-	for (string n: methodnames){
-	  std::size_t found = node_name.find(n);
-	  if (found != std::string::npos){
-	    targets.push_back(mNode);
-	    if (debug){
-	      cout << "Added method node: " << node_name << endl;
-	    }
-	    break;
-	  }
-	}
+    MethodNode * mNode = toMethodNode(n);
+    std::string node_name = mNode -> get_name();
+    for (string n: methodnames){
+      std::size_t found = node_name.find(n);
+      if (found != std::string::npos){
+        targets.push_back(mNode);
+        if (debug){
+          cout << "Added method node: " << node_name << endl;
+        }
+        break;
+      }
+    }
       }
     }
     return;
@@ -710,11 +710,11 @@ namespace fixrgraphiso {
       const vector<DataNode*> & args = m -> get_arguments();
       vector<DataNode * > new_args;
       for (DataNode * a: args) {
-	DataNode * nArg = fetchOrClone(retG, a, nodesToAdd);
-	new_args.push_back(nArg);
+    DataNode * nArg = fetchOrClone(retG, a, nodesToAdd);
+    new_args.push_back(nArg);
       }
       MethodNode * mNew = new MethodNode(m -> get_id(), m -> get_name(), new_rcv, new_args, new_assg);
-      
+
       retG -> add_node(mNew);
     }
 
@@ -725,43 +725,43 @@ namespace fixrgraphiso {
       node_id_t srcID = e -> get_src_id();
       node_id_t destID = e -> get_dst_id();
       if (nodesToAdd.find(srcID) != nodesToAdd.end() && nodesToAdd.find(destID) != nodesToAdd.end()){
-	/* Both source and destination edges exist */
-	Node * srcNode = retG -> getNodeFromID(srcID);
-	Node * destNode = retG -> getNodeFromID(destID);
-	switch(e -> get_type()){
-	case CONTROL_EDGE:
-	  if (treatControlEdgesSeparately) {
-	    ControlEdge * nEdge = new ControlEdge(e-> get_id(), srcNode, destNode);
-	    retG -> add_edge(nEdge);
-	  } else {
-	    TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
-	    retG -> add_edge(nEdge);
-	  }
+    /* Both source and destination edges exist */
+    Node * srcNode = retG -> getNodeFromID(srcID);
+    Node * destNode = retG -> getNodeFromID(destID);
+    switch(e -> get_type()){
+    case CONTROL_EDGE:
+      if (treatControlEdgesSeparately) {
+        ControlEdge * nEdge = new ControlEdge(e-> get_id(), srcNode, destNode);
+        retG -> add_edge(nEdge);
+      } else {
+        TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
+        retG -> add_edge(nEdge);
+      }
 
-	  break;
-	case TRANSITIVE_EDGE: {
-	  TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
-	  retG -> add_edge(nEdge);
-	}
-	  break;
-	case USE_EDGE: {
-	  UseEdge * uEdge = new  UseEdge(e -> get_id(), srcNode, destNode);
-	  retG -> add_edge(uEdge);
-	}
-	  break;
+      break;
+    case TRANSITIVE_EDGE: {
+      TransitiveEdge * nEdge = new TransitiveEdge(e -> get_id(), srcNode, destNode);
+      retG -> add_edge(nEdge);
+    }
+      break;
+    case USE_EDGE: {
+      UseEdge * uEdge = new  UseEdge(e -> get_id(), srcNode, destNode);
+      retG -> add_edge(uEdge);
+    }
+      break;
 
-	case DEF_EDGE: {
-	  DefEdge * dEdge = new DefEdge(e -> get_id(), srcNode, destNode);
-	  retG -> add_edge(dEdge);
-	}
-	  break;
+    case DEF_EDGE: {
+      DefEdge * dEdge = new DefEdge(e -> get_id(), srcNode, destNode);
+      retG -> add_edge(dEdge);
+    }
+      break;
 
-	case EXCEPTIONAL_EDGE: 
-	  break;
-	default:
-	  assert(false);
-	  break;
-	}
+    case EXCEPTIONAL_EDGE:
+      break;
+    default:
+      assert(false);
+      break;
+    }
       }
     }
 
@@ -771,68 +771,68 @@ namespace fixrgraphiso {
 
   Acdfg * Acdfg::extractSubgraphWithFrequencyCutoff(int cutoff) const {
     /*--
-      1. Extract all nodes that have been matched with some 
+      1. Extract all nodes that have been matched with some
       minimum frequency.
-      
+
       2. Complete the graph by adding data nodes and edges that correspond to arguments,
       receivers and invokees of method nodes.
       --*/
     Acdfg * retG = new Acdfg();
     std::set<node_id_t> nodesAboveFreqCutoff;
     std::set<node_id_t> addedNodes;
-    
+
     for (auto it = begin_nodes(); it != end_nodes(); ++it){
       const Node * n = *it;
       if (n -> get_type() != REGULAR_NODE){
-	if (n -> getMatchFrequency() >= cutoff){
-	  switch (n -> get_type() ){
-	  case DATA_NODE:{
-	    const DataNode * d = toDataNode(n);
-	    nodesAboveFreqCutoff.insert(d -> get_id() );
-	    /*- Does the node already exist? -*/
-	    if (addedNodes.find(d -> get_id()) == addedNodes.end()){
-	      /*-- If not, clone it --*/
-	      addedNodes.insert(d-> get_id());
-	      DataNode * dNew = d-> clone();
-	      retG -> add_node(dNew);
-	    }
-	  }
-	    break;
-	  case METHOD_NODE:{
-	    const MethodNode * m = toMethodNode(n);
-	    assert( addedNodes.find(m -> get_id()) == addedNodes.end() );
-	    addedNodes.insert( m -> get_id());
-	    nodesAboveFreqCutoff.insert( m -> get_id());
-	    /* Clone the receiver */
-	    const DataNode * rcv = m -> get_receiver();
-	    DataNode * new_rcv = fetchOrClone(retG, rcv, addedNodes);
+    if (n -> getMatchFrequency() >= cutoff){
+      switch (n -> get_type() ){
+      case DATA_NODE:{
+        const DataNode * d = toDataNode(n);
+        nodesAboveFreqCutoff.insert(d -> get_id() );
+        /*- Does the node already exist? -*/
+        if (addedNodes.find(d -> get_id()) == addedNodes.end()){
+          /*-- If not, clone it --*/
+          addedNodes.insert(d-> get_id());
+          DataNode * dNew = d-> clone();
+          retG -> add_node(dNew);
+        }
+      }
+        break;
+      case METHOD_NODE:{
+        const MethodNode * m = toMethodNode(n);
+        assert( addedNodes.find(m -> get_id()) == addedNodes.end() );
+        addedNodes.insert( m -> get_id());
+        nodesAboveFreqCutoff.insert( m -> get_id());
+        /* Clone the receiver */
+        const DataNode * rcv = m -> get_receiver();
+        DataNode * new_rcv = fetchOrClone(retG, rcv, addedNodes);
 
-	    /* Clone the assignee */
+        /* Clone the assignee */
 
-	    const DataNode * assg = m -> get_assignee();
-	    
-	    DataNode * new_assg = fetchOrClone(retG, assg, addedNodes);
-	    /* Clone the arguments */
-	    std::vector<DataNode *> const & args = m -> get_arguments();
-	    std::vector<DataNode *> new_args;
-	    for (const DataNode * dArg: args){
-	      assert( dArg != NULL);
-	      DataNode * nArg = fetchOrClone(retG, dArg, addedNodes);
-	      new_args.push_back(nArg);
-	    }
-	    
+        const DataNode * assg = m -> get_assignee();
 
-	    /* Make a new method node */
-	    MethodNode * mNew = new MethodNode(m -> get_id(), m -> get_name(), new_rcv, new_args, new_assg);
-	    retG -> add_node(mNew);
-	    
-	  }
-	    break;
-	  default:
-	    assert(false);
-	    break;
-	  }
-	}
+        DataNode * new_assg = fetchOrClone(retG, assg, addedNodes);
+        /* Clone the arguments */
+        std::vector<DataNode *> const & args = m -> get_arguments();
+        std::vector<DataNode *> new_args;
+        for (const DataNode * dArg: args){
+          assert( dArg != NULL);
+          DataNode * nArg = fetchOrClone(retG, dArg, addedNodes);
+          new_args.push_back(nArg);
+        }
+
+
+        /* Make a new method node */
+        MethodNode * mNew = new MethodNode(m -> get_id(), m -> get_name(), new_rcv, new_args, new_assg);
+        retG -> add_node(mNew);
+
+      }
+        break;
+      default:
+        assert(false);
+        break;
+      }
+    }
       }
     }
 
@@ -847,36 +847,36 @@ namespace fixrgraphiso {
       switch (e -> get_type()){
       case CONTROL_EDGE:
       case TRANSITIVE_EDGE:
-	if (e -> getMatchFrequency() >= cutoff){
-	  Node * srcNode = retG -> getNodeFromID( srcID);
-	  Node * destNode = retG -> getNodeFromID( destID);
-	  
-	  TransitiveEdge * nEdge = new TransitiveEdge( e -> get_id(), srcNode, destNode);
-	  retG -> add_edge(nEdge);
-	}
-	break;
+    if (e -> getMatchFrequency() >= cutoff){
+      Node * srcNode = retG -> getNodeFromID( srcID);
+      Node * destNode = retG -> getNodeFromID( destID);
+
+      TransitiveEdge * nEdge = new TransitiveEdge( e -> get_id(), srcNode, destNode);
+      retG -> add_edge(nEdge);
+    }
+    break;
 
       case DEF_EDGE:
-	if (retG -> hasNode(srcID) && retG -> hasNode(destID)){
-	  Node * srcNode = retG -> getNodeFromID( srcID);
-	  Node * destNode = retG -> getNodeFromID( destID);
-	  DefEdge * nEdge = new DefEdge( e -> get_id(), srcNode, destNode);
-	  retG -> add_edge(nEdge);
-	}
-	break;
+    if (retG -> hasNode(srcID) && retG -> hasNode(destID)){
+      Node * srcNode = retG -> getNodeFromID( srcID);
+      Node * destNode = retG -> getNodeFromID( destID);
+      DefEdge * nEdge = new DefEdge( e -> get_id(), srcNode, destNode);
+      retG -> add_edge(nEdge);
+    }
+    break;
       case USE_EDGE:
-	if (retG -> hasNode(srcID) && retG -> hasNode(destID)){
-	  Node * srcNode = retG -> getNodeFromID( srcID);
-	  Node * destNode = retG -> getNodeFromID( destID);
-	  UseEdge * nEdge = new UseEdge( e -> get_id(), srcNode, destNode);
-	  retG -> add_edge(nEdge);
-	}	
-	break;
+    if (retG -> hasNode(srcID) && retG -> hasNode(destID)){
+      Node * srcNode = retG -> getNodeFromID( srcID);
+      Node * destNode = retG -> getNodeFromID( destID);
+      UseEdge * nEdge = new UseEdge( e -> get_id(), srcNode, destNode);
+      retG -> add_edge(nEdge);
+    }
+    break;
       case EXCEPTIONAL_EDGE:
-	std::cerr << "Warning: Exceptional edges are not handled in the frequent subgraph mining yet. " << std::endl;
-	break;
+    std::cerr << "Warning: Exceptional edges are not handled in the frequent subgraph mining yet. " << std::endl;
+    break;
       }
-      
+
     }
 
     return retG;
@@ -886,7 +886,7 @@ namespace fixrgraphiso {
   {
     stream << "Acdfg\n" << "List of nodes: " << endl;
     for (nodes_t::const_iterator it =  acdfg.nodes_.begin();
-	 it != acdfg.nodes_.end(); ++it) {
+     it != acdfg.nodes_.end(); ++it) {
       printNode((*it),stream);
       stream << endl;
       std::vector<long> oEdges = acdfg.getOutgoingEdgeIDs((*it) -> get_id());
@@ -894,19 +894,19 @@ namespace fixrgraphiso {
       stream << "\t Successor nodes: \t";
       std::string sep="";
       for (std::vector<long>::const_iterator jt = oEdges.begin();
-	   jt != oEdges.end();
-	   jt ++){
-	const Edge * e = acdfg.getEdgeFromID(*jt);
-	assert(e != NULL);
-	assert(e -> get_src() -> get_id() == (*it) -> get_id());
-	stream << sep << e -> get_dst() -> get_id() ;
-	sep=", ";
+       jt != oEdges.end();
+       jt ++){
+    const Edge * e = acdfg.getEdgeFromID(*jt);
+    assert(e != NULL);
+    assert(e -> get_src() -> get_id() == (*it) -> get_id());
+    stream << sep << e -> get_dst() -> get_id() ;
+    sep=", ";
       }
       stream << endl;
     }
     stream << "\nEdges:\n";
     for (edges_t::const_iterator it =  acdfg.edges_.begin();
-	 it != acdfg.edges_.end(); ++it) {
+     it != acdfg.edges_.end(); ++it) {
       stream << (*(*it));
     }
     stream << endl;
@@ -916,11 +916,13 @@ namespace fixrgraphiso {
 
   void Acdfg::dumpToDot(std::ostream & out, bool transitiveReduce) const  {
     TransitiveReduceAcdfg trRed(this);
+
     if (transitiveReduce)
       trRed.performTransitiveReduction();
     out << "digraph isoX {" << endl;
-    out << " node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n	\
+    out << " node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n \
  edge[ arrowhead=onormal,penwidth=2.0,]; \n" <<endl;
+
     for (auto pt = begin_nodes(); pt != end_nodes(); ++pt){
       const Node * na = *pt;
       string strA = na -> getDotLabel();
@@ -930,7 +932,7 @@ namespace fixrgraphiso {
     for (auto rt = begin_edges(); rt != end_edges(); ++rt){
       const Edge * e = *rt;
       if (e -> get_type() != TRANSITIVE_EDGE || !transitiveReduce || trRed.hasEdge(e -> get_src_id(), e -> get_dst_id())){
-	out << "\"n_"<< e -> get_src_id() << "\" -> \"n_"<< e -> get_dst_id() << "\""<< e-> get_edge_dot_style() << ";" << endl;
+    out << "\"n_"<< e -> get_src_id() << "\" -> \"n_"<< e -> get_dst_id() << "\""<< e-> get_edge_dot_style() << ";" << endl;
       }
     }
 
@@ -938,30 +940,151 @@ namespace fixrgraphiso {
   }
 
 
-  
-  
-  
+  void Acdfg::dumpToAcdfgProto(std::ostream & out, bool transitiveReduce) const {
+    acdfg_protobuf::Acdfg* acdfg = new acdfg_protobuf::Acdfg();
+
+    TransitiveReduceAcdfg trRed(this);
+    if (transitiveReduce)
+      trRed.performTransitiveReduction();
+
+    for (auto pt = begin_nodes(); pt != end_nodes(); ++pt){
+      const Node * na = *pt;
+      na->addProtoNode(acdfg);
+    }
+
+    for (auto rt = begin_edges(); rt != end_edges(); ++rt){
+      const Edge * e = *rt;
+      e->addProtoEdge(acdfg);
+    }
+
+    {
+      if (! acdfg->SerializeToOstream(&out)) {
+        std::cerr << "Failed to write acdfg." << endl;
+      }
+    }
+  }
+
+  void Node::addProtoNode(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == REGULAR_NODE);
+
+    acdfg_protobuf::Acdfg_MiscNode* misc_node =
+      acdfg->add_misc_node();
+    misc_node->set_id(get_id());
+  }
+
+  void DataNode::addProtoNode(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == DATA_NODE);
+    acdfg_protobuf::Acdfg_DataNode* data_node = acdfg->add_data_node();
+
+    data_node->set_id(get_id());
+    data_node->set_name(get_name());
+    data_node->set_type(get_data_type());
+
+    if (get_data_node_type() == DATA_NODE_VAR) {
+      data_node->set_data_type(acdfg_protobuf::Acdfg_DataNode_DataType_DATA_VAR);
+    } else if (get_data_node_type() == DATA_NODE_CONST) {
+      data_node->set_data_type(acdfg_protobuf::Acdfg_DataNode_DataType_DATA_CONST);
+    }
+  }
+
+  void  MethodNode::addProtoNode(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == METHOD_NODE);
+    acdfg_protobuf::Acdfg_MethodNode* method_node =
+      acdfg->add_method_node();
+
+    method_node->set_id(get_id());
+    method_node->set_name(get_name());
+
+    const DataNode* r = get_receiver();
+    if (r != NULL){
+      method_node->set_invokee(r->get_id());
+    }
+
+    for (std::vector<DataNode*>::const_iterator it =  arguments_.begin();
+         it != arguments_.end();
+         ++it) {
+      method_node->add_argument((*it)->get_id());
+    }
+    // Assignee?
+    // optional uint64 assignee = 5;
+  }
+
+  void Edge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(false);
+  }
+
+  void DefEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == METHOD_NODE);
+    acdfg_protobuf::Acdfg_DefEdge* edge =
+      acdfg->add_def_edge();
+
+    edge->set_id(get_id());
+    edge->set_from(get_src_id());
+    edge->set_to(get_dst_id());
+  }
+
+  void UseEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == METHOD_NODE);
+    acdfg_protobuf::Acdfg_UseEdge* edge =
+      acdfg->add_use_edge();
+
+    edge->set_id(get_id());
+    edge->set_from(get_src_id());
+    edge->set_to(get_dst_id());
+  }
+
+  void ControlEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == METHOD_NODE);
+    acdfg_protobuf::Acdfg_ControlEdge* edge =
+      acdfg->add_control_edge();
+
+    edge->set_id(get_id());
+    edge->set_from(get_src_id());
+    edge->set_to(get_dst_id());
+  }
+
+  void TransitiveEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == METHOD_NODE);
+    acdfg_protobuf::Acdfg_TransEdge* edge =
+      acdfg->add_trans_edge();
+
+    edge->set_id(get_id());
+    edge->set_from(get_src_id());
+    edge->set_to(get_dst_id());
+  }
+
+  void ExceptionalEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
+    assert(get_type() == METHOD_NODE);
+    acdfg_protobuf::Acdfg_ExceptionalControlEdge* edge =
+      acdfg->add_exceptional_edge();
+
+    edge->set_id(get_id());
+    edge->set_from(get_src_id());
+    edge->set_to(get_dst_id());
+  }
+
+
   void TransitiveReduceAcdfg::extractDataFromACDFG(){
     // Extract all methods nodes
     for (auto it = a -> begin_nodes(); it != a -> end_nodes(); ++it){
       Node * n = *it;
       if (n -> get_type() == METHOD_NODE){
-	vertexIDs.insert(n -> get_id());
+    vertexIDs.insert(n -> get_id());
       }
     }
 
     for (auto jt = a -> begin_edges(); jt != a -> end_edges(); ++jt){
       Edge * e = *jt;
       if (vertexIDs.find(e -> get_src_id()) != vertexIDs.end()){
-	if (vertexIDs.find(e -> get_dst_id()) != vertexIDs.end()){
-	  // Insert it two ways
-	  std::pair<long,long> q(e-> get_src_id(), e -> get_dst_id());
-	  edges_src_dest[q] = e->get_id();
-	}
+    if (vertexIDs.find(e -> get_dst_id()) != vertexIDs.end()){
+      // Insert it two ways
+      std::pair<long,long> q(e-> get_src_id(), e -> get_dst_id());
+      edges_src_dest[q] = e->get_id();
+    }
       }
     }
 
-    
+
   }
 
   bool TransitiveReduceAcdfg::hasEdge(long srcID, long destID){
@@ -981,29 +1104,29 @@ namespace fixrgraphiso {
       edges_src_dest.erase(it);
     }
   }
-  
+
   void TransitiveReduceAcdfg::performTransitiveReduction() {
     // We will implement the n^3 algorithm because anything else is going to be a pain
     // to debug in a short period of time.
 
     for (long id1: vertexIDs){
       for (long id2: vertexIDs){
-	if (id1 != id2){
-	  for (long id3: vertexIDs){
-	    if (id2 != id3 && id1 != id3){
-	      if (hasEdge(id1, id2) && hasEdge(id2, id3)){
-		deleteEdge(id1, id3);
-	      }
-	    }	    
-	  }
-	}
+    if (id1 != id2){
+      for (long id3: vertexIDs){
+        if (id2 != id3 && id1 != id3){
+          if (hasEdge(id1, id2) && hasEdge(id2, id3)){
+        deleteEdge(id1, id3);
+          }
+        }
+      }
+    }
       }
     }
   }
 
 
-  
-  
+
+
 } // namespace fixrgraphiso
 
 

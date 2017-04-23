@@ -1,4 +1,5 @@
 #include <ostream>
+#include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <iterator>
@@ -11,7 +12,7 @@ namespace fixrgraphiso {
     // First check the graph so far
     for (AcdfgBin * c : subsumingBins){
       if (c -> hasSubsumingBin(b)){
-	return true;
+    return true;
       }
     }
 
@@ -30,20 +31,20 @@ namespace fixrgraphiso {
     IsoSubsumption dir_b (b, repr);
     if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
       if (debug){
-	cout << "Subsumption ruled out directly " << endl;
+    cout << "Subsumption ruled out directly " << endl;
       }
       return false;
     }
     if (! dir_a.check()){
       if (debug){
-	cout << "Subsumption bin -> b ruled out " << endl;
+    cout << "Subsumption bin -> b ruled out " << endl;
       }
       return false;
     }
 
     if (!dir_b.check()){
       if (debug){
-	cout << "Subsumption b -> bin ruled out " << endl;
+    cout << "Subsumption b -> bin ruled out " << endl;
       }
       return false;
     }
@@ -69,10 +70,10 @@ namespace fixrgraphiso {
     if (printAbove){
 
       for (const AcdfgBin * b : subsumingBins){
-	const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
-	for (const Acdfg * a: sub_acdfgs){
-	  out << a -> getName() << endl;
-	}
+    const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
+    for (const Acdfg * a: sub_acdfgs){
+      out << a -> getName() << endl;
+    }
       }
     }
 
@@ -86,6 +87,16 @@ namespace fixrgraphiso {
     dot_out.close();
   }
 
+  void AcdfgBin::dumpToProtobuf(string fileName) const{
+    std::fstream output(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
+
+    assert(acdfgs.size() >= 1);
+    Acdfg * repr = *(acdfgs.begin());
+    repr -> dumpToAcdfgProto(output);
+    output.close();
+  }
+
+
   void AcdfgBin::addSubsumingBinsToSet(set<AcdfgBin*> & what) {
     for (AcdfgBin* b: subsumingBins){
       assert(b != this);
@@ -98,9 +109,9 @@ namespace fixrgraphiso {
     for (AcdfgBin * b : subsumingBins){
       b -> addSubsumingBinsToSet(transitivelySubsuming);
     }
-    std::set_difference(subsumingBins.begin(), subsumingBins.end(),	\
-			transitivelySubsuming.begin(), transitivelySubsuming.end(), \
-			std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
+    std::set_difference(subsumingBins.begin(), subsumingBins.end(), \
+            transitivelySubsuming.begin(), transitivelySubsuming.end(), \
+            std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
 
   }
 
@@ -109,7 +120,7 @@ namespace fixrgraphiso {
     if (f < freq_cutoff) return false;
     for (const AcdfgBin * b: immediateSubsumingBins){
       if (b -> getPopularity() >= freq_cutoff)
-		return false;
+        return false;
     }
     return true;
   }
@@ -127,7 +138,7 @@ namespace fixrgraphiso {
   bool AcdfgBin::hasPopularAncestor() const{
     for (const AcdfgBin* b: subsumingBins){
       if (b -> isPopular())
-	return true;
+    return true;
     }
     return false;
   }
