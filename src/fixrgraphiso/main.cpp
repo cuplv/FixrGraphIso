@@ -27,18 +27,20 @@ void clean(acdfg_protobuf::Acdfg* proto_acdfg_a,
            acdfg_protobuf::Acdfg* proto_acdfg_b,
            Acdfg* acdfg_a, Acdfg* acdfg_b);
 
-void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_b, std::string fStem) {
+void process(std::string aName, Acdfg* acdfg_a,
+             std::string bName, Acdfg* acdfg_b,
+             std::string fStem) {
 
   std::cout << " A: " << aName;
   std::cout << " B: " << bName;
   std::cout << " R: " << fStem;
   // std::cout << "Acdfg a\n" << (*acdfg_a);
   //std::cout << "\nAcdfg b\n" << (*acdfg_b);
-  
+
   // /* Compute the isomorphism */
   // {
   //   IsoSolver solver(*acdfg_a, *acdfg_b);
-  
+
   //   /* compute (precise) isomorphism */
   //   bool is_iso = solver.is_iso();
   //   std::cout << "Is a isomorphic to b? " <<
@@ -47,7 +49,7 @@ void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_
   //     std::cout << "Isomorphism:\n" <<
   //       solver.get_last_isomorphism() << std::endl;
   //   }
-  
+
   //   bool is_approx_iso = solver.get_max_embedding();
   //   std::cout << "Is a approximate isomorphic to b? "
   //             << is_approx_iso << std::endl;
@@ -56,16 +58,17 @@ void process(std::string aName, Acdfg* acdfg_a, std::string bName, Acdfg* acdfg_
   //       solver.get_last_isomorphism() << std::endl;
   //   }
   // }
-  
+
   IlpApproxIsomorphism ilp(acdfg_a, acdfg_b);
   bool stat = ilp.computeILPEncoding();
-  if (stat){
- 
-  
+
+  ilp.printResults(std::cout);
+
+  if (stat) {
     std::ofstream file((fStem+".dot").c_str());
     ilp.prettyPrintEncodingResultInDot(file);
     file.close();
-    
+
     IsomorphismResults isoResults(aName,bName);
     ilp.populateResults(isoResults);
     isoResults.dumpProtobuf(fStem+".iso.bin", acdfg_a, true);

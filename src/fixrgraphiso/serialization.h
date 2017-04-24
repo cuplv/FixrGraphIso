@@ -26,6 +26,7 @@ public:
   acdfg_protobuf::Acdfg* read_protobuf_acdfg(const char* file_name);
 
   Acdfg * create_acdfg(acdfg_protobuf::Iso * proto_iso);
+
 private:
 };
 

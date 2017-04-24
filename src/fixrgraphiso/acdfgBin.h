@@ -27,7 +27,7 @@ namespace fixrgraphiso{
     AcdfgBin(Acdfg* a):subsuming(false), anomalous(false), popular(false){
       acdfgs.push_back(a);
     }
-    
+
     bool isACDFGEquivalent(Acdfg *b);
 
     void insertEquivalentACDFG(Acdfg * b){
@@ -45,7 +45,7 @@ namespace fixrgraphiso{
       assert(acdfgs.size() > 0);
       return *(acdfgs.begin());
     }
-    
+
     Acdfg * getRepresentative(){
       assert(acdfgs.size() > 0);
       return *(acdfgs.begin());
@@ -54,6 +54,7 @@ namespace fixrgraphiso{
     void printInfo(std::ostream & out, bool printAbove = true) const;
 
     void dumpToDot(string fileName) const;
+    void dumpToProtobuf(string fileName) const;
 
     bool isACDFGBinSubsuming(AcdfgBin * b);
     void insertIncomingEdge(AcdfgBin * c){
@@ -81,11 +82,11 @@ namespace fixrgraphiso{
     const std::vector<Acdfg*>  & getACDFGs() const { return acdfgs; }
     bool isAtFrontierOfPopularity(int freq_cutoff) const;
     bool hasPopularAncestor() const;
-    
+
   protected:
 
     void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
-    
+
     vector<Acdfg*> acdfgs;
     set<AcdfgBin*> subsumingBins;
     set<AcdfgBin*> immediateSubsumingBins;
@@ -93,7 +94,7 @@ namespace fixrgraphiso{
     bool subsuming;
     bool anomalous;
     bool popular;
-    
+
   };
 
 }
