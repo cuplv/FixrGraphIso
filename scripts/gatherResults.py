@@ -263,6 +263,10 @@ class GenerateIndexPage:
                     patternFrequency = int(m.group(1))
                     patternList.append(m.group(2))
                     continue
+                m = re.match(r'Bin:\s*(.*.bin)', line)
+                if m:
+                    # Skip binary files
+                    continue
                 patternList.append(line)
 
             f.close()
