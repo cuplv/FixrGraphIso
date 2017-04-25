@@ -1014,7 +1014,7 @@ namespace fixrgraphiso {
   }
 
   void DefEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
-    assert(get_type() == METHOD_NODE);
+    assert(get_type() == DEF_EDGE);
     acdfg_protobuf::Acdfg_DefEdge* edge =
       acdfg->add_def_edge();
 
@@ -1024,7 +1024,7 @@ namespace fixrgraphiso {
   }
 
   void UseEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
-    assert(get_type() == METHOD_NODE);
+    assert(get_type() == USE_EDGE);
     acdfg_protobuf::Acdfg_UseEdge* edge =
       acdfg->add_use_edge();
 
@@ -1034,7 +1034,7 @@ namespace fixrgraphiso {
   }
 
   void ControlEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
-    assert(get_type() == METHOD_NODE);
+    assert(get_type() == CONTROL_EDGE);
     acdfg_protobuf::Acdfg_ControlEdge* edge =
       acdfg->add_control_edge();
 
@@ -1044,7 +1044,7 @@ namespace fixrgraphiso {
   }
 
   void TransitiveEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
-    assert(get_type() == METHOD_NODE);
+    assert(get_type() == TRANSITIVE_EDGE);
     acdfg_protobuf::Acdfg_TransEdge* edge =
       acdfg->add_trans_edge();
 
@@ -1054,7 +1054,7 @@ namespace fixrgraphiso {
   }
 
   void ExceptionalEdge::addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const {
-    assert(get_type() == METHOD_NODE);
+    assert(get_type() == EXCEPTIONAL_EDGE);
     acdfg_protobuf::Acdfg_ExceptionalControlEdge* edge =
       acdfg->add_exceptional_edge();
 
