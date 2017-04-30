@@ -69,6 +69,8 @@ void process(std::string aName, Acdfg* acdfg_a,
     ilp.prettyPrintEncodingResultInDot(file);
     file.close();
 
+    ilp.printMatchOfB();
+
     IsomorphismResults isoResults(aName,bName);
     ilp.populateResults(isoResults);
     isoResults.dumpProtobuf(fStem+".iso.bin", acdfg_a, true);

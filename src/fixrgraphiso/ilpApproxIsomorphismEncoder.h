@@ -34,6 +34,7 @@ namespace fixrgraphiso {
     IlpApproxIsomorphism(Acdfg* a, Acdfg* b ): acdfg_a(a), acdfg_b(b){};
     ~IlpApproxIsomorphism(){};
     void prettyPrintEncodingResultInDot(ostream & out);
+    void printMatchOfB();
     bool computeILPEncoding();
     void populateResults(IsomorphismResults & res);
     void printResults(ostream &out);

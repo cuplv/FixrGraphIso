@@ -8,7 +8,7 @@ namespace fixrgraphiso {
   // Recommended that you do not turn these flags on.
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
   bool addCompatibleDataNodes = false; // This turns on additional checks for data node compatibility
-  bool printEverything=false;
+  bool printEverything=true;
   bool avoidComparisonMethodNodes = true;
 
   using std::ostringstream;
@@ -641,6 +641,7 @@ namespace fixrgraphiso {
     vector<string> graphEdges;
 
     nodes_t::const_iterator pt;
+    edges_t::const_iterator pt_edge;
     if (printEverything){
       for (pt = acdfg_a -> begin_nodes(); pt != acdfg_a -> end_nodes(); ++pt){
         const Node * na = *pt;
@@ -650,6 +651,21 @@ namespace fixrgraphiso {
         graphADot.push_back(sA.str());
       }
 
+      // for (pt_edge = acdfg_a -> begin_edges(); pt_edge != acdfg_a -> end_edges(); ++pt_edge){
+      //   const Edge * ea = *pt_edge;
+      //   if (ea->get_type() != TRANSITIVE_EDGE &&
+      //       ea->get_type() != EXCEPTIONAL_EDGE) {
+      //     const Node * nsrc = ea->get_src();
+      //     const Node * ndst = ea->get_dst();
+      //     string strsrc = (nsrc -> getDotLabel());
+      //     string strdst = (ndst -> getDotLabel());
+
+      //     ostringstream sC;
+      //     sC << "\"a_"<<nsrc -> get_id()<<"\" -> \"a_"<<ndst-> get_id()<<"\"" << ea->get_edge_dot_style() << "; "<< std::endl;
+      //     graphEdges.push_back(sC.str());
+      //   }
+      // }
+
       for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
         const Node * nb = *pt;
         string strB = (nb -> getDotLabel());
@@ -657,6 +673,22 @@ namespace fixrgraphiso {
         sB << "\"b_"<<nb -> get_id() <<"\" [color=gray," << strB << "];"<<std::endl;
       }
     }
+    
+    if (printEverything) {
+    for (pt_edge = acdfg_b -> begin_edges(); pt_edge != acdfg_b -> end_edges(); ++pt_edge){
+      const Edge * eb = *pt_edge;
+      if (eb->get_type() != TRANSITIVE_EDGE &&
+          eb->get_type() != EXCEPTIONAL_EDGE) {
+        const Node * nsrc = eb->get_src();
+        const Node * ndst = eb->get_dst();
+        string strsrc = (nsrc -> getDotLabel());
+        string strdst = (ndst -> getDotLabel());
+
+        ostringstream sC;
+        sC << "\"b_"<<nsrc -> get_id()<<"\" -> \"b_"<<ndst-> get_id()<<"\"" << eb->get_edge_dot_style() << "; "<< std::endl;
+        graphEdges.push_back(sC.str());
+      }
+    }}
 
     for (it = node_map_a_to_b.begin();
          it != node_map_a_to_b.end();
@@ -734,6 +766,65 @@ namespace fixrgraphiso {
       out << *kt << std::endl;
     }
     out << " } " << std::endl;
+  }
+
+  void IlpApproxIsomorphism::printMatchOfB(){
+    std::map< node_type_t, int> node_map;
+    
+    for (const auto it: node_map_a_to_b){
+      node_id_t i = it.first;
+      const vector<node_id_t> & compats = it.second;
+      for (node_id_t j: compats){
+        int vid = milp.lookupIsoNodeVariable(i,j);
+        MILPVariable var =milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          std::map<node_type_t,int>::iterator node_map_it;
+          int count = 0;
+
+          Node * nb = acdfg_b -> getNodeFromID(j);
+          node_map_it = node_map.find(nb->get_type());
+          if (node_map_it != node_map.end()){
+            count = node_map_it->second;
+          }
+          count += 1;
+          node_map[nb->get_type()] = count;
+        }
+      }
+    }
+
+    std::map< edge_type_t, int> edge_map;
+    for (auto mt : compat_edges_a_to_b){
+      edge_id_t eAID = mt. first;
+      edge_id_t eBID = mt. second;
+      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+      MILPVariable var = milp.getVariableFromID(vid);
+      if (var.binVal == 1){
+        std::map<edge_type_t,int>::iterator edge_map_it;
+        Edge * eb = acdfg_b -> getEdgeFromID(eBID);
+
+        edge_map_it = edge_map.find(eb->get_type());
+        int count = 0;
+        if (edge_map_it != edge_map.end()) {
+          count = edge_map_it->second;
+        }
+        count += 1;
+        edge_map[eb->get_type()] = count;
+      }
+    }    
+
+
+    for (const auto it: node_map) {
+      double ratio = double(it.second) / double(acdfg_b->typed_node_count(it.first));
+      std::cout << "NODETYPE: " << it.first << " = " << ratio << "\n";
+
+      if (it.first == METHOD_NODE) {
+        std::cout << "TOT_MET_NODES: " << it.second << "\n";
+      }
+    }
+    for (const auto it: edge_map) {
+      double ratio = double(it.second) / double(acdfg_b->typed_edge_count(it.first));
+      std::cout << "EDGETYPE: " << it.first << " = " << ratio << "\n";
+    }
   }
 
   void IlpApproxIsomorphism::populateFrequencies(){
