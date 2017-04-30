@@ -630,6 +630,89 @@ namespace fixrgraphiso {
     #endif
   }
 
+
+  bool IlpApproxIsomorphism::isNodeAInIso(node_id_t i) {
+    
+    compatible_node_map_t::const_iterator it;
+    it = node_map_a_to_b.find(i);
+    if (it != node_map_a_to_b.end()) {
+      vector<node_id_t>::const_iterator jt;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt != compats.end(); ++jt){
+        node_id_t j = *jt;
+        int vid = milp.lookupIsoNodeVariable(i,j);
+        // Now get the corresponding variable
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool IlpApproxIsomorphism::isNodeBInIso(node_id_t i) {
+    
+    compatible_node_map_t::const_iterator it;
+    it = node_map_b_to_a.find(i);
+    if (it != node_map_b_to_a.end()) {
+      vector<node_id_t>::const_iterator jt;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt != compats.end(); ++jt){
+        node_id_t j = *jt;
+        int vid = milp.lookupIsoNodeVariable(j,i);
+        // Now get the corresponding variable
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
+  bool IlpApproxIsomorphism::isEdgeAInIso(edge_id_t i) {
+    
+    std::vector<edge_pair_t>::const_iterator mt;
+    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+      edge_id_t eAID = mt -> first;
+
+      if (eAID == i) {
+
+        edge_id_t eBID = mt -> second;
+        Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+        Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+        int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool IlpApproxIsomorphism::isEdgeBInIso(edge_id_t i) {
+    
+    std::vector<edge_pair_t>::const_iterator mt;
+    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+      edge_id_t eAID = mt -> first;
+        edge_id_t eBID = mt -> second;
+      if (eBID == i) {
+        Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+        Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+        int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
   void IlpApproxIsomorphism::prettyPrintEncodingResultInDot(ostream & out){
     // This can only be called after the milp is successfully solved and solution extracted.
 
@@ -640,6 +723,8 @@ namespace fixrgraphiso {
     vector<string> graphBDot;
     vector<string> graphEdges;
 
+    string grayedStyle = "fillcolor=\"#eeeeee\",fontcolor=\"#a8a8a8\", color=\"#eeeeee\"";
+
     nodes_t::const_iterator pt;
     edges_t::const_iterator pt_edge;
     if (printEverything){
@@ -647,48 +732,89 @@ namespace fixrgraphiso {
         const Node * na = *pt;
         string strA = (na -> getDotLabel());
         ostringstream sA;
-        sA << "\"a_"<<na -> get_id() <<"\" [ color=gray, " << strA << "];"<<std::endl;
+                
+        bool is_in_iso = isNodeAInIso(na->get_id());
+
+        if (is_in_iso) {
+          sA << "\"a_"<<na -> get_id() <<"\" [ color=gray, " << strA << "];"<<std::endl;
+        } else {
+          sA << "\"a_"<<na -> get_id() <<"\" [" << grayedStyle << "," << strA << "];"<<std::endl;
+        }
         graphADot.push_back(sA.str());
       }
 
-      // for (pt_edge = acdfg_a -> begin_edges(); pt_edge != acdfg_a -> end_edges(); ++pt_edge){
-      //   const Edge * ea = *pt_edge;
-      //   if (ea->get_type() != TRANSITIVE_EDGE &&
-      //       ea->get_type() != EXCEPTIONAL_EDGE) {
-      //     const Node * nsrc = ea->get_src();
-      //     const Node * ndst = ea->get_dst();
-      //     string strsrc = (nsrc -> getDotLabel());
-      //     string strdst = (ndst -> getDotLabel());
+      for (pt_edge = acdfg_a -> begin_edges(); pt_edge != acdfg_a -> end_edges(); ++pt_edge){
+        const Edge * ea = *pt_edge;
+        if (ea->get_type() != TRANSITIVE_EDGE &&
+            ea->get_type() != EXCEPTIONAL_EDGE) {
+          const Node * nsrc = ea->get_src();
+          const Node * ndst = ea->get_dst();
+          string strsrc = (nsrc -> getDotLabel());
+          string strdst = (ndst -> getDotLabel());
 
-      //     ostringstream sC;
-      //     sC << "\"a_"<<nsrc -> get_id()<<"\" -> \"a_"<<ndst-> get_id()<<"\"" << ea->get_edge_dot_style() << "; "<< std::endl;
-      //     graphEdges.push_back(sC.str());
-      //   }
-      // }
+          ostringstream sC;
+          bool is_edge_in_iso = isEdgeAInIso(ea->get_id());
+          if (is_edge_in_iso) {
+            sC << "\"a_"<<nsrc -> get_id()<<"\" -> \"a_"<<ndst-> get_id()<<"\"" << ea->get_edge_dot_style() << "; "<< std::endl;
+          }
+          else {
+            sC << "\"a_"<<nsrc -> get_id()<<"\" -> \"a_"<<ndst-> get_id()<<"\" [" << grayedStyle << " ]; "<< std::endl;
+          }
+          graphEdges.push_back(sC.str());
+        }
+      }
 
       for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
         const Node * nb = *pt;
         string strB = (nb -> getDotLabel());
+
         ostringstream sB;
-        sB << "\"b_"<<nb -> get_id() <<"\" [color=gray," << strB << "];"<<std::endl;
+
+        bool is_in_iso = isNodeBInIso(nb->get_id());
+        if (is_in_iso) {
+          sB << "\"b_"<<nb -> get_id() <<"\" [ color=gray, " << strB << "];"<<std::endl;
+        } else {
+          sB << "\"b_"<<nb -> get_id() <<"\" [" << grayedStyle << "," << strB << "];"<<std::endl;
+        }
+        graphBDot.push_back(sB.str());
+       
+
       }
     }
     
     if (printEverything) {
-    for (pt_edge = acdfg_b -> begin_edges(); pt_edge != acdfg_b -> end_edges(); ++pt_edge){
-      const Edge * eb = *pt_edge;
-      if (eb->get_type() != TRANSITIVE_EDGE &&
-          eb->get_type() != EXCEPTIONAL_EDGE) {
-        const Node * nsrc = eb->get_src();
-        const Node * ndst = eb->get_dst();
-        string strsrc = (nsrc -> getDotLabel());
-        string strdst = (ndst -> getDotLabel());
+      for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
+        const Node * nb = *pt;
+        string strB = (nb -> getDotLabel());
+        ostringstream sB;
+        // std::cout << "NB" << strA << " " << nb->get_id() << "\n";
 
-        ostringstream sC;
-        sC << "\"b_"<<nsrc -> get_id()<<"\" -> \"b_"<<ndst-> get_id()<<"\"" << eb->get_edge_dot_style() << "; "<< std::endl;
-        graphEdges.push_back(sC.str());
+        bool is_in_iso = isNodeBInIso(nb->get_id());
+        if (is_in_iso) {
+          sB << "\"b_"<<nb -> get_id() <<"\" [ color=gray, " << strB << "];"<<std::endl;
+        } else {
+          sB << "\"b_"<<nb -> get_id() <<"\" [" << grayedStyle << "," << strB << "];"<<std::endl;
+        }
+        graphBDot.push_back(sB.str());
       }
-    }}
+
+      for (pt_edge = acdfg_b -> begin_edges(); pt_edge != acdfg_b -> end_edges(); ++pt_edge){
+        const Edge * eb = *pt_edge;
+        if (eb->get_type() != TRANSITIVE_EDGE &&
+            eb->get_type() != EXCEPTIONAL_EDGE) {
+          const Node * nsrc = eb->get_src();
+          const Node * ndst = eb->get_dst();
+          string strsrc = (nsrc -> getDotLabel());
+          string strdst = (ndst -> getDotLabel());
+
+          ostringstream sC;
+          // std::cout<< nsrc->get_id() << " " << ndst->get_id() << "\n";
+
+          sC << "\"b_"<<nsrc -> get_id()<<"\" -> \"b_"<<ndst-> get_id()<<"\"" << eb->get_edge_dot_style() << "; "<< std::endl;
+          graphEdges.push_back(sC.str());
+        }
+      }
+    }
 
     for (it = node_map_a_to_b.begin();
          it != node_map_a_to_b.end();
@@ -743,20 +869,20 @@ namespace fixrgraphiso {
 
     out << "digraph isoAB { " << std::endl;
     // Print the stuff for graph A
-    out << "rankdir=LR;\n\
+    out << "rankdir=TB;\n\
  node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n\
  edge[ arrowhead=onormal,penwidth=2.0,]; \n" <<std::endl;
 
     std::vector<string>::const_iterator kt;
 
     out << "subgraph cluster_A { " << std::endl;
-    out << "rank=same;\n \n style=\"rounded\"\n label=\"ACDFG A\"" << std::endl;
+    out << "rank=same;\n \n style=\"rounded\"\n label=\"My code\"" << std::endl;
     for(kt = graphADot.begin(); kt != graphADot.end(); ++kt){
       out << *kt << std::endl;
     }
     out << "} /* Cluster A */"<<std::endl;
     out << "subgraph cluster_B { " << std::endl;
-    out << "rank=same;\n color=gray;\n style=\"rounded\"\n label=\"ACDFG B\"" << std::endl;
+    out << "rank=same;\n color=gray;\n style=\"rounded\"\n label=\"GROUM Pattern\"" << std::endl;
     for(kt = graphBDot.begin(); kt != graphBDot.end(); ++kt){
       out << *kt << std::endl;
     }

@@ -67,6 +67,11 @@ namespace fixrgraphiso {
     void addUniqueMatchingConstraint(char a_or_b);
     void addAdditionalCompatibleDataNodes(MethodNode * ma, MethodNode * mb);
     void computeIsomorphismFeatures(IsomorphismResults & res);
+
+    bool isNodeAInIso(node_id_t i);
+    bool isEdgeAInIso(edge_id_t i);
+    bool isNodeBInIso(node_id_t i);
+    bool isEdgeBInIso(edge_id_t i);
     
   };
   
