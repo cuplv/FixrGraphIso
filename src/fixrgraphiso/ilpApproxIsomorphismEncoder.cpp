@@ -764,22 +764,22 @@ namespace fixrgraphiso {
         }
       }
 
-      for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
-        const Node * nb = *pt;
-        string strB = (nb -> getDotLabel());
+      // for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
+      //   const Node * nb = *pt;
+      //   string strB = (nb -> getDotLabel());
 
-        ostringstream sB;
+      //   ostringstream sB;
 
-        bool is_in_iso = isNodeBInIso(nb->get_id());
-        if (is_in_iso) {
-          sB << "\"b_"<<nb -> get_id() <<"\" [ color=gray, " << strB << "];"<<std::endl;
-        } else {
-          sB << "\"b_"<<nb -> get_id() <<"\" [" << grayedStyle << "," << strB << "];"<<std::endl;
-        }
-        graphBDot.push_back(sB.str());
+      //   bool is_in_iso = isNodeBInIso(nb->get_id());
+      //   if (is_in_iso) {
+      //     sB << "\"b_"<<nb -> get_id() <<"\" [ color=gray, " << strB << "];"<<std::endl;
+      //   } else {
+      //     sB << "\"b_"<<nb -> get_id() <<"\" [" << grayedStyle << "," << strB << "];"<<std::endl;
+      //   }
+      //   graphBDot.push_back(sB.str());
        
 
-      }
+      // }
     }
     
     if (printEverything) {
@@ -847,23 +847,23 @@ namespace fixrgraphiso {
     // Now iterate throught he compatible edge pairs.
 
     std::vector<edge_pair_t>::const_iterator mt;
-    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
-      edge_id_t eAID = mt -> first;
-      edge_id_t eBID = mt -> second;
-      Edge * eA = acdfg_a -> getEdgeFromID(eAID);
-      Edge * eB = acdfg_b -> getEdgeFromID(eBID);
-      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
-      MILPVariable var = milp.getVariableFromID(vid);
-      if (var.binVal == 1){
-        // Bingo.. print the two edges
-        ostringstream ssA,ssB;
-        ssA << "\"a_"<< eA -> get_src_id()<<"\" -> \"a_"<<eA -> get_dst_id()<<"\""<<eA -> get_edge_dot_style() <<";" << std::endl;
-        ssB << "\"b_"<< eB -> get_src_id()<<"\" -> \"b_"<<eB -> get_dst_id()<<"\""<<eB -> get_edge_dot_style() <<";" << std::endl;
-        graphEdges.push_back(ssA.str());
-        graphEdges.push_back(ssB.str());
-      }
+    // for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+    //   edge_id_t eAID = mt -> first;
+    //   edge_id_t eBID = mt -> second;
+    //   Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+    //   Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+    //   int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+    //   MILPVariable var = milp.getVariableFromID(vid);
+    //   if (var.binVal == 1){
+    //     // Bingo.. print the two edges
+    //     ostringstream ssA,ssB;
+    //     ssA << "\"a_"<< eA -> get_src_id()<<"\" -> \"a_"<<eA -> get_dst_id()<<"\""<<eA -> get_edge_dot_style() <<";" << std::endl;
+    //     ssB << "\"b_"<< eB -> get_src_id()<<"\" -> \"b_"<<eB -> get_dst_id()<<"\""<<eB -> get_edge_dot_style() <<";" << std::endl;
+    //     graphEdges.push_back(ssA.str());
+    //     graphEdges.push_back(ssB.str());
+    //   }
 
-    }
+    // }
 
     // Now we can dump this to the file
 
