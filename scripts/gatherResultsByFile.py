@@ -360,19 +360,20 @@ def main(argv):
             help_message()
             sys.exit(1)
     
-    filter = "zhuang" # droidplanner"
+    filter = "org"
     
     g = GenerateIndexPage(configPaths)
     for id in range(start_range, end_range+1):
-        g.parseInfoFile(id)
-
-
-        for acdfg_name, pattern_list in g.minedPatternsByAcdfg.iteritems():
-            print(acdfg_name)
-            print(filter)
-            if filter in acdfg_name:
-                print(acdfg_name)
-                g.generatePageForAcdfg(acdfg_name, pattern_list)
+        try:
+            g.parseInfoFile(id)
+            for acdfg_name, pattern_list in g.minedPatternsByAcdfg.iteritems():
+                # print(acdfg_name)
+                # print(filter)
+                if filter in acdfg_name:
+                    print(acdfg_name)
+                    g.generatePageForAcdfg(acdfg_name, pattern_list)
+        except Exception as e:
+            print("error on %d" % id)
     g.makeIndexFile()
 
 
