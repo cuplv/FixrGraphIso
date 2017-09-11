@@ -763,23 +763,6 @@ namespace fixrgraphiso {
           graphEdges.push_back(sC.str());
         }
       }
-
-      // for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
-      //   const Node * nb = *pt;
-      //   string strB = (nb -> getDotLabel());
-
-      //   ostringstream sB;
-
-      //   bool is_in_iso = isNodeBInIso(nb->get_id());
-      //   if (is_in_iso) {
-      //     sB << "\"b_"<<nb -> get_id() <<"\" [ color=gray, " << strB << "];"<<std::endl;
-      //   } else {
-      //     sB << "\"b_"<<nb -> get_id() <<"\" [" << grayedStyle << "," << strB << "];"<<std::endl;
-      //   }
-      //   graphBDot.push_back(sB.str());
-       
-
-      // }
     }
     
     if (printEverything) {
