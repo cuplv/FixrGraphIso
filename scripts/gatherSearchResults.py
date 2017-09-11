@@ -73,8 +73,8 @@ class MinedPattern:
                     htmlfile = acdfg_file
 
                     # hack for grouminer - to be removed
-                    #print(htmlfile)
-                    #htmlfile = htmlfile.replace("/home/smover/raw_results/dataset_all/grouminer_clusters_50_3/","../")
+                    print(htmlfile)
+                    htmlfile = htmlfile.replace("/home/smover/raw_results/dataset_all/grouminer_clusters_50_3/","../")
             else:
                 continue
 
@@ -304,7 +304,7 @@ def main(argv):
         help_message()
         sys.exit(2)
     for (o,a) in opts:
-        # print (o,a)
+        print (o,a)
         if o in ("-a","--start"):
             start_range = int(a)
         if o in ("-b","--end"):
@@ -326,12 +326,6 @@ def main(argv):
     for id in range(start_range, end_range+1):
         g.parseInfoFile(id)
         g.generatePageForCluster(id)
-
-        # try:
-        #     g.parseInfoFile(id)
-        #     g.generatePageForCluster(id)
-        # except Exception as e:
-        #     pass
     g.makeIndexFile()
 
 

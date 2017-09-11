@@ -3,6 +3,27 @@ import os.path
 import sys
 import re
 import getopt
+import subprocess
+import logging
+
+def _call_sub(args, outstd, outerr, cwd=None):
+    """Call a subprocess.
+    """
+    print("Executing %s" % " ".join(args))
+
+    # not pipe stdout - processes will hang
+    # Known limitation of Popen
+    proc = subprocess.Popen(args, cwd=cwd, stdout=outstd, stderr=outerr)
+    proc.wait()
+
+    return_code = proc.returncode
+    if (return_code != 0):
+        err_msg = "Error code is %s\nCommand line is: %s\n%s" % (str(return_code), str(" ".join(args)),"\n")
+        logging.error("Error executing %s\n%s" % (" ".join(args), err_msg))
+        return False
+
+    return True
+
 
 class ClusterProcessor:
     def __init__(self):
@@ -25,9 +46,24 @@ class ClusterProcessor:
         for s in fun_list0:
             print(s, file=fil)
         fil.close()
+
         cmd = '%s -f %d -o ./cluster_%d_info.txt -m %s *.acdfg.bin > ./run%d.out 2> ./run%d.err.out'%(cmd_name, freq,  clusterID, method_file, clusterID, clusterID)
         print ('%s'%(cmd))
         os.system(cmd)
+
+        # %s -f %d -o ./cluster_%d_info.txt -m %s *.acdfg.bin > ./run%d.out 2> ./run%d.err.out'%(cmd_name, freq,  clusterID, method_file, clusterID, clusterID)
+        #  > ./run%d.out 2> ./run%d.err.out'%( , )
+        args = [cmd_name, "-f", "%d" % freq,
+                "-o", "./cluster_%d_info.txt" % clusterID,
+                " -m",  method_file,
+                "*.acdfg.bin"]
+        outstd_name = "run%d.out" % clusterID
+        outerr_name = "run%d.err.out" % clusterID
+        outstd = open(outstd_name, 'w')
+        outerr = open(outerr_name, 'w')
+        retval = _call_sub(args, outstd, outerr)
+        outstd.close()
+        outerr.close()
         os.chdir('../..')
 
 

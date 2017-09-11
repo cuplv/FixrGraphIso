@@ -26,6 +26,7 @@ class MinedPattern:
     def __init__ (self, clusterID, image,
                   listOfMethods, patternID,
                   patternType, patternFrequency,
+                  minedPatternsByAcdfg,
                   acdfg2java_map=None,
                   configPaths = None):
         self.clusterID = clusterID
@@ -36,6 +37,14 @@ class MinedPattern:
         self.acdfg2java_map = acdfg2java_map
         self.patternFrequency = patternFrequency
         self.configPaths = configPaths
+
+        for m in self.listOfMethods:
+            if m:
+                if m in minedPatternsByAcdfg:
+                    minedPatternsByAcdfg[m].append(self)
+                else:
+                    minedPatternsByAcdfg[m] = [self]
+        
 
     def printToHTML(self, f):
         if self.isPopular == 1:
@@ -73,8 +82,8 @@ class MinedPattern:
                     htmlfile = acdfg_file
 
                     # hack for grouminer - to be removed
-                    #print(htmlfile)
-                    #htmlfile = htmlfile.replace("/home/smover/raw_results/dataset_all/grouminer_clusters_50_3/","../")
+                    print(htmlfile)
+                    htmlfile = htmlfile.replace("/home/smover/raw_results/dataset_all/grouminer_clusters_50_3/","../")        
             else:
                 continue
 
@@ -103,6 +112,8 @@ class GenerateIndexPage:
 
         self.clusterInfo = {}
         self.minedPatternsByClusterID = {}
+        self.minedPatternsByAcdfg = {}
+
         self.clusterMethods = {}
         self.clusterPages = {}
         self.runDotLocally = False
@@ -165,12 +176,37 @@ class GenerateIndexPage:
                     i = i +1
                     print("Processing %d/%d patterns for cluster %d..." % (i,len(pattern_list),clusterID))
                     pat.printToHTML(f)
-                self.printClusterTrailer(f, clusterID)
+                self.printClusterTrailer(f, 0)
                 self.clusterPages[clusterID] = 'cluster_%d.html'%(clusterID)
                 f.close()
             except IOError:
                 print('Could not open file for writing %s'%(fName), file=sys.stderr)
                 raise
+
+    def generatePageForAcdfg(self, acdfg,  pattern_list):
+        fName = '%s/graph_%s.html'%(self.configPaths.htmlOutputDir,acdfg)
+#        fName = '%s/cluster_%d.html'%(self.configPaths.htmlOutputDir,clusterID)
+#        if (clusterID in self.minedPatternsByClusterID):
+        f = open(fName, 'w')
+        try:
+            #cluster_methods = []
+            #if (clusterID in self.clusterMethods):
+            #    cluster_methods = self.clusterMethods[clusterID]
+            #self.printClusterHeader(f, clusterID, cluster_methods)
+            # Print each pattern
+            # pattern_list = self.minedPatternsByClusterID[clusterID]
+            i = 0
+            for pat in pattern_list:
+                i = i +1
+                print("Processing %d/%d patterns for acdfg %s..." % (i,len(pattern_list),acdfg))
+                pat.printToHTML(f)
+ #           self.printClusterTrailer(f, clusterID)
+#            self.clusterPages[clusterID] = 'cluster_%d.html'%(clusterID)
+            f.close()
+        except IOError:
+            print('Could not open file for writing %s'%(fName), file=sys.stderr)
+            raise
+
 
     def loadMethodsFile(self, clusterID):
         fName = '%s/cluster_%d/methods_%d.txt'%(self.configPaths.outputRootName,clusterID, clusterID)
@@ -202,6 +238,7 @@ class GenerateIndexPage:
         #2. Add a link to that PNG file
         pat = MinedPattern(clusterID, png_file_name, patternList, patternID,
                            isPopular, patternFrequency,
+                           self.minedPatternsByAcdfg,
                            self.acdfg2java_map, self.configPaths)
         if clusterID in self.minedPatternsByClusterID:
             lst = self.minedPatternsByClusterID[clusterID]
@@ -304,7 +341,7 @@ def main(argv):
         help_message()
         sys.exit(2)
     for (o,a) in opts:
-        # print (o,a)
+        print (o,a)
         if o in ("-a","--start"):
             start_range = int(a)
         if o in ("-b","--end"):
@@ -322,16 +359,21 @@ def main(argv):
         if o in ("-h","--help"):
             help_message()
             sys.exit(1)
+    
+    filter = "org"
+    
     g = GenerateIndexPage(configPaths)
     for id in range(start_range, end_range+1):
-        g.parseInfoFile(id)
-        g.generatePageForCluster(id)
-
-        # try:
-        #     g.parseInfoFile(id)
-        #     g.generatePageForCluster(id)
-        # except Exception as e:
-        #     pass
+        try:
+            g.parseInfoFile(id)
+            for acdfg_name, pattern_list in g.minedPatternsByAcdfg.iteritems():
+                # print(acdfg_name)
+                # print(filter)
+                if filter in acdfg_name:
+                    print(acdfg_name)
+                    g.generatePageForAcdfg(acdfg_name, pattern_list)
+        except Exception as e:
+            print("error on %d" % id)
     g.makeIndexFile()
 
 
