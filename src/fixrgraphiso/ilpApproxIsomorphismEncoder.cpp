@@ -8,7 +8,7 @@ namespace fixrgraphiso {
   // Recommended that you do not turn these flags on.
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
   bool addCompatibleDataNodes = false; // This turns on additional checks for data node compatibility
-  bool printEverything=false;
+  bool printEverything=true;
   bool avoidComparisonMethodNodes = true;
 
   using std::ostringstream;
@@ -630,6 +630,89 @@ namespace fixrgraphiso {
     #endif
   }
 
+
+  bool IlpApproxIsomorphism::isNodeAInIso(node_id_t i) {
+    
+    compatible_node_map_t::const_iterator it;
+    it = node_map_a_to_b.find(i);
+    if (it != node_map_a_to_b.end()) {
+      vector<node_id_t>::const_iterator jt;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt != compats.end(); ++jt){
+        node_id_t j = *jt;
+        int vid = milp.lookupIsoNodeVariable(i,j);
+        // Now get the corresponding variable
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool IlpApproxIsomorphism::isNodeBInIso(node_id_t i) {
+    
+    compatible_node_map_t::const_iterator it;
+    it = node_map_b_to_a.find(i);
+    if (it != node_map_b_to_a.end()) {
+      vector<node_id_t>::const_iterator jt;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt != compats.end(); ++jt){
+        node_id_t j = *jt;
+        int vid = milp.lookupIsoNodeVariable(j,i);
+        // Now get the corresponding variable
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
+  bool IlpApproxIsomorphism::isEdgeAInIso(edge_id_t i) {
+    
+    std::vector<edge_pair_t>::const_iterator mt;
+    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+      edge_id_t eAID = mt -> first;
+
+      if (eAID == i) {
+
+        edge_id_t eBID = mt -> second;
+        Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+        Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+        int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool IlpApproxIsomorphism::isEdgeBInIso(edge_id_t i) {
+    
+    std::vector<edge_pair_t>::const_iterator mt;
+    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+      edge_id_t eAID = mt -> first;
+        edge_id_t eBID = mt -> second;
+      if (eBID == i) {
+        Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+        Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+        int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+        MILPVariable var = milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
   void IlpApproxIsomorphism::prettyPrintEncodingResultInDot(ostream & out){
     // This can only be called after the milp is successfully solved and solution extracted.
 
@@ -640,21 +723,79 @@ namespace fixrgraphiso {
     vector<string> graphBDot;
     vector<string> graphEdges;
 
+    string grayedStyle = "fillcolor=\"#eeeeee\",fontcolor=\"#a8a8a8\", color=\"#eeeeee\"";
+
     nodes_t::const_iterator pt;
+    edges_t::const_iterator pt_edge;
     if (printEverything){
       for (pt = acdfg_a -> begin_nodes(); pt != acdfg_a -> end_nodes(); ++pt){
         const Node * na = *pt;
         string strA = (na -> getDotLabel());
         ostringstream sA;
-        sA << "\"a_"<<na -> get_id() <<"\" [ color=gray, " << strA << "];"<<std::endl;
+                
+        bool is_in_iso = isNodeAInIso(na->get_id());
+
+        if (is_in_iso) {
+          sA << "\"a_"<<na -> get_id() <<"\" [ color=gray, " << strA << "];"<<std::endl;
+        } else {
+          sA << "\"a_"<<na -> get_id() <<"\" [" << grayedStyle << "," << strA << "];"<<std::endl;
+        }
         graphADot.push_back(sA.str());
       }
 
+      for (pt_edge = acdfg_a -> begin_edges(); pt_edge != acdfg_a -> end_edges(); ++pt_edge){
+        const Edge * ea = *pt_edge;
+        if (ea->get_type() != TRANSITIVE_EDGE &&
+            ea->get_type() != EXCEPTIONAL_EDGE) {
+          const Node * nsrc = ea->get_src();
+          const Node * ndst = ea->get_dst();
+          string strsrc = (nsrc -> getDotLabel());
+          string strdst = (ndst -> getDotLabel());
+
+          ostringstream sC;
+          bool is_edge_in_iso = isEdgeAInIso(ea->get_id());
+          if (is_edge_in_iso) {
+            sC << "\"a_"<<nsrc -> get_id()<<"\" -> \"a_"<<ndst-> get_id()<<"\"" << ea->get_edge_dot_style() << "; "<< std::endl;
+          }
+          else {
+            sC << "\"a_"<<nsrc -> get_id()<<"\" -> \"a_"<<ndst-> get_id()<<"\" [" << grayedStyle << " ]; "<< std::endl;
+          }
+          graphEdges.push_back(sC.str());
+        }
+      }
+    }
+    
+    if (printEverything) {
       for (pt = acdfg_b -> begin_nodes(); pt != acdfg_b -> end_nodes(); ++pt){
         const Node * nb = *pt;
         string strB = (nb -> getDotLabel());
         ostringstream sB;
-        sB << "\"b_"<<nb -> get_id() <<"\" [color=gray," << strB << "];"<<std::endl;
+        // std::cout << "NB" << strA << " " << nb->get_id() << "\n";
+
+        bool is_in_iso = isNodeBInIso(nb->get_id());
+        if (is_in_iso) {
+          sB << "\"b_"<<nb -> get_id() <<"\" [ color=gray, " << strB << "];"<<std::endl;
+        } else {
+          sB << "\"b_"<<nb -> get_id() <<"\" [" << grayedStyle << "," << strB << "];"<<std::endl;
+        }
+        graphBDot.push_back(sB.str());
+      }
+
+      for (pt_edge = acdfg_b -> begin_edges(); pt_edge != acdfg_b -> end_edges(); ++pt_edge){
+        const Edge * eb = *pt_edge;
+        if (eb->get_type() != TRANSITIVE_EDGE &&
+            eb->get_type() != EXCEPTIONAL_EDGE) {
+          const Node * nsrc = eb->get_src();
+          const Node * ndst = eb->get_dst();
+          string strsrc = (nsrc -> getDotLabel());
+          string strdst = (ndst -> getDotLabel());
+
+          ostringstream sC;
+          // std::cout<< nsrc->get_id() << " " << ndst->get_id() << "\n";
+
+          sC << "\"b_"<<nsrc -> get_id()<<"\" -> \"b_"<<ndst-> get_id()<<"\"" << eb->get_edge_dot_style() << "; "<< std::endl;
+          graphEdges.push_back(sC.str());
+        }
       }
     }
 
@@ -689,42 +830,42 @@ namespace fixrgraphiso {
     // Now iterate throught he compatible edge pairs.
 
     std::vector<edge_pair_t>::const_iterator mt;
-    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
-      edge_id_t eAID = mt -> first;
-      edge_id_t eBID = mt -> second;
-      Edge * eA = acdfg_a -> getEdgeFromID(eAID);
-      Edge * eB = acdfg_b -> getEdgeFromID(eBID);
-      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
-      MILPVariable var = milp.getVariableFromID(vid);
-      if (var.binVal == 1){
-        // Bingo.. print the two edges
-        ostringstream ssA,ssB;
-        ssA << "\"a_"<< eA -> get_src_id()<<"\" -> \"a_"<<eA -> get_dst_id()<<"\""<<eA -> get_edge_dot_style() <<";" << std::endl;
-        ssB << "\"b_"<< eB -> get_src_id()<<"\" -> \"b_"<<eB -> get_dst_id()<<"\""<<eB -> get_edge_dot_style() <<";" << std::endl;
-        graphEdges.push_back(ssA.str());
-        graphEdges.push_back(ssB.str());
-      }
+    // for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+    //   edge_id_t eAID = mt -> first;
+    //   edge_id_t eBID = mt -> second;
+    //   Edge * eA = acdfg_a -> getEdgeFromID(eAID);
+    //   Edge * eB = acdfg_b -> getEdgeFromID(eBID);
+    //   int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+    //   MILPVariable var = milp.getVariableFromID(vid);
+    //   if (var.binVal == 1){
+    //     // Bingo.. print the two edges
+    //     ostringstream ssA,ssB;
+    //     ssA << "\"a_"<< eA -> get_src_id()<<"\" -> \"a_"<<eA -> get_dst_id()<<"\""<<eA -> get_edge_dot_style() <<";" << std::endl;
+    //     ssB << "\"b_"<< eB -> get_src_id()<<"\" -> \"b_"<<eB -> get_dst_id()<<"\""<<eB -> get_edge_dot_style() <<";" << std::endl;
+    //     graphEdges.push_back(ssA.str());
+    //     graphEdges.push_back(ssB.str());
+    //   }
 
-    }
+    // }
 
     // Now we can dump this to the file
 
     out << "digraph isoAB { " << std::endl;
     // Print the stuff for graph A
-    out << "rankdir=LR;\n\
+    out << "rankdir=TB;\n\
  node[shape=box,style=\"filled,rounded\",penwidth=2.0,fontsize=13,]; \n\
  edge[ arrowhead=onormal,penwidth=2.0,]; \n" <<std::endl;
 
     std::vector<string>::const_iterator kt;
 
     out << "subgraph cluster_A { " << std::endl;
-    out << "rank=same;\n \n style=\"rounded\"\n label=\"ACDFG A\"" << std::endl;
+    out << "rank=same;\n \n style=\"rounded\"\n label=\"My code\"" << std::endl;
     for(kt = graphADot.begin(); kt != graphADot.end(); ++kt){
       out << *kt << std::endl;
     }
     out << "} /* Cluster A */"<<std::endl;
     out << "subgraph cluster_B { " << std::endl;
-    out << "rank=same;\n color=gray;\n style=\"rounded\"\n label=\"ACDFG B\"" << std::endl;
+    out << "rank=same;\n color=gray;\n style=\"rounded\"\n label=\"GROUM Pattern\"" << std::endl;
     for(kt = graphBDot.begin(); kt != graphBDot.end(); ++kt){
       out << *kt << std::endl;
     }
@@ -734,6 +875,65 @@ namespace fixrgraphiso {
       out << *kt << std::endl;
     }
     out << " } " << std::endl;
+  }
+
+  void IlpApproxIsomorphism::printMatchOfB(){
+    std::map< node_type_t, int> node_map;
+    
+    for (const auto it: node_map_a_to_b){
+      node_id_t i = it.first;
+      const vector<node_id_t> & compats = it.second;
+      for (node_id_t j: compats){
+        int vid = milp.lookupIsoNodeVariable(i,j);
+        MILPVariable var =milp.getVariableFromID(vid);
+        if (var.binVal == 1){
+          std::map<node_type_t,int>::iterator node_map_it;
+          int count = 0;
+
+          Node * nb = acdfg_b -> getNodeFromID(j);
+          node_map_it = node_map.find(nb->get_type());
+          if (node_map_it != node_map.end()){
+            count = node_map_it->second;
+          }
+          count += 1;
+          node_map[nb->get_type()] = count;
+        }
+      }
+    }
+
+    std::map< edge_type_t, int> edge_map;
+    for (auto mt : compat_edges_a_to_b){
+      edge_id_t eAID = mt. first;
+      edge_id_t eBID = mt. second;
+      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+      MILPVariable var = milp.getVariableFromID(vid);
+      if (var.binVal == 1){
+        std::map<edge_type_t,int>::iterator edge_map_it;
+        Edge * eb = acdfg_b -> getEdgeFromID(eBID);
+
+        edge_map_it = edge_map.find(eb->get_type());
+        int count = 0;
+        if (edge_map_it != edge_map.end()) {
+          count = edge_map_it->second;
+        }
+        count += 1;
+        edge_map[eb->get_type()] = count;
+      }
+    }    
+
+
+    for (const auto it: node_map) {
+      double ratio = double(it.second) / double(acdfg_b->typed_node_count(it.first));
+      std::cout << "NODETYPE: " << it.first << " = " << ratio << "\n";
+
+      if (it.first == METHOD_NODE) {
+        std::cout << "TOT_MET_NODES: " << it.second << "\n";
+      }
+    }
+    for (const auto it: edge_map) {
+      double ratio = double(it.second) / double(acdfg_b->typed_edge_count(it.first));
+      std::cout << "EDGETYPE: " << it.first << " = " << ratio << "\n";
+    }
   }
 
   void IlpApproxIsomorphism::populateFrequencies(){
