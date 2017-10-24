@@ -182,5 +182,5 @@ int main (int argc, char *argv[]) {
   cout << " Frequent Item Sets computed " << endl;
   out_file.close();
   google::protobuf::ShutdownProtobufLibrary();
-  return 1;
+  return 0;
 }
