@@ -44,9 +44,9 @@ namespace fixrgraphiso{
     std::string line;
     while (std::getline(ifile, line)){
       line.erase( std::remove_if( line.begin(),
-				  line.end(),
-				  [](char x){ return std::isspace(x);}),
-		  line.end());
+                                  line.end(),
+                                  [](char x){ return std::isspace(x);}),
+                  line.end());
       listOfNames.push_back(line);
       std::cout << "\t Adding :" << line << std::endl;
     }
@@ -80,36 +80,36 @@ namespace fixrgraphiso{
     while ((c = getopt(argc, argv, "dm:f:t:o:i:z"))!= -1){
       switch (c){
       case 'm': {
-		string methodNamesFile = optarg;
-		cout << "Loading methods" << endl;
-		loadNamesFromFile(methodNamesFile, methodNames);
+        string methodNamesFile = optarg;
+        cout << "Loading methods" << endl;
+        loadNamesFromFile(methodNamesFile, methodNames);
       }
-	break;
+        break;
       case 'z':
-	runTestOfSubsumption = true;
-	break;
+        runTestOfSubsumption = true;
+        break;
       case 'd':
-	fixrgraphiso::debug = true;
-	break;
+        fixrgraphiso::debug = true;
+        break;
       case 'f':
-	freq_cutoff = strtol(optarg, NULL, 10);
-	break;
+        freq_cutoff = strtol(optarg, NULL, 10);
+        break;
       case 't':
-	gurobi_timeout = strtof(optarg, NULL);
-	cout << "Setting Gurobi timeout to : " << gurobi_timeout << std::endl;
-	break;
+        gurobi_timeout = strtof(optarg, NULL);
+        cout << "Setting Gurobi timeout to : " << gurobi_timeout << std::endl;
+        break;
       case 'i':{
-	string inputFileName = optarg;
-	cout << "Loading ACDFGs " << endl;
-	loadNamesFromFile(inputFileName, filenames);
+        string inputFileName = optarg;
+        cout << "Loading ACDFGs " << endl;
+        loadNamesFromFile(inputFileName, filenames);
       }
-	break;
+        break;
       case 'o':
-	info_file_name = string(optarg);
-	cout << "Info will be dumped to : " << info_file_name << std::endl;
-	break;
+        info_file_name = string(optarg);
+        cout << "Info will be dumped to : " << info_file_name << std::endl;
+        break;
       default:
-	break;
+        break;
       }
     }
 
@@ -162,7 +162,7 @@ namespace fixrgraphiso{
       a -> dumpToProtobuf(iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
-     }
+    }
 
     count = 1;
     for (AcdfgBin * a: isolated){
@@ -176,7 +176,7 @@ namespace fixrgraphiso{
       a -> dumpToProtobuf(iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
-     }
+    }
     out_file << "Total Time (s): " << time_taken.count()<< endl;
     printStats(out_file);
 
@@ -187,17 +187,17 @@ namespace fixrgraphiso{
     for (auto it = allBins.begin(); it != allBins.end(); ++it){
       AcdfgBin * a = *it;
       for (auto jt = allBins.begin(); jt != allBins.end(); ++jt){
-	AcdfgBin * b = *jt;
-	if (a == b) continue;
-	if (a -> isACDFGBinSubsuming(b)){
-	  a -> addSubsumingBin(b);
-	}
+        AcdfgBin * b = *jt;
+        if (a == b) continue;
+        if (a -> isACDFGBinSubsuming(b)){
+          a -> addSubsumingBin(b);
+        }
       }
     }
   }
 
   void classifyBins(std::vector<AcdfgBin*> & allBins, std::vector<AcdfgBin*> & popular,
-		    std::vector<AcdfgBin*> & anomalous, std::vector<AcdfgBin*> & isolated){
+                    std::vector<AcdfgBin*> & anomalous, std::vector<AcdfgBin*> & isolated){
 
     calculateLatticeGraph(allBins);
     // 1. Calculate the transitive reduction for each node and use it to judge popularity
@@ -205,10 +205,10 @@ namespace fixrgraphiso{
       a -> computeImmediatelySubsumingBins();
       if (a -> isSubsuming()) continue;
       if (a -> isAtFrontierOfPopularity(freq_cutoff)){
-	a -> setPopular();
-	if (debug){
-	  std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
-	}
+        a -> setPopular();
+        if (debug){
+          std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
+        }
       }
     }
 
@@ -216,14 +216,14 @@ namespace fixrgraphiso{
     for (AcdfgBin * a: allBins){
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
-	popular.push_back(a);
+        popular.push_back(a);
 	
       } else  if (a -> getFrequency() <= anomalyCutOff && a -> hasPopularAncestor()){
-	a -> setAnomalous();
-	anomalous.push_back(a);
+        a -> setAnomalous();
+        anomalous.push_back(a);
 
       } else if (a -> getFrequency() <= anomalyCutOff){
-	isolated.push_back(a);
+        isolated.push_back(a);
       }
     }
 
@@ -243,88 +243,88 @@ namespace fixrgraphiso{
 
     for (AcdfgBin* a: allBins){
       if (a -> getPopularity() >= freq_cutoff){
-	if (debug){
-	  std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
-	}
-	popularBins.insert(a);
+        if (debug){
+          std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
+        }
+        popularBins.insert(a);
       } else{
-	anomalyCandidates.insert(a);
+        anomalyCandidates.insert(a);
       }
     }
 
     if (debug){
       std::cout << "After pass 0 : " << popularBins.size()		\
-		<< " popular, and " << anomalyCandidates.size()		\
-		<< "anomaly candidates " << std::endl;
+                << " popular, and " << anomalyCandidates.size()		\
+                << "anomaly candidates " << std::endl;
     }
 
     for (auto it = anomalyCandidates.begin(); it != anomalyCandidates.end(); ){
       bool subsuming = false;
       AcdfgBin * a = *it;
       for (AcdfgBin * b : popularBins){
-	if (b -> isACDFGBinSubsuming(a)){
-	  subsuming = true;
-	  b -> addSubsumingBin(a);
-	  break;
-	}
+        if (b -> isACDFGBinSubsuming(a)){
+          subsuming = true;
+          b -> addSubsumingBin(a);
+          break;
+        }
       }
 
       if (subsuming){
-	//a -> setSubsuming();
-	it = anomalyCandidates.erase(it); // erase from anomaly candidates
+        //a -> setSubsuming();
+        it = anomalyCandidates.erase(it); // erase from anomaly candidates
       } else {
-	++it;
+        ++it;
       }
 
     }
 
     if (debug){
       std::cout << "After pass 1 : " << popularBins.size()		\
-		<< " popular, and " << anomalyCandidates.size()		\
-		<< "anomaly candidates " << std::endl;
+                << " popular, and " << anomalyCandidates.size()		\
+                << "anomaly candidates " << std::endl;
     }
 
     for (auto it = anomalyCandidates.begin(); it != anomalyCandidates.end(); ++it){
       AcdfgBin * a = *it;
       for (auto jt = anomalyCandidates.begin(); jt != anomalyCandidates.end(); ++jt){
-	AcdfgBin * b = *jt;
-	if (a == b) continue;
-	if (a -> isACDFGBinSubsuming(b)){
-	  b-> setSubsuming();
-	  a -> addSubsumingBin(b);
-	}
+        AcdfgBin * b = *jt;
+        if (a == b) continue;
+        if (a -> isACDFGBinSubsuming(b)){
+          b-> setSubsuming();
+          a -> addSubsumingBin(b);
+        }
       }
     }
 
     for (auto it = anomalyCandidates.begin(); it != anomalyCandidates.end();){
       AcdfgBin * a = *it;
       if (a -> getPopularity() >= freq_cutoff && ! a -> isSubsuming() ){
-	if (debug){
-	  std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
-	}
-	popularBins.insert(a);
-	it = anomalyCandidates.erase(it);
+        if (debug){
+          std::cout << "Found popular bin with frequency : " << a -> getPopularity() << std::endl;
+        }
+        popularBins.insert(a);
+        it = anomalyCandidates.erase(it);
       } else {
-	++it;
+        ++it;
       }
     }
 
-     if (debug){
+    if (debug){
       std::cout << "After pass 2 : " << popularBins.size()		\
-		<< " popular, and " << anomalyCandidates.size()		\
-		<< "anomaly candidates " << std::endl;
+                << " popular, and " << anomalyCandidates.size()		\
+                << "anomaly candidates " << std::endl;
     }
 
 
-     for (AcdfgBin* a: anomalyCandidates){
-       if (!a -> isSubsuming() && a -> getPopularity() < anomalyCutOff)
-	 a -> setAnomalous();
-     }
+    for (AcdfgBin* a: anomalyCandidates){
+      if (!a -> isSubsuming() && a -> getPopularity() < anomalyCutOff)
+        a -> setAnomalous();
+    }
 
-     for (AcdfgBin * a : popularBins){
-       if (!a -> isSubsuming())
-	 a -> setPopular();
-     }
+    for (AcdfgBin * a : popularBins){
+      if (!a -> isSubsuming())
+        a -> setPopular();
+    }
 
 
   }
@@ -339,29 +339,29 @@ namespace fixrgraphiso{
       orig_acdfg -> getMethodsFromName(methodnames, targets);
 
       if (targets.size() < minTargetSize){
-	// File has too few methods, something is not correct.
-	std::cerr << "Warning: filename = " << f			\
-		  << " Could not find "<< minTargetSize			\
-		  << " methods from the list of method names"		\
-		  << " -- Ignoring this file." << std::endl;
+        // File has too few methods, something is not correct.
+        std::cerr << "Warning: filename = " << f			\
+                  << " Could not find "<< minTargetSize			\
+                  << " methods from the list of method names"		\
+                  << " -- Ignoring this file." << std::endl;
 
       } else if (targets.size() >= maxTargetSize){
-	std::cerr << "Warning: filename = " << f			\
-		  << "too many matching methods found -- "		\
-		  <<  targets.size()					\
-		  <<" -- Ignoring this file." << std::endl;
+        std::cerr << "Warning: filename = " << f			\
+                  << "too many matching methods found -- "		\
+                  <<  targets.size()					\
+                  <<" -- Ignoring this file." << std::endl;
       } else {
-	Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets);
-	if (new_acdfg -> edge_count() >= maxEdgeSize){
-	  std::cerr << "Warning: Filename = " << f \
-		    << "too many edges found -- " << new_acdfg -> edge_count() \
-		    << "-- Ignorning this file." << std::endl;
-	  delete(new_acdfg);
-	} else {
-	  new_acdfg -> setName(f);
-	  addGraphStats(new_acdfg -> node_count(), new_acdfg-> edge_count());
-	  allSlicedACDFGs.push_back(new_acdfg);
-	}
+        Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets);
+        if (new_acdfg -> edge_count() >= maxEdgeSize){
+          std::cerr << "Warning: Filename = " << f \
+                    << "too many edges found -- " << new_acdfg -> edge_count() \
+                    << "-- Ignorning this file." << std::endl;
+          delete(new_acdfg);
+        } else {
+          new_acdfg -> setName(f);
+          addGraphStats(new_acdfg -> node_count(), new_acdfg-> edge_count());
+          allSlicedACDFGs.push_back(new_acdfg);
+        }
       }
       delete(orig_acdfg);
     }
@@ -371,29 +371,29 @@ namespace fixrgraphiso{
     for (Acdfg* a: allSlicedACDFGs){
       bool acdfgSubsumed = false;
       for (AcdfgBin * bin: allBins){
-	if (bin -> isACDFGEquivalent(a)){
-	  bin -> insertEquivalentACDFG(a);
-	  acdfgSubsumed = true;
-	  break;
-	}
+        if (bin -> isACDFGEquivalent(a)){
+          bin -> insertEquivalentACDFG(a);
+          acdfgSubsumed = true;
+          break;
+        }
       }
       if (!acdfgSubsumed){
-	AcdfgBin * newbin = new AcdfgBin(a);
-	allBins.push_back(newbin);
+        AcdfgBin * newbin = new AcdfgBin(a);
+        allBins.push_back(newbin);
       }
     }
     //3. Print all the popular patterns.
 
     std::sort(allBins.begin(), allBins.end(),
-	      [](const AcdfgBin  * iso1, const AcdfgBin * iso2){
-		return iso1 -> getFrequency() > iso2 -> getFrequency();
-	      });
+              [](const AcdfgBin  * iso1, const AcdfgBin * iso2){
+                return iso1 -> getFrequency() > iso2 -> getFrequency();
+              });
 
     //analyzeAnomalies(allBins);
     std::vector<AcdfgBin*> popular, anomalous, isolated;
     classifyBins(allBins,popular,anomalous,isolated);
-	auto end = std::chrono::steady_clock::now();
-	std::chrono::seconds time_taken = std::chrono::duration_cast<std::chrono::seconds>(end -start);
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::seconds time_taken = std::chrono::duration_cast<std::chrono::seconds>(end -start);
     dumpAllBins(popular, anomalous, isolated, time_taken, info_file_name);
   }
 
@@ -411,11 +411,11 @@ namespace fixrgraphiso{
 
     for (Acdfg * a : allACDFGs){
       for (Acdfg * b : allACDFGs){
-	if (a == b) continue;
-	IsoSubsumption isoSub(a, b);
-	if (isoSub.check()){
-	  std:: cout << a -> getName() << " subsumes " << b -> getName() << endl;
-	} 
+        if (a == b) continue;
+        IsoSubsumption isoSub(a, b);
+        if (isoSub.check()){
+          std:: cout << a -> getName() << " subsumes " << b -> getName() << endl;
+        } 
       }
     }
     return ;
@@ -429,15 +429,15 @@ namespace fixrgraphiso{
     processCommandLine(argc, argv, filenames, methodnames);
 
 
-// #ifdef D__OLD_CODE
-//     if (useApproximateIsomorphism){
-//       vector<Acdfg*> allACDFGs;
-//       for (string s: filenames){
-// 	loadACDFGFromFilename(s, allACDFGs);
-//       }
-//       computePatternsThroughApproximateIsomorphism(allACDFGs);
-//     } else
-// #endif
+    // #ifdef D__OLD_CODE
+    //     if (useApproximateIsomorphism){
+    //       vector<Acdfg*> allACDFGs;
+    //       for (string s: filenames){
+    // 	loadACDFGFromFilename(s, allACDFGs);
+    //       }
+    //       computePatternsThroughApproximateIsomorphism(allACDFGs);
+    //     } else
+    // #endif
     if (runTestOfSubsumption){
       testPairwiseSubsumption(filenames, methodnames);
     } else {
