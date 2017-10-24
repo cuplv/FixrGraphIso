@@ -428,16 +428,6 @@ namespace fixrgraphiso{
     vector<string> methodnames;
     processCommandLine(argc, argv, filenames, methodnames);
 
-
-    // #ifdef D__OLD_CODE
-    //     if (useApproximateIsomorphism){
-    //       vector<Acdfg*> allACDFGs;
-    //       for (string s: filenames){
-    // 	loadACDFGFromFilename(s, allACDFGs);
-    //       }
-    //       computePatternsThroughApproximateIsomorphism(allACDFGs);
-    //     } else
-    // #endif
     if (runTestOfSubsumption){
       testPairwiseSubsumption(filenames, methodnames);
     } else {
