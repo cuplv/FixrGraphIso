@@ -28,6 +28,7 @@ namespace fixrgraphiso{
   int freq_cutoff=20;
   double gurobi_timeout = 30.0;
   string info_file_name = "cluster-info.txt";
+  string output_prefix = ".";
   bool useApproximateIsomorphism=false;
   int minTargetSize = 2;
   int maxTargetSize = 100;
@@ -77,7 +78,7 @@ namespace fixrgraphiso{
 
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:z"))!= -1){
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:"))!= -1){
       switch (c){
       case 'm': {
         string methodNamesFile = optarg;
@@ -108,6 +109,10 @@ namespace fixrgraphiso{
         info_file_name = string(optarg);
         cout << "Info will be dumped to : " << info_file_name << std::endl;
         break;
+      case 'p':
+        output_prefix = string(optarg);
+        cout << "Output patterns will be dumped in: " << output_prefix << std::endl;
+        break;
       default:
         break;
       }
@@ -127,7 +132,9 @@ namespace fixrgraphiso{
 
   void dumpAllBins(std::vector<AcdfgBin*> & popular,
                    std::vector<AcdfgBin*> & anomalous,
-                   std::vector<AcdfgBin*> & isolated, std::chrono::seconds time_taken,
+                   std::vector<AcdfgBin*> & isolated,
+                   std::chrono::seconds time_taken,
+                   const std::string & output_prefix,
                    const std::string & infoFileName){
     std::ofstream out_file(infoFileName.c_str());
     int count = 1;
@@ -142,8 +149,8 @@ namespace fixrgraphiso{
       out_file << "Dot: " << iso_file_name << endl;
       out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() << ", " << a-> getPopularity() << std::endl;
-      a -> dumpToDot(iso_file_name);
-      a -> dumpToProtobuf(iso_bin_file_name);
+      a -> dumpToDot(output_prefix + "/" + iso_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file);
       count ++;
     }
@@ -158,8 +165,8 @@ namespace fixrgraphiso{
       out_file << "Dot: " << iso_file_name << endl;
       out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency()<< std::endl;
-      a -> dumpToDot(iso_file_name);
-      a -> dumpToProtobuf(iso_bin_file_name);
+      a -> dumpToDot(output_prefix + "/" + iso_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
@@ -172,8 +179,8 @@ namespace fixrgraphiso{
       out_file << "Dot: " << iso_file_name << endl;
       out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() ;
-      a -> dumpToDot(iso_file_name);
-      a -> dumpToProtobuf(iso_bin_file_name);
+      a -> dumpToDot(output_prefix + "/" + iso_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
@@ -366,7 +373,7 @@ namespace fixrgraphiso{
       delete(orig_acdfg);
     }
 
-    //2.Compute a binning of all the sliced ACDFGs using the exact isomorphism
+    // 2.Compute a binning of all the sliced ACDFGs using the exact isomorphism
     std::vector<AcdfgBin*> allBins;
     for (Acdfg* a: allSlicedACDFGs){
       bool acdfgSubsumed = false;
@@ -382,19 +389,19 @@ namespace fixrgraphiso{
         allBins.push_back(newbin);
       }
     }
-    //3. Print all the popular patterns.
 
+    // 3. Print all the popular patterns.
     std::sort(allBins.begin(), allBins.end(),
               [](const AcdfgBin  * iso1, const AcdfgBin * iso2){
                 return iso1 -> getFrequency() > iso2 -> getFrequency();
               });
 
-    //analyzeAnomalies(allBins);
+    // analyzeAnomalies(allBins);
     std::vector<AcdfgBin*> popular, anomalous, isolated;
     classifyBins(allBins,popular,anomalous,isolated);
     auto end = std::chrono::steady_clock::now();
     std::chrono::seconds time_taken = std::chrono::duration_cast<std::chrono::seconds>(end -start);
-    dumpAllBins(popular, anomalous, isolated, time_taken, info_file_name);
+    dumpAllBins(popular, anomalous, isolated, time_taken, output_prefix, info_file_name);
   }
 
   void testPairwiseSubsumption(std::vector<string> & filenames, std::vector<string> & methodnames){
