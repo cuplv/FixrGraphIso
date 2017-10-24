@@ -12,10 +12,6 @@
 #include "fixrgraphiso/proto_acdfg.pb.h"
 #include "fixrgraphiso/collectStats.h"
 #include "fixrgraphiso/isomorphismClass.h"
-#ifdef D__OLD_CODE
-// 
-// #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
-#endif
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfgBin.h"
 namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
@@ -129,119 +125,6 @@ namespace fixrgraphiso{
     }
   }
 
-#ifdef D__OLD_CODE
-  // void computeAllPairwiseIsos(vector<Acdfg*> & allACDFGs){
-  //   int n = allACDFGs.size();
-  //   if (debug){
-  //     cout << "# of ACDFGs loaded: " << n << endl;
-  //   }
-  //   for (int i = 1; i < n ; ++i){
-  //     for (int j = 0; j +i < n; ++j){
-  // 	Acdfg * a = allACDFGs[j];
-  // 	Acdfg * b = allACDFGs[j+i];
-  // 	if (debug){
-  // 	  cout << a -> getName() << " vs. " << b -> getName() << std::endl;
-  // 	}
-
-  // 	IlpApproxIsomorphism ilp(a, b);
-  // 	bool stat = ilp.computeILPEncoding();
-  // 	if (stat)
-  // 	  ilp.populateFrequencies();
-  //     }
-  //   }
-  // }
-
-  // void computeSubsumedACDFGs(std::vector<IsomorphismClass> & allIsos, std::vector<IsomorphismClass> & maximalIsos, std::vector<string> & anamolies){
-  //   for (auto iso1: allIsos){
-  //     bool is_subsumed = false;
-  //     int i;
-  //     vector<int> subsumedIsos;
-  //     int freq = 1;
-  //     Acdfg * a = iso1.get_acdfg();
-  //     if (a -> method_node_count() < 3){
-  // 	std::cout << "IGNORING: " << a -> getName() << std::endl;
-  // 	anamolies.push_back(a -> getName());
-  // 	continue;
-  //     }
-  //     for (i = maximalIsos.size()-1; i >= 0;  --i){
-  // 	fixrgraphiso::IsomorphismClass & iso2 = maximalIsos[i];
-
-  // 	if (iso1.subsumes(&iso2)){
-  // 	  is_subsumed = true;
-  // 	  iso2.addSubsumingACDFG(iso1.get_acdfg() -> getName());
-  // 	  iso2.incrFrequency();
-  // 	  break;
-  // 	}
-  // 	if (iso2.subsumes(&iso1)){
-  // 	  subsumedIsos.push_back(i);
-  // 	  iso1.copySubsumingACDFGs(iso2);
-  // 	  freq = freq + iso2.getFrequency();
-  // 	}
-  // 	// } else {
-  // 	//   if (iso2.subsumes(&iso1)){
-  // 	//     iso2.incrFrequency();
-  // 	//     is_subsumed = true;
-  // 	//     break;
-  // 	//   }
-  // 	//   if (iso1.subsumes(&iso2)){
-  // 	//     subsumedIsos.push_back(i);
-  // 	//     freq = freq + iso2.getFrequency();
-  // 	//   }
-  // 	// }
-  //     }
-
-  //     if (!is_subsumed){
-  // 	iso1.setFrequency(freq);
-  // 	maximalIsos.push_back(iso1);
-  //     }
-  //     for (int j: subsumedIsos){
-  // 	assert (!is_subsumed);
-  // 	maximalIsos.erase(maximalIsos.begin() + j);
-  //     }
-
-  //   }
-  //   // Sort the maximal Isos according to the frequencies
-  //   std::sort(maximalIsos.begin(), maximalIsos.end(),
-  // 	      [](const fixrgraphiso::IsomorphismClass  & iso1, const fixrgraphiso::IsomorphismClass & iso2){
-  // 		return iso1.getFrequency() > iso2.getFrequency();
-  // 	      });
-
-  // }
-
-  // void dumpAllIsos(std::vector<IsomorphismClass> & maximalIsos, std::vector<std::string> & anamolous, std::string infoFileName){
-  //   std::ofstream out_file(infoFileName.c_str());
-
-  //   out_file << "Number of Minimal Isos: " << maximalIsos.size() << endl;
-  //   for (int k = 0; k < maximalIsos.size(); ++k){
-  //     fixrgraphiso::IsomorphismClass & iso = maximalIsos[k];
-  //     if (iso.getFrequency() >= subsumption_freq_cutoff){
-  // 	out_file << "Popular Pattern #"<< k << " Frequency = " << iso.getFrequency() << endl;
-  //     } else {
-  // 	out_file << "Unpopular Pattern #" << k << " Frequency = " << iso.getFrequency() << endl;
-  //     }
-  //     //out_file << "F: " << iso.getIsoFilename () << endl;
-  //     std::vector<std::string> const & fnames = iso.getSubsumingACDFGs();
-  //     for (const auto s: fnames){
-  // 	out_file << "F: "<< s << endl;
-  //     }
-  //     string fname = string("iso_")+std::to_string(k)+".dot";
-  //     out_file << "DOT: " << fname << endl;
-  //     std::ofstream dot_file(fname.c_str());
-  //     (iso.get_acdfg()) -> dumpToDot( dot_file);
-  //     dot_file.close();
-  //   }
-
-  //   out_file << "Anomalous ACDFGs Frequency = " << anamolous.size() << endl;
-  //   for (string s: anamolous){
-  //     out_file << "X:" << s << endl;
-  //   }
-
-  //   out_file.close();
-
-  // }
-
-#endif
-
   void dumpAllBins(std::vector<AcdfgBin*> & popular,
                    std::vector<AcdfgBin*> & anomalous,
                    std::vector<AcdfgBin*> & isolated, std::chrono::seconds time_taken,
@@ -299,26 +182,6 @@ namespace fixrgraphiso{
 
     out_file.close();
   }
-#ifdef D__OLD_CODE
-  // void computePatternsThroughApproximateIsomorphism(vector<Acdfg*> & allACDFGs){
-  //   computeAllPairwiseIsos(allACDFGs);
-  //   vector<IsomorphismClass> aboveCutoff;
-  //   vector<IsomorphismClass> maximalIsos;
-  //   for (Acdfg * a: allACDFGs){
-  //     Acdfg * b = a-> extractSubgraphWithFrequencyCutoff(freq_cutoff);
-  //     b -> setName( a -> getName() );
-  //     IsomorphismClass iso (b);
-  //     aboveCutoff.push_back (iso);
-  //   }
-  //   vector<string> anamolous;
-  //   computeSubsumedACDFGs(aboveCutoff, maximalIsos,  anamolous);
-  //   dumpAllIsos(maximalIsos, anamolous,info_file_name);
-  //   for (auto iso:aboveCutoff){
-  //     delete(iso.get_acdfg());
-  //   }
-
-  // }
-#endif
 
   void calculateLatticeGraph(std::vector<AcdfgBin*> & allBins){
     for (auto it = allBins.begin(); it != allBins.end(); ++it){
@@ -666,5 +529,5 @@ namespace fixrgraphiso{
 
 int main(int argc, char * argv[]){
   fixrgraphiso::frequentSubgraphsMain(argc, argv);
-  return 1;
+  return 0;
 }
