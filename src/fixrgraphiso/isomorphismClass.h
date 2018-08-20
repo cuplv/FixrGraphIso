@@ -24,6 +24,9 @@ namespace fixrgraphiso {
   typedef std::pair<long, long> id_pair_t;
 
 
+  /**
+   * Encodes the subgraph isomorphism problem in Z3
+   */
   class IsoEncoder {
   protected:
     z3::context ctx;
@@ -45,6 +48,9 @@ namespace fixrgraphiso {
     bool getTruthValuation(var_t x);
   };
 
+  /**
+   * Check if acdfg_a subsumes acdfg_b
+   */
   class IsoSubsumption {
 
   protected:
@@ -91,6 +97,9 @@ namespace fixrgraphiso {
     bool check();
   };
 
+  /**
+   * Check if acdfg_a is isomorphic to acdfg_b
+   */
   class IsomorphismClass {
   protected:
     Acdfg * acdfg;

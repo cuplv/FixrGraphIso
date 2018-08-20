@@ -22,11 +22,9 @@ namespace fixrgraphiso {
     return false;
   }
 
-
   IsoEncoder::IsoEncoder():  ctx(), s(ctx), alreadySolved(false), satisfiable(false){}
 
   IsoEncoder::~IsoEncoder(){
-
   }
 
   /*-
@@ -36,14 +34,16 @@ namespace fixrgraphiso {
     return ctx.bool_const(vName.c_str());
   }
 
-  IsoEncoder::var_t  IsoSubsumption::getNodePairVar(node_id_t a, node_id_t b) const {
+  IsoEncoder::var_t  IsoSubsumption::getNodePairVar(node_id_t a,
+                                                    node_id_t b) const {
     id_pair_t ab (a,b);
     auto it = node_pairs_to_var.find(ab);
     assert(it != node_pairs_to_var.end());
     return it -> second;
   }
 
-  IsoEncoder::var_t IsoSubsumption::getEdgePairVar(edge_id_t a, edge_id_t b) const {
+  IsoEncoder::var_t IsoSubsumption::getEdgePairVar(edge_id_t a,
+                                                   edge_id_t b) const {
     id_pair_t ab(a,b);
     auto it = edge_pairs_to_var.find(ab);
     assert ( it != edge_pairs_to_var.end());
@@ -69,8 +69,10 @@ namespace fixrgraphiso {
       vector<node_id_t> const & v = p.second;
       assert(v.size() > 0);
       for (node_id_t id_b: v){
-        IsoEncoder::var_t v = e.createBooleanVariable(np_pref+to_string(id_a) + "__" + to_string(id_b));
-        node_pairs_to_var.insert( std::pair<id_pair_t, z3::expr>( id_pair_t(id_a, id_b) , v));
+        IsoEncoder::var_t v = e.createBooleanVariable(np_pref+to_string(id_a) +
+                                                      "__" + to_string(id_b));
+        node_pairs_to_var.insert( std::pair<id_pair_t,
+                                  z3::expr>( id_pair_t(id_a, id_b) , v));
       }
     }
 
@@ -119,7 +121,7 @@ namespace fixrgraphiso {
   }
 
   void IsoEncoder::solve(){
-    if (!alreadySolved){
+    if (! alreadySolved){
       switch(s.check()){
       case z3::unsat:
         satisfiable = false;
@@ -137,7 +139,7 @@ namespace fixrgraphiso {
   }
 
   bool IsoEncoder::isSat(){
-    if (!alreadySolved)
+    if (! alreadySolved)
       solve();
     return satisfiable;
   }
@@ -231,8 +233,9 @@ namespace fixrgraphiso {
   }
 
 
-  void add_id_pair_to_map_pair(long id_a, long id_b, map< long, vector<long> > & a_to_b, map< long, vector<long> > & b_to_a){
-
+  void add_id_pair_to_map_pair(long id_a, long id_b,
+                               map< long, vector<long> > & a_to_b,
+                               map< long, vector<long> > & b_to_a){
     auto it_a = a_to_b.find(id_a);
     auto it_b = b_to_a.find(id_b);
     if (it_a == a_to_b.end()){
@@ -416,10 +419,10 @@ namespace fixrgraphiso {
       }
       e.exactlyOne(var_pairs);
     }
+
     /*-
       Every node in A can be connected to at most one node in b.
       -*/
-
     for (const auto p: nodes_a_to_b){
       node_id_t id_a = p.first;
       vector<node_id_t> const & v = p.second;
@@ -446,14 +449,8 @@ namespace fixrgraphiso {
       e.atleastOne(var_pairs);
     }
 
-
-
-
-
-
     // Every edge in A must be connected to at most one edge in b.
     // Sriram: this is actually redundant.
-
     for (const auto p: edges_a_to_b){
       edge_id_t edg_a = p.first;
       vector<edge_id_t> const & v = p.second;
@@ -465,13 +462,10 @@ namespace fixrgraphiso {
       e.atmostOne(var_pairs);
     }
 
-
-
     /*-
       If two method nodes are connected, then
       their arguments, receiver and assignees should also be connected
       -*/
-
     for (const auto p: nodes_a_to_b){
       node_id_t id_a = p.first;
       Node * na = acdfg_a -> getNodeFromID(id_a);
@@ -552,22 +546,31 @@ namespace fixrgraphiso {
 
   bool IsoSubsumption::check(){
 
-    if (!checkNodeCounts()){
+    if (! checkNodeCounts()){
       if (debug) std::cout << "\t Node counts rule out subsumption" << endl;
       return false;
     }
 
     if (! findCompatibleMethodNodes()){
-      if (debug) std::cout << "\t Incompatible method node found. Subsumption ruled out" << endl;
+      if (debug) {
+        std::cout <<
+          "\t Incompatible method node found. Subsumption ruled out" << endl;
+      }
       return false;
     }
     if (! findCompatibleDataNodes()){
-      if (debug) std::cout << "\t Incompatible data node found. Subsumption ruled out" << endl;
+      if (debug) {
+        std::cout <<
+          "\t Incompatible data node found. Subsumption ruled out" << endl;
+      }
       return false;
     }
 
     if (!findCompatibleEdgePairs()){
-      if (debug) std::cout << "\t Incompatible edges found. Subsumption ruled out" << endl;
+      if (debug) {
+        std::cout <<
+          "\t Incompatible edges found. Subsumption ruled out" << endl;
+      }
       return false;
     }
 
@@ -583,11 +586,13 @@ namespace fixrgraphiso {
   /*--
     Constructors for IsomorphismClass.
     --*/
-  IsomorphismClass::IsomorphismClass(Acdfg * what): iso_filename(what -> getName()), freq(1), acdfg(what){
+  IsomorphismClass::IsomorphismClass(Acdfg * what) :
+    iso_filename(what -> getName()), freq(1), acdfg(what) {
     subsumingACDFGs.push_back(what -> getName());
   }
 
-  IsomorphismClass::IsomorphismClass(string const & fname):iso_filename(fname), freq(1){
+  IsomorphismClass::IsomorphismClass(string const & fname) :
+    iso_filename(fname), freq(1) {
     iso_protobuf::Iso iso;
     std::fstream inp_file (fname.c_str(), std::ios::in | std::ios::binary);
     assert(inp_file.is_open());
@@ -601,9 +606,6 @@ namespace fixrgraphiso {
 
   IsomorphismClass::~IsomorphismClass(){
   }
-
-
-
 
   bool IsomorphismClass::subsumes(IsomorphismClass const * b) const {
     /* -- Encode the precise subsumption of b in a. I.e, b is a subgraph of a.
@@ -636,6 +638,7 @@ namespace fixrgraphiso {
        assignee and receiver must be matched to each other.
        5. If two edges are isomorphic then their source and target nodes must be isomorphic to each other.
        ---*/
+
     IsoSubsumption isoSub(this -> acdfg, b -> acdfg);
     if (isoSub.check()) {
       if (debug) cout << "\t SAT solver returned SAT! " << endl;

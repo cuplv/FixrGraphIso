@@ -201,8 +201,10 @@ namespace fixrgraphiso {
                     std::vector<AcdfgBin*> & anomalous,
                     std::vector<AcdfgBin*> & isolated) {
 
+    // 1. Compute the lattice of bins
     calculateLatticeGraph(allBins);
-    // 1. Calculate the transitive reduction for each bin in the
+
+    // 2. Calculate the transitive reduction for each bin in the
     //    lattice and use it to judge popularity
     for (AcdfgBin * a: allBins){
       a -> computeImmediatelySubsumingBins();
@@ -216,7 +218,7 @@ namespace fixrgraphiso {
       }
     }
 
-    // 2. Now calculate the anomalous and isolated patterns
+    // 3. Now calculate the anomalous and isolated patterns
     for (AcdfgBin * a: allBins){
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
