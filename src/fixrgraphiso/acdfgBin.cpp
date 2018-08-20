@@ -8,7 +8,7 @@
 
 namespace fixrgraphiso {
 
-  bool AcdfgBin::isACDFGBinSubsuming( AcdfgBin * b){
+  bool AcdfgBin::isACDFGBinSubsuming(AcdfgBin * b){
     // First check the graph so far
     for (AcdfgBin * c : subsumingBins){
       if (c -> hasSubsumingBin(b)){
@@ -128,7 +128,7 @@ namespace fixrgraphiso {
   void AcdfgBin::setPopular() {
     assert(! this -> subsuming);
     this -> popular = true;
-    for (AcdfgBin * b: subsumingBins){
+    for (AcdfgBin * b: subsumingBins) {
       b -> popular = false;
       b -> subsuming = true;
     }
@@ -136,7 +136,7 @@ namespace fixrgraphiso {
   }
 
   bool AcdfgBin::hasPopularAncestor() const{
-    for (const AcdfgBin* b: subsumingBins){
+    for (const AcdfgBin* b: subsumingBins) {
       if (b -> isPopular())
         return true;
     }

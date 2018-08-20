@@ -199,11 +199,11 @@ namespace fixrgraphiso {
   void classifyBins(std::vector<AcdfgBin*> & allBins,
                     std::vector<AcdfgBin*> & popular,
                     std::vector<AcdfgBin*> & anomalous,
-                    std::vector<AcdfgBin*> & isolated){
+                    std::vector<AcdfgBin*> & isolated) {
 
     calculateLatticeGraph(allBins);
-    // 1. Calculate the transitive reduction for each node and use
-    //    it to judge popularity
+    // 1. Calculate the transitive reduction for each bin in the
+    //    lattice and use it to judge popularity
     for (AcdfgBin * a: allBins){
       a -> computeImmediatelySubsumingBins();
       if (a -> isSubsuming()) continue;
@@ -216,7 +216,7 @@ namespace fixrgraphiso {
       }
     }
 
-    // 2. Now calculate the anomalous patterns
+    // 2. Now calculate the anomalous and isolated patterns
     for (AcdfgBin * a: allBins){
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
@@ -276,30 +276,32 @@ namespace fixrgraphiso {
     for (Acdfg* a: allSlicedACDFGs){
       bool acdfgSubsumed = false;
       for (AcdfgBin * bin: allBins){
-        if (bin -> isACDFGEquivalent(a)){
+        if (bin -> isACDFGEquivalent(a)) {
           bin -> insertEquivalentACDFG(a);
           acdfgSubsumed = true;
           break;
         }
       }
-      if (!acdfgSubsumed){
+      if (! acdfgSubsumed) {
         AcdfgBin * newbin = new AcdfgBin(a);
         allBins.push_back(newbin);
       }
     }
 
-    // 3. Print all the popular patterns.
+    // 3. Sort the bins by frequency
     std::sort(allBins.begin(), allBins.end(),
-              [](const AcdfgBin  * iso1, const AcdfgBin * iso2){
-                return iso1 -> getFrequency() > iso2 -> getFrequency();
+              [](const AcdfgBin  * bin1, const AcdfgBin * bin2){
+                return bin1 -> getFrequency() > bin2 -> getFrequency();
               });
 
+    // 4. Classify the bin trough lattice construction
     std::vector<AcdfgBin*> popular, anomalous, isolated;
     classifyBins(allBins,popular,anomalous,isolated);
     auto end = std::chrono::steady_clock::now();
     std::chrono::seconds time_taken =
       std::chrono::duration_cast<std::chrono::seconds>(end -start);
 
+    // 8. Print all the  patterns
     dumpAllBins(popular, anomalous, isolated,
                 time_taken, output_prefix, info_file_name);
   }
