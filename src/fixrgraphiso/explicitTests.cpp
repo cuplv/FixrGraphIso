@@ -1,4 +1,3 @@
-
 #include "fixrgraphiso/acdfg.h"
 using namespace fixrgraphiso;
 
@@ -149,6 +148,4 @@ Acdfg * createGraphB(){
   addDefEdge(acdfg_b,z3, m3);
 
   return acdfg_b;
-
-  
 }

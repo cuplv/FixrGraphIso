@@ -108,9 +108,9 @@ namespace fixrgraphiso {
   class MethodNode : public CommandNode {
   public:
     MethodNode(long id, const string& name,
-           DataNode* receiver,
-           std::vector<DataNode*> arguments,
-           DataNode * assignee);
+               DataNode* receiver,
+               std::vector<DataNode*> arguments,
+               DataNode * assignee);
     MethodNode(const MethodNode& node);
     virtual ~MethodNode() {}
 
@@ -150,10 +150,10 @@ namespace fixrgraphiso {
   public:
 
     Edge(long id, edge_type_t typ, Node* src, Node* dst): id_(id),
-                              eType_(typ),
-                              src_(src),
-                              dst_(dst),
-                              match_frequency(0)
+                                                          eType_(typ),
+                                                          src_(src),
+                                                          dst_(dst),
+                                                          match_frequency(0)
     {};
 
 
@@ -241,7 +241,7 @@ namespace fixrgraphiso {
     void addException(std::string const & what){
       exceptList_.push_back(what);
     }
-   virtual void addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const;
+    virtual void addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const;
   };
 
   typedef std::vector<Node*> nodes_t;
@@ -265,8 +265,8 @@ namespace fixrgraphiso {
     int typed_node_count(node_type_t t) const {
       int rVal =0;
       for (nodes_t::const_iterator it = begin_nodes(); it != end_nodes(); ++it){
-    if ( (*it) -> get_type() == t)
-      rVal ++;
+        if ( (*it) -> get_type() == t)
+          rVal ++;
       }
       return rVal;
     }
@@ -286,8 +286,8 @@ namespace fixrgraphiso {
     int typed_edge_count(edge_type_t t) const{
       int rVal = 0;
       for (edges_t::const_iterator jt = begin_edges(); jt != end_edges(); ++jt){
-    if ( (*jt) -> get_type() == t)
-      ++rVal;
+        if ( (*jt) -> get_type() == t)
+          ++rVal;
       }
       return rVal;
     }
@@ -300,14 +300,14 @@ namespace fixrgraphiso {
 
     std::vector< std::pair<string,int> > all_counts() const {
       std::vector< std::pair<string, int> > rVal {
-    {"nodes" , node_count()} ,
-      { "edges", edge_count()},
-        {"data nodes", data_node_count()},
-          {"method nodes", method_node_count()},
-        {"control edges", (control_edge_count() + transitive_edge_count())},
-          {"use edges", use_edge_count()},
-            {"def edges", def_edge_count()},
-              {"exceptional edges", exceptional_edge_count() }
+        {"nodes" , node_count()} ,
+          { "edges", edge_count()},
+            {"data nodes", data_node_count()},
+              {"method nodes", method_node_count()},
+                {"control edges", (control_edge_count() + transitive_edge_count())},
+                  {"use edges", use_edge_count()},
+                    {"def edges", def_edge_count()},
+                      {"exceptional edges", exceptional_edge_count() }
       };
       return rVal;
     }
@@ -323,10 +323,10 @@ namespace fixrgraphiso {
     std::vector<long> getOutgoingEdgeIDs(long nodeID) const{
       node_id_to_outgoing_edges_map_t::const_iterator it = outgoingMap_.find(nodeID);
       if (it == outgoingMap_.end()){
-    vector<long> tmp;// return a dummy empty vector
-    return tmp;
+        vector<long> tmp;// return a dummy empty vector
+        return tmp;
       } else {
-    return (it -> second);
+        return (it -> second);
       }
     }
 

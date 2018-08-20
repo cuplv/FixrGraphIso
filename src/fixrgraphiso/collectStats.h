@@ -5,7 +5,7 @@
 #include <chrono>
 
 namespace fixrgraphiso{
-  
+
   struct stats_struct{
     int numSATCalls;
     int numSubsumptionChecks;
@@ -16,20 +16,22 @@ namespace fixrgraphiso{
     int maxEdges;
     int minNodes;
     int minEdges;
-    
+
     std::chrono::milliseconds satSolverTime;
 
-    stats_struct():numSATCalls(0), numSubsumptionChecks(0), totalEdges(0), totalGraphs(0), totalNodes(0), maxNodes(0), maxEdges(0), minNodes(0), minEdges(0), satSolverTime(0) {}
-    
+  stats_struct():numSATCalls(0), numSubsumptionChecks(0), totalEdges(0),
+      totalGraphs(0), totalNodes(0), maxNodes(0), maxEdges(0), minNodes(0),
+      minEdges(0), satSolverTime(0) {}
+
   };
 
   extern stats_struct all_stats;
 
-    
+
   static void addSubsumptionCheck(){
     all_stats.numSubsumptionChecks++;
   }
-  
+
   static void addSATCallStat(std::chrono::milliseconds t){
     all_stats.numSATCalls++;
     all_stats.satSolverTime = all_stats.satSolverTime + t;
@@ -47,9 +49,8 @@ namespace fixrgraphiso{
       all_stats.maxEdges = n_edges;
     }
   }
-  
-  static void printStats(std::ostream & out){
 
+  static void printStats(std::ostream & out){
     out << "# Graphs : " << all_stats.totalGraphs << std::endl;
     if (all_stats.totalGraphs > 0){
       out << "Average # of nodes: " << all_stats.totalNodes/all_stats.totalGraphs << std::endl;
@@ -62,11 +63,7 @@ namespace fixrgraphiso{
     out << "# SAT calls: " << all_stats.numSATCalls << std::endl;
 
     out << "# satSolverTime (ms): " << all_stats.satSolverTime.count() << std::endl;
-						    
-									 
   }
-  
-  
 }
 
 #endif

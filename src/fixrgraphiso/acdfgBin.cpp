@@ -12,7 +12,7 @@ namespace fixrgraphiso {
     // First check the graph so far
     for (AcdfgBin * c : subsumingBins){
       if (c -> hasSubsumingBin(b)){
-    return true;
+        return true;
       }
     }
 
@@ -31,20 +31,20 @@ namespace fixrgraphiso {
     IsoSubsumption dir_b (b, repr);
     if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
       if (debug){
-    cout << "Subsumption ruled out directly " << endl;
+        cout << "Subsumption ruled out directly " << endl;
       }
       return false;
     }
     if (! dir_a.check()){
       if (debug){
-    cout << "Subsumption bin -> b ruled out " << endl;
+        cout << "Subsumption bin -> b ruled out " << endl;
       }
       return false;
     }
 
     if (!dir_b.check()){
       if (debug){
-    cout << "Subsumption b -> bin ruled out " << endl;
+        cout << "Subsumption b -> bin ruled out " << endl;
       }
       return false;
     }
@@ -70,10 +70,10 @@ namespace fixrgraphiso {
     if (printAbove){
 
       for (const AcdfgBin * b : subsumingBins){
-    const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
-    for (const Acdfg * a: sub_acdfgs){
-      out << a -> getName() << endl;
-    }
+        const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
+        for (const Acdfg * a: sub_acdfgs){
+          out << a -> getName() << endl;
+        }
       }
     }
 
@@ -110,8 +110,8 @@ namespace fixrgraphiso {
       b -> addSubsumingBinsToSet(transitivelySubsuming);
     }
     std::set_difference(subsumingBins.begin(), subsumingBins.end(), \
-            transitivelySubsuming.begin(), transitivelySubsuming.end(), \
-            std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
+                        transitivelySubsuming.begin(), transitivelySubsuming.end(), \
+                        std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
 
   }
 
@@ -138,7 +138,7 @@ namespace fixrgraphiso {
   bool AcdfgBin::hasPopularAncestor() const{
     for (const AcdfgBin* b: subsumingBins){
       if (b -> isPopular())
-    return true;
+        return true;
     }
     return false;
   }

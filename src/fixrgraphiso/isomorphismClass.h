@@ -20,10 +20,10 @@ using std::map;
 namespace fixrgraphiso {
 
   extern bool debug;
-  
+
   typedef std::pair<long, long> id_pair_t;
-  
-  
+
+
   class IsoEncoder {
   protected:
     z3::context ctx;
@@ -31,7 +31,7 @@ namespace fixrgraphiso {
     bool satisfiable;
     bool alreadySolved;
   public:
-    
+
     typedef z3::expr var_t;
     IsoEncoder();
     ~IsoEncoder();
@@ -44,16 +44,16 @@ namespace fixrgraphiso {
     bool isSat();
     bool getTruthValuation(var_t x);
   };
-    
+
   class IsoSubsumption {
-    
+
   protected:
     typedef long node_id_t;
     typedef long edge_id_t;
     typedef map< id_pair_t, IsoEncoder::var_t> id_pair_map_t;
     typedef map< node_id_t, vector<node_id_t> > compat_nodes_map_t;
     typedef map< edge_id_t, vector<edge_id_t> > compat_edges_map_t;
-    
+
     Acdfg * acdfg_a;
     Acdfg * acdfg_b;
     IsoEncoder e;
@@ -72,29 +72,25 @@ namespace fixrgraphiso {
     bool isCompatibleNodePair(const Node * na, const Node  * nb) const {
       return isCompatibleNodePair(na -> get_id(), nb -> get_id());
     }
-    
+
     bool staticCheckMethodNodeCompatible(const MethodNode * ma, const MethodNode * mb) const;
     void addCompatibleNodePair(Node * na, Node * nb);
     void addCompatibleEdgePair(Edge * ea, Edge * eb);
-    
+
     void createEncodingVariables();
 
-    
-    
   public:
     IsoSubsumption(Acdfg * a, Acdfg * b);
     ~IsoSubsumption(){}
-    
-    
+
     bool checkNodeCounts() const;
     bool findCompatibleMethodNodes();
     bool findCompatibleDataNodes();
     bool findCompatibleEdgePairs();
     void makeEncoding();
     bool check();
-    
   };
-  
+
   class IsomorphismClass {
   protected:
     Acdfg * acdfg;
@@ -104,13 +100,13 @@ namespace fixrgraphiso {
     int freq;
     std::vector<std::string> subsumingACDFGs;
   public:
-    
+
     IsomorphismClass(Acdfg * what);
     IsomorphismClass(string const & iso_filename);
     ~IsomorphismClass();
     bool subsumes(IsomorphismClass const * what) const;
     Acdfg * get_acdfg() const { return acdfg; }
-    string getIsoFilename() const { return iso_filename;} 
+    string getIsoFilename() const { return iso_filename;}
     int getFrequency() const {return freq; }
     void setFrequency(int f){ this -> freq = f ; }
     void incrFrequency(){ freq++; }
@@ -119,14 +115,14 @@ namespace fixrgraphiso {
     }
 
     std::vector<std::string> const & getSubsumingACDFGs(){ return subsumingACDFGs; }
-    
+
     void copySubsumingACDFGs(IsomorphismClass const & what){
       std::vector<std::string> const & v = what.subsumingACDFGs;
       for (const auto s: v){
-	(this -> subsumingACDFGs).push_back(s);
+        (this -> subsumingACDFGs).push_back(s);
       }
     }
-    
+
   };
 
 }
