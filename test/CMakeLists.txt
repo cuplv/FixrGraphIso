@@ -14,8 +14,9 @@ set(TEST_LIBS
 file(COPY test_data DESTINATION
     ${CMAKE_CURRENT_BINARY_DIR})
 
+include_directories(${GTEST_INCLUDE_DIR})
+
 add_subdirectory(iso)
-include_directories(${GTEST_INCLUDE_DIR},
-                    ${source_dir}/test/iso)
+add_subdirectory(frequentsubgraph)
 
 
