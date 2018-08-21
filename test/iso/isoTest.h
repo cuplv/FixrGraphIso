@@ -1,8 +1,12 @@
 #include <gtest/gtest.h>
 
-class IsoTest : public ::testing::Test {
- protected:
+namespace isotest {
+  using std::string;
 
-  IsoTest();
-};
+  class IsoTest : public ::testing::TestWithParam<string> {
+  protected:
+    IsoTest();
+  };
+}
+
 

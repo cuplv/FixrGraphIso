@@ -17,9 +17,6 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS_ISO PROTO_HDRS_ISO ${PROTOBUF_IMPORT_DIRS}/prot
 #MESSAGE("PROTO SOURCES: ${PROTO_SRCS}")
 #MESSAGE("PROTO HDRS: ${PROTO_HDRS}")
 
-# TODO: create a library for reuse
-
-
 add_executable(fixrgraphiso
   main.cpp
   explicitTests.cpp
@@ -41,9 +38,9 @@ add_executable(frequentitemsets
 
 target_compile_features(frequentitemsets PRIVATE cxx_range_for)
 target_link_libraries(frequentitemsets
-	${PROTOBUF_LIBRARY}
-	)
-	
+  ${PROTOBUF_LIBRARY}
+  )
+
 add_executable(frequentsubgraphs
    frequentSubgraphsMain.cpp
    acdfgBin.cpp
@@ -54,6 +51,21 @@ add_executable(frequentsubgraphs
    ${PROTO_SRCS_ACDFG}
 )
 target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
+
+set(CMAKE_MACOSX_RPATH 1)
+add_library(frequentsubgraphs_library SHARED
+   frequentSubgraphsMain.cpp
+   acdfgBin.cpp
+   isomorphismClass.cpp
+   acdfg.cpp
+   serialization.cpp
+   ${PROTO_SRCS_ISO}
+   ${PROTO_SRCS_ACDFG}
+)
+target_compile_features(frequentsubgraphs_library PRIVATE cxx_range_for)
+target_link_libraries(frequentsubgraphs_library
+  ${PROTOBUF_LIBRARY}
+  ${Z3_LIBRARY})
 
 
 if (NOT GUROBI_FOUND)
@@ -67,8 +79,8 @@ if (NOT GUROBI_FOUND)
     ${GLPK_LIBRARY}
     ${PROTOBUF_LIBRARY}
     ${Z3_LIBRARY}
-    )   
- 
+    )
+
 endif(NOT GUROBI_FOUND)
 
 if (GUROBI_FOUND)
@@ -83,7 +95,7 @@ if (GUROBI_FOUND)
 target_link_libraries(frequentsubgraphs
     ${PROTOBUF_LIBRARY}
     ${Z3_LIBRARY}
-    ) 
+    )
 
 endif(GUROBI_FOUND)
 

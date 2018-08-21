@@ -664,7 +664,8 @@ namespace fixrgraphiso {
   }
 
 
-  void Acdfg::getMethodsFromName(const std::vector<string> & methodnames, std::vector<MethodNode*> & targets){
+  void Acdfg::getMethodsFromName(const std::vector<string> & methodnames,
+                                 std::vector<MethodNode*> & targets){
     /* -- Iterate through all method nodes and check if it is found inside the given vector --*/
     std::set<string> methodNameSet;
     for (const string str: methodnames) {
@@ -690,6 +691,15 @@ namespace fixrgraphiso {
     return;
   }
 
+  void Acdfg::getMethodNodes(std::vector<MethodNode*> & targets) {
+    for (auto it = this -> begin_nodes(); it != this -> end_nodes(); ++it){
+      Node * n = *it;
+      if (n -> get_type() == METHOD_NODE) {
+        MethodNode * mNode = toMethodNode(n);
+        targets.push_back(mNode);
+      }
+    }
+  }
 
   Acdfg* Acdfg::sliceACDFG(const std::vector<MethodNode*>  & targets){
     /*-

@@ -50,6 +50,9 @@ namespace fixrgraphiso {
 
   /**
    * Check if acdfg_a subsumes acdfg_b
+   *
+   * WARNING: the encoding is correct ONLY if the acdfg is sliced now
+   * i.e. it does not contain regular nodes
    */
   class IsoSubsumption {
 
