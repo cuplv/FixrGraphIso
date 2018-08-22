@@ -39,7 +39,7 @@ namespace fixrgraphiso {
                                   [](char x){ return std::isspace(x);}),
                   line.end());
       listOfNames.push_back(line);
-      std::cout << "\t Adding :" << line << endl;
+      std::cout << "\t Adding: " << line << endl;
     }
   }
 
@@ -352,12 +352,12 @@ namespace fixrgraphiso {
 
     this->freq_cutoff = freqCutoff;
 
-    cout << "Loading methods" << endl;
+    cout << "Loading methods from " << methodNamesFile << endl;
     loadNamesFromFile(methodNamesFile, methodNames);
 
     this->output_prefix = outputPrefix;
 
-    cout << "Loading ACDFGs " << endl;
+    cout << "Loading ACDFGs from " << acdfgFileName << endl;
     loadNamesFromFile(acdfgFileName, fileNames);
 
     computePatternsThroughSlicing(fileNames, methodNames);
