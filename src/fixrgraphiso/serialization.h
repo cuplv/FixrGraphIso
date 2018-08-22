@@ -20,9 +20,16 @@ namespace fixrgraphiso {
   namespace acdfg_protobuf = edu::colorado::plv::fixr::protobuf;
 
   class AcdfgSerializer {
+  private:
+    void proto_from_acdfg_label(acdfg_protobuf::Acdfg * protoAcdfg,
+                                const Acdfg &acdfg,
+                                Edge * edge);
   public:
     /* convert the protobuf represenation to our representation */
     Acdfg* create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg);
+
+    void fill_proto_from_acdfg(const Acdfg &acdfg,
+                               acdfg_protobuf::Acdfg*);
 
     /* Read the protobuf acdfg */
     acdfg_protobuf::Acdfg* read_protobuf_acdfg(const char* file_name);
@@ -34,8 +41,8 @@ namespace fixrgraphiso {
 
   class LatticeSerializer {
   public:
-    AcdfgBin* lattice_from_proto(acdfg_protobuf::Lattice* proto_acdfg_bin);
-    acdfg_protobuf::Lattice* proto_from_lattice(AcdfgBin*);
+    Lattice* lattice_from_proto(acdfg_protobuf::Lattice* proto_lattice);
+    acdfg_protobuf::Lattice* proto_from_lattice(const Lattice & lattice);
 
     acdfg_protobuf::Lattice* read_protobuf(const char* file_name);
   private:

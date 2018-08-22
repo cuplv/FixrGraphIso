@@ -69,16 +69,28 @@ namespace fixrgraphiso {
   void computeImmediatelySubsumingBins();
 
   bool isSubsuming() const { return subsuming; }
-
   bool isAnomalous() const {return anomalous; }
   void setAnomalous() { anomalous = true; }
-
   void setPopular() ;
   bool isPopular() const { return popular;}
 
   const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
   bool isAtFrontierOfPopularity(int freq_cutoff) const;
   bool hasPopularAncestor() const;
+
+  const std::set<AcdfgBin*> & getSubsumingBins() const {
+    return subsumingBins;
+  }
+
+  const std::set<AcdfgBin*> & getImmediateSubsumingBins() const {
+    return immediateSubsumingBins;
+  }
+
+  const std::set<AcdfgBin*> & getIncomingEdges() const {
+    return incomingEdges;
+  }
+
+
 
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;

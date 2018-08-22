@@ -16,7 +16,7 @@ message Lattice {
   }
 
   repeated AcdfgBin bins = 1;
-  repeated AcdfgBin popular_bins = 2;
-  repeated AcdfgBin anomalous_bins = 3;
-  repeated AcdfgBin isolated_bins = 4;
+  repeated uint64 popular_bins = 2;
+  repeated uint64 anomalous_bins = 3;
+  repeated uint64 isolated_bins = 4;
 }

@@ -357,12 +357,229 @@ namespace fixrgraphiso {
   }
 
 
+  void AcdfgSerializer::proto_from_acdfg_label(acdfg_protobuf::Acdfg * protoAcdfg,
+                                               const Acdfg &acdfg,
+                                               Edge * edge) {
+    acdfg_protobuf::Acdfg::LabelMap* protoLabel =
+      protoAcdfg->add_edge_labels();
 
-    AcdfgBin* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* proto_acdfg_bin) {
+    protoLabel->set_edge_id(edge->get_id());
+
+    for (edge_label_t label : edge->get_labels()) {
+      if (DOMINATE == label) {
+        protoLabel->add_labels(acdfg_protobuf::Acdfg::DOMINATE);
+      } else if (POST_DOMINATED == label) {
+        protoLabel->add_labels(acdfg_protobuf::Acdfg::POSTDOMINATED);
+      }
+    }
+  }
+
+  /**
+   * Serialize a acdfg in a protobuffer
+   */
+  void AcdfgSerializer::fill_proto_from_acdfg(const Acdfg &acdfg,
+                                              acdfg_protobuf::Acdfg* protoAcdfg) {
+    /* Write the nodes */
+    for (auto it = acdfg.begin_nodes(); it != acdfg.end_nodes(); ++it) {
+      Node* node = *it;
+
+      if (node->get_type() == REGULAR_NODE) {
+        acdfg_protobuf::Acdfg::MiscNode* protoNode =
+          protoAcdfg->add_misc_node();
+        protoNode->set_id(node->get_id());
+      } else if (node->get_type() == METHOD_NODE) {
+        MethodNode* methodNode = static_cast<MethodNode*>(node);
+        acdfg_protobuf::Acdfg::MethodNode* protoNode =
+          protoAcdfg->add_method_node();
+
+        protoNode->set_id(methodNode->get_id());
+
+        if (NULL == methodNode->get_assignee()) {
+          DataNode* assignee = methodNode->get_assignee();
+          protoNode->set_assignee(assignee->get_id());
+        }
+
+        if (NULL == methodNode->get_receiver()) {
+          DataNode* receiver = methodNode->get_receiver();
+          protoNode->set_invokee(receiver->get_id());
+        }
+
+        protoNode->set_name(methodNode->get_name());
+
+        for (DataNode* argNode : methodNode->get_arguments()) {
+          protoNode->add_argument(argNode->get_id());
+        }
+
+      } else if (node->get_type() == DATA_NODE) {
+        DataNode* dataNode = static_cast<DataNode*>(node);
+
+        acdfg_protobuf::Acdfg::DataNode* protoDataNode =
+          protoAcdfg->add_data_node();
+        protoDataNode->set_id(dataNode->get_id());
+        protoDataNode->set_name(dataNode->get_name());
+
+       if (dataNode->get_data_node_type() == DATA_NODE_CONST) {
+         protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_CONST);
+       } else if (dataNode->get_data_node_type() == DATA_NODE_VAR) {
+         protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_VAR);
+       } else if (dataNode->get_data_node_type() == DATA_NODE_UNKNOWN) {
+         // Do nothing - do not set the data type
+       }
+      }
+    } // end of nodes
+
+    /* convert the edges */
+    for (auto it = acdfg.begin_edges(); it != acdfg.end_edges(); ++it) {
+      Edge* edge = *it;
+
+      if (CONTROL_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::ControlEdge* protoEdge =
+          protoAcdfg->add_control_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (DEF_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::DefEdge* protoEdge =
+          protoAcdfg->add_def_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (USE_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::UseEdge* protoEdge =
+          protoAcdfg->add_use_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (TRANSITIVE_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::TransEdge* protoEdge =
+          protoAcdfg->add_trans_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (EXCEPTIONAL_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::ExceptionalControlEdge* protoEdge =
+          protoAcdfg->add_exceptional_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      }
+    } // end of edges
+  }
+
+  /**
+   * Read a lattice from the protobuffer and create a lattice data structure
+   */
+  Lattice* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* protoLattice) {
+    Lattice* lattice = new Lattice();
+
+    // 1. Create the bins
+    std::map<int, AcdfgBin*> id2AcdfgBinMap;
+    for (int i = 0; i < protoLattice->bins_size(); i++) {
+      const acdfg_protobuf::Lattice::AcdfgBin protoAcdfgBin =
+        protoLattice->bins(i);
+
+      // AcdfgBin* acdfgBin = new AcdfgBin();
+
+      // TODO acdfgBin->
+
+      // id2AcdfgBinMap[id] = acdfgBin;
     }
 
-    acdfg_protobuf::Lattice* LatticeSerializer::proto_from_lattice(AcdfgBin*) {
+    // 2. Populate popular/anomalous/isolated list
+    // TODO
+    // for (int i = 0; i < protoLattice->bins(); i++) {
+
+    // repeated AcdfgBin popular_bins = 2;
+    // repeated AcdfgBin anomalous_bins = 3;
+    // repeated AcdfgBin isolated_bins = 4;
+    // lattice.addBin(bin)
+
+    return lattice;
+  }
+
+  /**
+   * Serialize a lattice structure in a protobuffer
+   */
+  acdfg_protobuf::Lattice* LatticeSerializer::proto_from_lattice(const Lattice & lattice) {
+    acdfg_protobuf::Lattice* protoLattice = new acdfg_protobuf::Lattice();
+
+    std::map<AcdfgBin*, int> acdfgBin2idMap;
+
+    // 1. Assign the IDs to the acdfgs
+    {
+      int id = -1;
+      for (auto it = lattice.beginAllBins();
+           it != lattice.endAllBins(); ++it) {
+        AcdfgBin * a = *it;
+        id += 1;
+        acdfgBin2idMap[a] = id;
+      };
     }
+
+    // 2. Populate the bins field
+    for (auto it = lattice.beginAllBins();
+         it != lattice.endAllBins(); ++it) {
+      AcdfgBin * a = *it;
+      int id = acdfgBin2idMap[a];
+
+      acdfg_protobuf::Lattice::AcdfgBin* proto_a =
+        protoLattice->add_bins();
+
+      proto_a->set_id(id);
+
+      acdfg_protobuf::Acdfg* proto_repr = new acdfg_protobuf::Acdfg();
+      AcdfgSerializer serializer;
+      serializer.fill_proto_from_acdfg((const Acdfg&) *a, proto_repr);
+      proto_a->set_allocated_acdfg_repr(proto_repr);
+
+      for (const string & acdfgName : a->getAcdfgNames()) {
+        proto_a->add_acdfg_names(acdfgName);
+      }
+
+      for (AcdfgBin* subsuming : a->getSubsumingBins()) {
+        int id = acdfgBin2idMap[subsuming];
+        proto_a->add_subsuming_bins(id);
+      }
+
+      for (AcdfgBin* subsuming : a->getImmediateSubsumingBins()) {
+        int id = acdfgBin2idMap[subsuming];
+        proto_a->add_immediate_subsuming_bins(id);
+      }
+
+      for (AcdfgBin* incoming : a->getIncomingEdges()) {
+        int id = acdfgBin2idMap[incoming];
+        proto_a->add_incoming_edges(id);
+      }
+
+      proto_a->set_subsuming(a->isSubsuming());
+      proto_a->set_anomalous(a->isAnomalous());
+      proto_a->set_popular(a->isPopular());
+    }
+
+    for (auto it = lattice.beginPopular(); it != lattice.endPopular(); ++it) {
+      AcdfgBin * a = *it;
+      protoLattice->add_popular_bins(acdfgBin2idMap[a]);
+    }
+
+    for (auto it = lattice.beginAnomalous();
+         it != lattice.endAnomalous(); ++it) {
+      AcdfgBin * a = *it;
+      protoLattice->add_anomalous_bins(acdfgBin2idMap[a]);
+    }
+
+    for (auto it = lattice.beginIsolated();
+         it != lattice.endIsolated(); ++it) {
+      AcdfgBin * a = *it;
+      protoLattice->add_isolated_bins(acdfgBin2idMap[a]);
+    }
+
+    return protoLattice;
+  }
 
   acdfg_protobuf::Lattice* LatticeSerializer::read_protobuf(const char* file_name) {
     acdfg_protobuf::Lattice* lattice = new acdfg_protobuf::Lattice();
