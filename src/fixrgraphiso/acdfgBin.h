@@ -26,29 +26,28 @@ namespace fixrgraphiso {
   public:
 
   AcdfgBin(Acdfg* a) : subsuming(false), anomalous(false), popular(false) {
-    acdfgs.push_back(a);
+    acdfgRepr = a;
+    acdfgNames.push_back(a->getName());
   }
 
   bool isACDFGEquivalent(Acdfg *b);
 
   void insertEquivalentACDFG(Acdfg * b){
-    acdfgs.push_back(b);
+    acdfgNames.push_back(b->getName());
   }
 
   int getFrequency() const {
-    return acdfgs.size() ;
+    return acdfgNames.size() ;
   }
 
   int getPopularity() const;
 
   const Acdfg* getRepresentative() const{
-    assert(acdfgs.size() > 0);
-    return *(acdfgs.begin());
+    return acdfgRepr;
   }
 
   Acdfg * getRepresentative(){
-    assert(acdfgs.size() > 0);
-    return *(acdfgs.begin());
+    return acdfgRepr;
   }
 
   void printInfo(std::ostream & out, bool printAbove = true) const;
@@ -77,7 +76,7 @@ namespace fixrgraphiso {
   void setPopular() ;
   bool isPopular() const { return popular;}
 
-  const std::vector<Acdfg*>  & getACDFGs() const { return acdfgs; }
+  const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
   bool isAtFrontierOfPopularity(int freq_cutoff) const;
   bool hasPopularAncestor() const;
 
@@ -85,7 +84,8 @@ namespace fixrgraphiso {
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
 
   /* List of acdfgs contained in the Bin */
-  vector<Acdfg*> acdfgs;
+  Acdfg* acdfgRepr;
+  vector<string> acdfgNames;
   /* List of bins subsumed by this bin */
   set<AcdfgBin*> subsumingBins;
   /* List of bins that are directly subsumed by this bin

@@ -26,9 +26,8 @@ namespace fixrgraphiso {
 
 
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b){
-    Acdfg * repr = *(acdfgs.begin());
-    IsoSubsumption dir_a (repr, b);
-    IsoSubsumption dir_b (b, repr);
+    IsoSubsumption dir_a (acdfgRepr, b);
+    IsoSubsumption dir_b (b, acdfgRepr);
     if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
       if (debug){
         cout << "Subsumption ruled out directly " << endl;
@@ -64,15 +63,15 @@ namespace fixrgraphiso {
 
   void AcdfgBin::printInfo(std::ostream & out, bool printAbove) const {
 
-    for (const Acdfg * a : acdfgs){
-      out <<  a -> getName() << endl;
+    for (const string acdfgName : acdfgNames){
+      out <<  acdfgName << endl;
     }
     if (printAbove){
 
       for (const AcdfgBin * b : subsumingBins){
-        const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
-        for (const Acdfg * a: sub_acdfgs){
-          out << a -> getName() << endl;
+        const std::vector<string> & sub_acdfgs = b -> getAcdfgNames();
+        for (const string a_name: sub_acdfgs){
+          out << a_name << endl;
         }
       }
     }
@@ -81,18 +80,14 @@ namespace fixrgraphiso {
 
   void AcdfgBin::dumpToDot(string fileName) const{
     std::ofstream dot_out (fileName.c_str());
-    assert(acdfgs.size() >= 1);
-    Acdfg * repr = *(acdfgs.begin());
-    repr -> dumpToDot(dot_out);
+    acdfgRepr -> dumpToDot(dot_out);
     dot_out.close();
   }
 
   void AcdfgBin::dumpToProtobuf(string fileName) const{
     std::fstream output(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    assert(acdfgs.size() >= 1);
-    Acdfg * repr = *(acdfgs.begin());
-    repr -> dumpToAcdfgProto(output);
+    acdfgRepr -> dumpToAcdfgProto(output);
     output.close();
   }
 
