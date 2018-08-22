@@ -14,6 +14,9 @@ include_directories(.)
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFG PROTO_HDRS_ACDFG ${PROTOBUF_IMPORT_DIRS}/proto_acdfg.proto)
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ISO PROTO_HDRS_ISO ${PROTOBUF_IMPORT_DIRS}/proto_iso.proto)
 
+set(FIXRISO_PROTOBUF_DIR protobuf)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFG_BIN PROTO_HDRS_ACDFG_BIN ${FIXRISO_PROTOBUF_DIR}/proto_acdfg_bin.proto)
+
 #MESSAGE("PROTO SOURCES: ${PROTO_SRCS}")
 #MESSAGE("PROTO HDRS: ${PROTO_HDRS}")
 
@@ -64,6 +67,7 @@ add_library(frequentsubgraphs_library SHARED
    serialization.cpp
    ${PROTO_SRCS_ISO}
    ${PROTO_SRCS_ACDFG}
+   ${PROTO_SRCS_ACDFG_BIN}
 )
 target_compile_features(frequentsubgraphs_library PRIVATE cxx_range_for)
 target_link_libraries(frequentsubgraphs_library
