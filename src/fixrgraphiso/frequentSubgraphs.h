@@ -14,26 +14,16 @@ namespace fixrgraphiso {
                             vector<string> & filenames,
                             vector<string> & methodNames);
 
-    void calculateLatticeGraph(vector<AcdfgBin*> & allBins);
+    void calculateLatticeGraph(Lattice & lattice);
 
-    void classifyBins(vector<AcdfgBin*> & allBins,
-                      vector<AcdfgBin*> & popular,
-                      vector<AcdfgBin*> & anomalous,
-                      vector<AcdfgBin*> & isolated);
+    void classifyBins(Lattice & lattice);
 
-    void computePatternsThroughSlicing(vector<string> & filenames,
+    void computePatternsThroughSlicing(Lattice & lattice,
+                                       vector<string> & filenames,
                                        vector<string> & methodnames);
 
     void testPairwiseSubsumption(vector<string> & filenames,
                                  vector<string> & methodnames);
-
-    void dumpAllBins(vector<AcdfgBin*> & popular,
-                     vector<AcdfgBin*> & anomalous,
-                     vector<AcdfgBin*> & isolated,
-                     std::chrono::seconds time_taken,
-                     const string & output_prefix,
-                     const string & infoFileName);
-
 
     public:
     FrequentSubgraphMiner();

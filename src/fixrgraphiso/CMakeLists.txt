@@ -11,11 +11,15 @@ include_directories(.)
 #############################################################################
 # process the protobuf file
 #############################################################################
+set(FIXRISO_PROTOBUF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/protobuf")
+message("${FIXRISO_PROTOBUF_DIR}/proto_acdfg_bin.proto")
+
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFG PROTO_HDRS_ACDFG ${PROTOBUF_IMPORT_DIRS}/proto_acdfg.proto)
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ISO PROTO_HDRS_ISO ${PROTOBUF_IMPORT_DIRS}/proto_iso.proto)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFGBIN PROTO_HDRS_ACDFGBIN ${FIXRISO_PROTOBUF_DIR}/proto_acdfg_bin.proto)
 
-set(FIXRISO_PROTOBUF_DIR protobuf)
-PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFG_BIN PROTO_HDRS_ACDFG_BIN ${FIXRISO_PROTOBUF_DIR}/proto_acdfg_bin.proto)
+message("cavallo ${PROTO_SRCS_ACDFGBIN}")
+message("cavallo ${PROTO_HDRS_ACDFGBIN}")
 
 #MESSAGE("PROTO SOURCES: ${PROTO_SRCS}")
 #MESSAGE("PROTO HDRS: ${PROTO_HDRS}")
@@ -29,6 +33,7 @@ add_executable(fixrgraphiso
   milpProblem.cpp
   ${PROTO_SRCS_ACDFG}
   ${PROTO_SRCS_ISO}
+  ${PROTO_SRCS_ACDFGBIN}
 )
 target_compile_features(fixrgraphiso PRIVATE cxx_range_for)
 
@@ -37,6 +42,7 @@ add_executable(frequentitemsets
   itemSetDB.cpp
   ${PROTO_SRCS_ISO}
   ${PROTO_SRCS_ACDFG}
+  ${PROTO_SRCS_ACDFGBIN}
 )
 
 target_compile_features(frequentitemsets PRIVATE cxx_range_for)
@@ -54,6 +60,7 @@ add_executable(frequentsubgraphs
    serialization.cpp
    ${PROTO_SRCS_ISO}
    ${PROTO_SRCS_ACDFG}
+   ${PROTO_SRCS_ACDFGBIN}
 )
 target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
 
@@ -67,7 +74,7 @@ add_library(frequentsubgraphs_library SHARED
    serialization.cpp
    ${PROTO_SRCS_ISO}
    ${PROTO_SRCS_ACDFG}
-   ${PROTO_SRCS_ACDFG_BIN}
+   ${PROTO_SRCS_ACDFGBIN}
 )
 target_compile_features(frequentsubgraphs_library PRIVATE cxx_range_for)
 target_link_libraries(frequentsubgraphs_library

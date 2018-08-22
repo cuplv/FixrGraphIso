@@ -117,10 +117,12 @@ namespace fixrgraphiso {
     }
   }
 
-  void FrequentSubgraphMiner::calculateLatticeGraph(vector<AcdfgBin*> & allBins) {
-    for (auto it = allBins.begin(); it != allBins.end(); ++it){
+  void FrequentSubgraphMiner::calculateLatticeGraph(Lattice & lattice) {
+    for (auto it = lattice.beginAllBins();
+         it != lattice.endAllBins(); ++it) {
       AcdfgBin * a = *it;
-      for (auto jt = allBins.begin(); jt != allBins.end(); ++jt){
+      for (auto jt = lattice.beginAllBins();
+           jt != lattice.endAllBins(); ++jt){
         AcdfgBin * b = *jt;
         if (a == b) continue;
         if (a -> isACDFGBinSubsuming(b)){
@@ -130,17 +132,17 @@ namespace fixrgraphiso {
     }
   }
 
-  void FrequentSubgraphMiner::classifyBins(vector<AcdfgBin*> & allBins,
-                                           vector<AcdfgBin*> & popular,
-                                           vector<AcdfgBin*> & anomalous,
-                                           vector<AcdfgBin*> & isolated) {
+  void FrequentSubgraphMiner::classifyBins(Lattice &lattice) {
 
     // 1. Compute the lattice of bins
-    calculateLatticeGraph(allBins);
+    calculateLatticeGraph(lattice);
 
     // 2. Calculate the transitive reduction for each bin in the
     //    lattice and use it to judge popularity
-    for (AcdfgBin * a: allBins){
+    for (auto it = lattice.beginAllBins();
+         it != lattice.endAllBins(); ++it){
+      AcdfgBin * a = *it;
+
       a -> computeImmediatelySubsumingBins();
       if (a -> isSubsuming()) continue;
       if (a -> isAtFrontierOfPopularity(freq_cutoff)){
@@ -153,23 +155,27 @@ namespace fixrgraphiso {
     }
 
     // 3. Now calculate the anomalous and isolated patterns
-    for (AcdfgBin * a: allBins){
+    for (auto it = lattice.beginAllBins();
+         it != lattice.endAllBins(); ++it){
+      AcdfgBin * a = *it;
+
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
-        popular.push_back(a);
+        lattice.addPopular(a);
       } else  if (a -> getFrequency() <= anomalyCutOff &&
                   a -> hasPopularAncestor()){
         a -> setAnomalous();
-        anomalous.push_back(a);
+        lattice.addAnomalous(a);
       } else if (a -> getFrequency() <= anomalyCutOff){
-        isolated.push_back(a);
+        lattice.addIsolated(a);
       }
     }
 
     return;
   }
 
-  void FrequentSubgraphMiner::computePatternsThroughSlicing(vector<string> & filenames,
+  void FrequentSubgraphMiner::computePatternsThroughSlicing(Lattice & lattice,
+                                                            vector<string> & filenames,
                                                             vector<string> & methodnames) {
     // 1. Slice all the ACDFGs using the methods in the
     // method names as the target
@@ -208,10 +214,12 @@ namespace fixrgraphiso {
     }
 
     // 2. Compute a binning of all the sliced ACDFGs using the exact isomorphism
-    vector<AcdfgBin*> allBins;
     for (Acdfg* a: allSlicedACDFGs){
       bool acdfgSubsumed = false;
-      for (AcdfgBin * bin: allBins){
+
+      for (auto it = lattice.beginAllBins();
+           it != lattice.endAllBins(); ++it){
+        AcdfgBin * bin = *it;
         if (bin -> isACDFGEquivalent(a)) {
           bin -> insertEquivalentACDFG(a);
           acdfgSubsumed = true;
@@ -220,26 +228,24 @@ namespace fixrgraphiso {
       }
       if (! acdfgSubsumed) {
         AcdfgBin * newbin = new AcdfgBin(a);
-        allBins.push_back(newbin);
+        lattice.addBin(newbin);
       }
     }
 
     // 3. Sort the bins by frequency
-    std::sort(allBins.begin(), allBins.end(),
-              [](const AcdfgBin  * bin1, const AcdfgBin * bin2){
-                return bin1 -> getFrequency() > bin2 -> getFrequency();
-              });
+    lattice.sortByFrequency();
 
     // 4. Classify the bin trough lattice construction
+    classifyBins(lattice);
+
     vector<AcdfgBin*> popular, anomalous, isolated;
-    classifyBins(allBins,popular,anomalous,isolated);
+
     auto end = std::chrono::steady_clock::now();
     std::chrono::seconds time_taken =
       std::chrono::duration_cast<std::chrono::seconds>(end -start);
 
     // 8. Print all the  patterns
-    dumpAllBins(popular, anomalous, isolated,
-                time_taken, output_prefix, info_file_name);
+    lattice.dumpAllBins(time_taken, output_prefix, info_file_name);
   }
 
   void FrequentSubgraphMiner::testPairwiseSubsumption(vector<string> & filenames,
@@ -268,67 +274,6 @@ namespace fixrgraphiso {
     return ;
   }
 
-  void FrequentSubgraphMiner::dumpAllBins(vector<AcdfgBin*> & popular,
-                                          vector<AcdfgBin*> & anomalous,
-                                          vector<AcdfgBin*> & isolated,
-                                          std::chrono::seconds time_taken,
-                                          const string & output_prefix,
-                                          const string & infoFileName){
-    ofstream out_file(infoFileName.c_str());
-    int count = 1;
-    string iso_file_name;
-    string iso_bin_file_name;
-    out_file << "Popular Bins: " << endl;
-    for (AcdfgBin * a: popular){
-      assert (a -> isPopular());
-      iso_file_name = string("pop_")+std::to_string(count)+".dot";
-      iso_bin_file_name = string("pop_")+std::to_string(count)+".acdfg.bin";
-      out_file << "Popular Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name << endl;
-      out_file << "Bin: " << iso_bin_file_name << endl;
-      out_file << "Frequency: " << a -> getFrequency() << ", "
-               << a-> getPopularity() << endl;
-      a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
-      a -> printInfo(out_file);
-      count ++;
-    }
-
-    count = 1;
-
-    for (AcdfgBin * a: anomalous){
-      assert(a -> isAnomalous());
-      iso_file_name = string("anom_")+std::to_string(count)+".dot";
-      iso_bin_file_name = string("anom_")+std::to_string(count)+".acdfg.bin";
-      out_file << "Anomalous Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name << endl;
-      out_file << "Bin: " << iso_bin_file_name << endl;
-      out_file << "Frequency: " << a -> getFrequency()<< endl;
-      a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
-      a -> printInfo(out_file, false);
-      count ++;
-    }
-
-    count = 1;
-    for (AcdfgBin * a: isolated){
-      iso_file_name = string("isol_")+std::to_string(count)+".dot";
-      iso_bin_file_name = string("isol_")+std::to_string(count)+".acdfg.bin";
-      out_file << "Isolated Bin # " << count << endl;
-      out_file << "Dot: " << iso_file_name << endl;
-      out_file << "Bin: " << iso_bin_file_name << endl;
-      out_file << "Frequency: " << a -> getFrequency() ;
-      a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
-      a -> printInfo(out_file, false);
-      count ++;
-    }
-    out_file << "Total Time (s): " << time_taken.count()<< endl;
-    printStats(out_file);
-
-    out_file.close();
-  }
-
   FrequentSubgraphMiner::FrequentSubgraphMiner() {}
 
   void FrequentSubgraphMiner::mine(int argc, char * argv [] ){
@@ -339,7 +284,8 @@ namespace fixrgraphiso {
     if (runTestOfSubsumption){
       testPairwiseSubsumption(filenames, methodnames);
     } else {
-      computePatternsThroughSlicing(filenames, methodnames);
+      Lattice lattice;
+      computePatternsThroughSlicing(lattice, filenames, methodnames);
     }
   }
 
@@ -360,6 +306,7 @@ namespace fixrgraphiso {
     cout << "Loading ACDFGs from " << acdfgFileName << endl;
     loadNamesFromFile(acdfgFileName, fileNames);
 
-    computePatternsThroughSlicing(fileNames, methodNames);
+    Lattice lattice;
+    computePatternsThroughSlicing(lattice, fileNames, methodNames);
   }
 }

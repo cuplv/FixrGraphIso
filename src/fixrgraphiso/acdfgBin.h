@@ -102,6 +102,40 @@ namespace fixrgraphiso {
   bool popular;
   };
 
+  class Lattice {
+  public:
+    Lattice() {
+    }
+
+    void addBin(AcdfgBin* bin);
+    void addPopular(AcdfgBin* bin);
+    void addAnomalous(AcdfgBin* bin);
+    void addIsolated(AcdfgBin* bin);
+
+    using acdfgbins_t = vector<AcdfgBin*>;
+    using bin_iterator = acdfgbins_t::const_iterator;
+    bin_iterator beginAllBins() const { return allBins.begin(); }
+    bin_iterator endAllBins() const { return allBins.end(); }
+    bin_iterator beginPopular() const { return popularBins.begin(); }
+    bin_iterator endPopular() const { return popularBins.end(); }
+    bin_iterator beginAnomalous() const { return anomalousBins.begin(); }
+    bin_iterator endAnomalous() const { return anomalousBins.end(); }
+    bin_iterator beginIsolated() const { return isolatedBins.begin(); }
+    bin_iterator endIsolated() const { return isolatedBins.end(); }
+
+    void sortByFrequency();
+
+    void dumpAllBins(std::chrono::seconds time_taken,
+                     const string & output_prefix,
+                     const string & infoFileName);
+
+  private:
+    vector<AcdfgBin*> allBins;
+    vector<AcdfgBin*> popularBins;
+    vector<AcdfgBin*> anomalousBins;
+    vector<AcdfgBin*> isolatedBins;
+  };
+
 }
 #endif
 

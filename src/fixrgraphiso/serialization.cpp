@@ -356,4 +356,28 @@ namespace fixrgraphiso {
 
   }
 
+
+
+    AcdfgBin* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* proto_acdfg_bin) {
+    }
+
+    acdfg_protobuf::Lattice* LatticeSerializer::proto_from_lattice(AcdfgBin*) {
+    }
+
+  acdfg_protobuf::Lattice* LatticeSerializer::read_protobuf(const char* file_name) {
+    acdfg_protobuf::Lattice* lattice = new acdfg_protobuf::Lattice();
+
+    std::fstream input_stream (file_name, std::ios::in | std::ios::binary);
+    if (input_stream.is_open()) {
+      if (lattice->ParseFromIstream(&input_stream)) {
+        return lattice;
+      } else {
+        return NULL;
+      }
+    } else {
+      return NULL;
+    }
+  }
+
+
 } // namespace fixrgraphiso
