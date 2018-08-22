@@ -1,3 +1,5 @@
+#include <fstream>
+#include <iostream>
 #include "frequentSubgraphTest.h"
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serialization.h"
@@ -6,6 +8,8 @@
 namespace frequentSubgraph {
   using std::string;
   using std::cout;
+  using std::ifstream;
+  using std::ofstream;
 
   using fixrgraphiso::Acdfg;
   using fixrgraphiso::MethodNode;
@@ -20,7 +24,7 @@ namespace frequentSubgraph {
 
   TEST_F(FrequentSubgraphTest, ByDefaultIsoIsTrue) {
     int frequency = 20;
-    string output_prefix = "output.txt";
+    string output_prefix = "../test_data/produced_res";
     string method_file = "../test_data/methods_521.txt";
     string acdfg_list = "../test_data/acdfg_list.txt";
 
@@ -28,11 +32,19 @@ namespace frequentSubgraph {
 
     fixrgraphiso::FrequentSubgraphMiner miner;
 
-    miner.mine(frequency,
-               method_file,
-               output_prefix,
-               acdfg_list);
+    miner.mine(frequency, method_file,
+               output_prefix, acdfg_list);
 
-    EXPECT_EQ(true, true);
+    ifstream res(res_file.c_str());
+    string out_file = "cluster-info.txt";
+    cout << out_file << endl;
+    ifstream myout(out_file.c_str());
+    if (! res.is_open()) {
+      FAIL() << "Error opening the correct result";
+    } else if (! myout.is_open()) {
+      FAIL() << "Error opening the test result";
+    } else {
+      SUCCEED();
+    }
   }
 }
