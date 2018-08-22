@@ -56,7 +56,6 @@ target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
 
 set(CMAKE_MACOSX_RPATH 1)
 add_library(frequentsubgraphs_library SHARED
-   frequentSubgraphsMain.cpp
    frequentSubgraphs.cpp
    frequentSubgraphs.h
    acdfgBin.cpp

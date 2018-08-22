@@ -39,6 +39,10 @@ namespace fixrgraphiso {
     FrequentSubgraphMiner();
     void mine(int argc, char * argv []);
 
+    void mine(int freqCutoff,
+              string methodNames,
+              string outputPrefix,
+              string acdfgFileName);
 
 
     private:

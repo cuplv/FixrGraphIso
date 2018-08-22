@@ -342,4 +342,24 @@ namespace fixrgraphiso {
       computePatternsThroughSlicing(filenames, methodnames);
     }
   }
+
+  void FrequentSubgraphMiner::mine(int freqCutoff,
+                                   string methodNamesFile,
+                                   string outputPrefix,
+                                   string acdfgFileName) {
+    vector<string> fileNames;
+    vector<string> methodNames;
+
+    this->freq_cutoff = freqCutoff;
+
+    cout << "Loading methods" << endl;
+    loadNamesFromFile(methodNamesFile, methodNames);
+
+    this->output_prefix = outputPrefix;
+
+    cout << "Loading ACDFGs " << endl;
+    loadNamesFromFile(acdfgFileName, fileNames);
+
+    computePatternsThroughSlicing(fileNames, methodNames);
+  }
 }

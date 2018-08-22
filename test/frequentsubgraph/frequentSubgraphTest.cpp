@@ -1,7 +1,7 @@
 #include "frequentSubgraphTest.h"
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serialization.h"
-#include "fixrgraphiso/acdfg.h"
+#include "fixrgraphiso/frequentSubgraphs.h"
 
 namespace frequentSubgraph {
   using std::string;
@@ -18,9 +18,21 @@ namespace frequentSubgraph {
   {
   }
 
-  TEST_P(FrequentSubgraphTest, ByDefaultIsoIsTrue) {
+  TEST_F(FrequentSubgraphTest, ByDefaultIsoIsTrue) {
+    int frequency = 20;
+    string output_prefix = "output.txt";
+    string method_file = "../test_data/methods_521.txt";
+    string acdfg_list = "../test_data/acdfg_list.txt";
+
+    string res_file = "../test_data/subgraph_results/cluster_521_info.txt";
+
+    fixrgraphiso::FrequentSubgraphMiner miner;
+
+    miner.mine(frequency,
+               method_file,
+               output_prefix,
+               acdfg_list);
+
     EXPECT_EQ(true, true);
   }
-
-  INSTANTIATE_TEST_CASE_P(InstantiationName, FrequentSubgraphTest, ::testing::Values(""));
 }
