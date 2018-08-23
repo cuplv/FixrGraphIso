@@ -25,6 +25,7 @@ namespace isotest {
 
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(fileName.c_str());
     Acdfg * acdfg = s.create_acdfg((const iso_protobuf::Acdfg&) *proto_acdfg);
+    delete(proto_acdfg);
 
     acdfg->getMethodNodes(targets);
     Acdfg * slicedAcdfg = acdfg->sliceACDFG(targets);
@@ -36,6 +37,40 @@ namespace isotest {
     EXPECT_EQ(result, true);
 
     delete(slicedAcdfg);
+  }
+
+  TEST_P(IsoTest, SerializeAcdfg) {
+    string const& inFile = GetParam();
+    string const& outFile = "./out.acdfg.bin";
+
+    AcdfgSerializer s;
+
+    Acdfg * orig_acdfg;
+    Acdfg * read_acdfg;
+
+    {
+      iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(inFile.c_str());
+      orig_acdfg = s.create_acdfg((const iso_protobuf::Acdfg&) *proto_acdfg);
+      delete(proto_acdfg);
+    }
+
+    {
+      // serialize to proto
+      iso_protobuf::Acdfg * proto_acdfg = new iso_protobuf::Acdfg();
+      s.fill_proto_from_acdfg((const Acdfg&) *orig_acdfg, proto_acdfg);
+
+      // read back the acdfg
+      read_acdfg = s.create_acdfg((const iso_protobuf::Acdfg&) *proto_acdfg);
+
+      delete(proto_acdfg);
+    }
+
+    bool isEqual = (*orig_acdfg) == (*read_acdfg);
+
+    EXPECT_EQ(isEqual, true);
+
+    delete(orig_acdfg);
+    delete(read_acdfg);
   }
 
   INSTANTIATE_TEST_CASE_P(InstantiationName, IsoTest, ::testing::Values(

@@ -393,12 +393,12 @@ namespace fixrgraphiso {
 
         protoNode->set_id(methodNode->get_id());
 
-        if (NULL == methodNode->get_assignee()) {
+        if (NULL != methodNode->get_assignee()) {
           DataNode* assignee = methodNode->get_assignee();
           protoNode->set_assignee(assignee->get_id());
         }
 
-        if (NULL == methodNode->get_receiver()) {
+        if (NULL != methodNode->get_receiver()) {
           DataNode* receiver = methodNode->get_receiver();
           protoNode->set_invokee(receiver->get_id());
         }
@@ -466,6 +466,10 @@ namespace fixrgraphiso {
         protoEdge->set_from((edge->get_src())->get_id());
         protoEdge->set_to((edge->get_dst())->get_id());
         proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+
+        for (string exc : edge->get_exceptList()) {
+          protoEdge->add_exceptions(exc);
+        }
       }
     } // end of edges
   }

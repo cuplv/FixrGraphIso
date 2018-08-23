@@ -1134,7 +1134,152 @@ namespace fixrgraphiso {
     }
   }
 
+  bool Acdfg::operator==(const Acdfg& other) const {
+    if (! (name_ == other.name_)) return false;
 
+    /* Compare nodes */
+    if (nodes_.size() != other.nodes_.size()) return false;
+
+    {
+      node_id_to_ptr_map_t idToNode;
+      for (nodes_t::const_iterator it1 = nodes_.begin();
+           it1 != nodes_.end(); ++it1) {
+        Node* a = *it1;
+        idToNode[a->get_id()] = a;
+      }
+
+      for (nodes_t::const_iterator it2 = other.nodes_.begin();
+           it2 != other.nodes_.end(); ++it2) {
+        Node* b = *it2;
+
+        if (idToNode.find( b->get_id() ) == idToNode.end()) {
+          std::cerr << "Cannot find id for " << (*b) << std::endl;
+          return false;
+        }
+
+        Node* a = idToNode[b->get_id()];
+
+        if (! ((*a) == (*b))) {
+          std::cerr << "Node " << (*a) << " is different from "
+                    << (*b) << std::endl;
+          return false;
+        }
+      }
+    }
+
+
+    /* Compare edges */
+    if (edges_.size() != other.edges_.size()) return false;
+    {
+      edge_id_to_ptr_map_t idToEdge;
+      for (edges_t::const_iterator it1 = edges_.begin();
+           it1 != edges_.end(); ++it1) {
+        Edge* a = *it1;
+        idToEdge[a->get_id()] = a;
+      }
+
+      for(edges_t::const_iterator it2 = other.edges_.begin();
+          it2 != other.edges_.end(); ++it2) {
+        Edge* b = *it2;
+
+        if (idToEdge.find( b->get_id() ) == idToEdge.end()) {
+          std::cerr << "Cannot find id for " << (*b) << std::endl;
+          return false;
+        }
+
+        Edge* a = idToEdge[b->get_id()];
+
+        if (! (*a == *b)) {
+          std::cerr << "Edge " << (*a) <<
+            " is different from " << (*b) << std::endl;
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  bool Node::operator==(const Node& other) const {
+    return id_ == other.id_ &&
+      nType_ == other.nType_ &&
+      match_frequency == other.match_frequency;
+  }
+
+  bool DataNode::operator==(const DataNode& other) const {
+    return id_ == other.id_ &&
+      nType_ == other.nType_ &&
+      match_frequency == other.match_frequency &&
+      name_ == other.name_ &&
+      data_type_ == other.data_type_ &&
+      data_node_type_ == other.data_node_type_;
+  }
+
+
+  bool MethodNode::operator==(const MethodNode& other) const {
+    if (! (id_ == other.id_ &&
+           nType_ == other.nType_ &&
+           match_frequency == other.match_frequency &&
+           name_ == other.name_ &&
+           receiver_ == other.receiver_ &&
+           assignee_ == other.assignee_)) {
+      return false;
+    } else if (arguments_.size() != other.arguments_.size()) {
+      return false;
+    } else {
+      auto it1 = arguments_.begin();
+      auto it2 = other.arguments_.begin();
+
+      for (; it1 != arguments_.end(); it1++, it2++) {
+        if (! (**it1 == **it2)) return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool Edge::operator==(const Edge& other) const {
+    if (! (id_ == other.id_ &&
+           eType_ == other.eType_ &&
+           match_frequency == other.match_frequency &&
+           (*src_) == (*other.src_) &&
+           (*dst_) == (*other.dst_))) {
+      std::cerr << "Different fields" << endl;
+      return false;
+    } if (eLabels_.size() != other.eLabels_.size()) {
+      std::cerr << "Different label size" << endl;
+      return false;
+    } if (exceptList_.size() != other.exceptList_.size()) {
+      std::cerr << "Different exception size" << endl;
+      return false;
+    } else {
+      {
+        auto it1 = exceptList_.begin();
+        auto it2 = other.exceptList_.begin();
+
+        for (; it1 != exceptList_.end(); it1++, it2++) {
+          if (! (*it1 == *it2)) {
+            std::cerr << (*it1) << "different from " << (*it2) << endl;
+            return false;
+          }
+        }
+      }
+
+      {
+        auto it1 = eLabels_.begin();
+        auto it2 = other.eLabels_.begin();
+
+        for (; it1 != eLabels_.end(); it1++, it2++) {
+          if (!(*it1 == *it2)) {
+            std::cerr << (*it1) << "different from " << (*it2) << endl;
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
 
 
 } // namespace fixrgraphiso

@@ -15,7 +15,6 @@
 #include <cassert>
 #include <iostream>
 #include <set>
-#include <map>
 #include "fixrgraphiso/proto_acdfg.pb.h"
 
 namespace fixrgraphiso {
@@ -65,6 +64,8 @@ namespace fixrgraphiso {
     void setMatchFrequency(int m) { match_frequency = m; }
     void incrMatchFrequency() { match_frequency++; }
 
+    bool operator==(const Node& other) const;
+
   protected:
     long id_;
     node_type_t nType_;
@@ -91,6 +92,9 @@ namespace fixrgraphiso {
     DataNode * clone() const;
     friend std::ostream& operator<<(std::ostream&, const DataNode&);
     virtual node_type_t get_type() const { return DATA_NODE; }
+
+    bool operator==(const DataNode& other) const;
+
   protected:
     string name_;
     string data_type_;
@@ -129,6 +133,9 @@ namespace fixrgraphiso {
     bool isSpecialMethod() const;
     friend std::ostream& operator<<(std::ostream&, const MethodNode&);
     virtual node_type_t get_type() const { return METHOD_NODE; }
+
+    bool operator==(const MethodNode& other) const;
+
   protected:
     // Name of the method
     string name_;
@@ -168,6 +175,9 @@ namespace fixrgraphiso {
     void set_label( edge_label_t eNew)
     { eLabels_.push_back(eNew); };
 
+    const std::vector<std::string> & get_exceptList() const
+    { return exceptList_; };
+
     const Node* get_src() const;
     const Node* get_dst() const;
     long get_src_id() const{
@@ -186,6 +196,8 @@ namespace fixrgraphiso {
     int getMatchFrequency() const { return match_frequency; }
     void incrMatchFrequency() { match_frequency++; }
     virtual void addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const;
+
+    bool operator==(const Edge& other) const;
 
   protected:
     long id_;
@@ -358,6 +370,9 @@ namespace fixrgraphiso {
     void getMethodsFromName(const std::vector<string> & methodnames,
                             std::vector<MethodNode*> & targets);
     void getMethodNodes(std::vector<MethodNode*> & targets);
+
+
+    bool operator==(const Acdfg& other) const;
 
 
   private:
