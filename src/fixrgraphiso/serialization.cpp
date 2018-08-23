@@ -417,6 +417,8 @@ namespace fixrgraphiso {
         protoDataNode->set_id(dataNode->get_id());
         protoDataNode->set_name(dataNode->get_name());
 
+        protoDataNode->set_type(dataNode->get_data_type());
+
        if (dataNode->get_data_node_type() == DATA_NODE_CONST) {
          protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_CONST);
        } else if (dataNode->get_data_node_type() == DATA_NODE_VAR) {

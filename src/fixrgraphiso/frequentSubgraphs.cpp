@@ -289,7 +289,8 @@ namespace fixrgraphiso {
     }
   }
 
-  void FrequentSubgraphMiner::mine(int freqCutoff,
+  void FrequentSubgraphMiner::mine(Lattice & lattice,
+                                   int freqCutoff,
                                    string methodNamesFile,
                                    string outputPrefix,
                                    string acdfgFileName) {
@@ -306,7 +307,6 @@ namespace fixrgraphiso {
     cout << "Loading ACDFGs from " << acdfgFileName << endl;
     loadNamesFromFile(acdfgFileName, fileNames);
 
-    Lattice lattice;
     computePatternsThroughSlicing(lattice, fileNames, methodNames);
   }
 }

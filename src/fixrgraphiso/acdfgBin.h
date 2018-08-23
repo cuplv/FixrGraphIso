@@ -25,7 +25,8 @@ namespace fixrgraphiso {
   class AcdfgBin {
   public:
 
-  AcdfgBin(Acdfg* a) : subsuming(false), anomalous(false), popular(false) {
+  AcdfgBin(Acdfg* a) : subsuming(false),
+      anomalous(false), popular(false) {
     acdfgRepr = a;
     acdfgNames.push_back(a->getName());
   }

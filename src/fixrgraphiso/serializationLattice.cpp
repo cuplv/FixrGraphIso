@@ -116,10 +116,10 @@ namespace fixrgraphiso {
 
       proto_a->set_id(id);
 
-      acdfg_protobuf::Acdfg* proto_repr = new acdfg_protobuf::Acdfg();
+      acdfg_protobuf::Acdfg* proto_repr = proto_a->mutable_acdfg_repr();
       AcdfgSerializer serializer;
-      serializer.fill_proto_from_acdfg((const Acdfg&) *a, proto_repr);
-      proto_a->set_allocated_acdfg_repr(proto_repr);
+      Acdfg* reprAcdfg = (a->getRepresentative());
+      serializer.fill_proto_from_acdfg((const Acdfg&) *reprAcdfg, proto_repr);
 
       for (const string & acdfgName : a->getAcdfgNames()) {
         proto_a->add_acdfg_names(acdfgName);

@@ -224,5 +224,4 @@ namespace fixrgraphiso {
 
     out_file.close();
   }
-
 }

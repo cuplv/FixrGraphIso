@@ -29,7 +29,8 @@ namespace fixrgraphiso {
     FrequentSubgraphMiner();
     void mine(int argc, char * argv []);
 
-    void mine(int freqCutoff,
+    void mine(Lattice & lattice,
+              int freqCutoff,
               string methodNames,
               string outputPrefix,
               string acdfgFileName);
