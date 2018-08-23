@@ -40,16 +40,17 @@ add_executable(frequentitemsets
 target_compile_features(frequentitemsets PRIVATE cxx_range_for)
 target_link_libraries(frequentitemsets
   ${PROTOBUF_LIBRARY}
-  )
+    )
 
 set(CMAKE_MACOSX_RPATH 1)
 add_library(frequentsubgraphs_library SHARED
-   frequentSubgraphs.cpp
-   acdfgBin.cpp
-   isomorphismClass.cpp
    acdfg.cpp
+   acdfgBin.cpp
+   frequentSubgraphs.cpp
+   isomorphismClass.cpp
    serialization.cpp
    serializationLattice.cpp
+   searchLattice.cpp
    ${PROTO_SRCS_ISO}
    ${PROTO_SRCS_ACDFG}
    ${PROTO_SRCS_ACDFGBIN}
@@ -64,35 +65,37 @@ add_executable(frequentsubgraphs
 )
 target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
 
-if (NOT GUROBI_FOUND)
-   target_link_libraries(fixrgraphiso
-    ${FIXR_GRAPH_ISO_LINK_LIBS}
-    ${PROTOBUF_LIBRARY}
-    ${GLPK_LIBRARY}
-    )
+add_executable(searchlattice
+   searchLatticeMain.cpp
+)
+target_compile_features(searchlattice PRIVATE cxx_range_for)
 
-    target_link_libraries(frequentsubgraphs
-    frequentsubgraphs_library
-    ${GLPK_LIBRARY}
-    ${PROTOBUF_LIBRARY}
-    ${Z3_LIBRARY}
-    )
+
+
+if (NOT GUROBI_FOUND)
+   set(LP_LIBRARY ${GLPK_LIBRARY})
+else()
+   set(LP_LIBRARY ${GLPK_LIBRARY} ${GUROBI_CPP_LIBRARY} ${GUROBI_C_LIBRARY})
 endif(NOT GUROBI_FOUND)
 
-if (GUROBI_FOUND)
-   target_link_libraries(fixrgraphiso
-   ${FIXR_GRAPH_ISO_LINK_LIBS}
-   ${PROTOBUF_LIBRARY}
-   ${GLPK_LIBRARY}
-   ${GUROBI_CPP_LIBRARY}
-   ${GUROBI_C_LIBRARY}
-   )
+target_link_libraries(fixrgraphiso
+  ${FIXR_GRAPH_ISO_LINK_LIBS}
+  ${PROTOBUF_LIBRARY}
+  ${LP_LIBRARY}
+)
 
 target_link_libraries(frequentsubgraphs
-    frequentsubgraphs_library
-    ${PROTOBUF_LIBRARY}
-    ${Z3_LIBRARY}
-    )
+  frequentsubgraphs_library
+  ${LP_LIBRARY}
+  ${PROTOBUF_LIBRARY}
+  ${Z3_LIBRARY}
+)
 
-endif(GUROBI_FOUND)
+target_link_libraries(searchlattice
+  frequentsubgraphs_library
+  ${LP_LIBRARY}
+  ${PROTOBUF_LIBRARY}
+  ${Z3_LIBRARY}
+)
+
 

@@ -43,19 +43,18 @@ namespace frequentSubgraph {
     miner.mine(lattice, frequency, method_file,
                output_prefix, acdfg_list);
 
-    {
-      LatticeSerializer s;
-      string const& outFile = "/tmp/out.serialization.bin";
-      iso_protobuf::Lattice * proto = s.proto_from_lattice(lattice);
-      fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
-      proto->SerializeToOstream(&myfile);
-      myfile.close();
+    // {
+    //   LatticeSerializer s;
+    //   string const& outFile = "/tmp/out.serialization.bin";
+    //   iso_protobuf::Lattice * proto = s.proto_from_lattice(lattice);
+    //   fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
+    //   proto->SerializeToOstream(&myfile);
+    //   myfile.close();
 
-      proto = s.read_protobuf(outFile.c_str());
-      s.lattice_from_proto(proto);
-      delete(proto);
-    }
-
+    //   proto = s.read_protobuf(outFile.c_str());
+    //   s.lattice_from_proto(proto);
+    //   delete(proto);
+    // }
 
     ifstream res(res_file.c_str());
     string out_file = "cluster-info.txt";
@@ -81,6 +80,10 @@ namespace frequentSubgraph {
 
     {
       iso_protobuf::Lattice * proto = s.read_protobuf(inFile.c_str());
+      if (NULL == proto) {
+        FAIL() << "Cannot read " + inFile;
+      }
+
       orig = s.lattice_from_proto(proto);
       delete(proto);
     }
