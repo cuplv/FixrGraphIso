@@ -24,7 +24,7 @@ namespace isotest {
     vector<MethodNode*> targets;
 
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(fileName.c_str());
-    Acdfg * acdfg = s.create_acdfg(proto_acdfg);
+    Acdfg * acdfg = s.create_acdfg((const iso_protobuf::Acdfg&) *proto_acdfg);
 
     acdfg->getMethodNodes(targets);
     Acdfg * slicedAcdfg = acdfg->sliceACDFG(targets);

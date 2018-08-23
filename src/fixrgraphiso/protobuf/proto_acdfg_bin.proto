@@ -8,15 +8,14 @@ message Lattice {
     required Acdfg acdfg_repr = 2;
     repeated string acdfg_names = 3;
     repeated uint64 subsuming_bins = 4;
-    repeated uint64 immediate_subsuming_bins = 5;
-    repeated uint64 incoming_edges = 6;
-    required bool subsuming = 7;
-    required bool anomalous = 8;
-    required bool popular = 9;
+    repeated uint64 incoming_edges = 5;
+    required bool subsuming = 6;
+    required bool anomalous = 7;
+    required bool popular = 8;
   }
 
-  repeated AcdfgBin bins = 1;
-  repeated uint64 popular_bins = 2;
-  repeated uint64 anomalous_bins = 3;
-  repeated uint64 isolated_bins = 4;
+  repeated AcdfgBin bins = 2;
+  repeated uint64 popular_bins = 3;
+  repeated uint64 anomalous_bins = 4;
+  repeated uint64 isolated_bins = 5;
 }

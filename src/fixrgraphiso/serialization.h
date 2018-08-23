@@ -10,10 +10,8 @@
 #define SERIALIZATION_H_INCLUDED
 
 #include "fixrgraphiso/acdfg.h"
-#include "fixrgraphiso/acdfgBin.h"
 #include "fixrgraphiso/proto_acdfg.pb.h"
 #include "fixrgraphiso/proto_iso.pb.h"
-#include "fixrgraphiso/proto_acdfg_bin.pb.h"
 
 namespace fixrgraphiso {
 
@@ -26,7 +24,8 @@ namespace fixrgraphiso {
                                 Edge * edge);
   public:
     /* convert the protobuf represenation to our representation */
-    Acdfg* create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg);
+    Acdfg* create_acdfg(const acdfg_protobuf::Acdfg &proto_acdfg);
+
 
     void fill_proto_from_acdfg(const Acdfg &acdfg,
                                acdfg_protobuf::Acdfg*);
@@ -38,17 +37,6 @@ namespace fixrgraphiso {
 
   private:
   };
-
-  class LatticeSerializer {
-  public:
-    Lattice* lattice_from_proto(acdfg_protobuf::Lattice* proto_lattice);
-    acdfg_protobuf::Lattice* proto_from_lattice(const Lattice & lattice);
-
-    acdfg_protobuf::Lattice* read_protobuf(const char* file_name);
-  private:
-  };
-
-
 } // end fixrgraphiso namespace
 
 #endif // SERIALIZATION_H_INCLUDED

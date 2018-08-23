@@ -46,7 +46,7 @@ namespace fixrgraphiso {
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
-    Acdfg * acdfg = s.create_acdfg(proto_acdfg);
+    Acdfg * acdfg = s.create_acdfg((const iso_protobuf::Acdfg &) *proto_acdfg);
     acdfg -> setName(filename);
     return acdfg;
   }

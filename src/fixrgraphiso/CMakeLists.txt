@@ -18,12 +18,6 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFG PROTO_HDRS_ACDFG ${PROTOBUF_IMPORT_DIRS}/
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ISO PROTO_HDRS_ISO ${PROTOBUF_IMPORT_DIRS}/proto_iso.proto)
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFGBIN PROTO_HDRS_ACDFGBIN ${FIXRISO_PROTOBUF_DIR}/proto_acdfg_bin.proto)
 
-message("cavallo ${PROTO_SRCS_ACDFGBIN}")
-message("cavallo ${PROTO_HDRS_ACDFGBIN}")
-
-#MESSAGE("PROTO SOURCES: ${PROTO_SRCS}")
-#MESSAGE("PROTO HDRS: ${PROTO_HDRS}")
-
 add_executable(fixrgraphiso
   main.cpp
   explicitTests.cpp
@@ -33,7 +27,6 @@ add_executable(fixrgraphiso
   milpProblem.cpp
   ${PROTO_SRCS_ACDFG}
   ${PROTO_SRCS_ISO}
-  ${PROTO_SRCS_ACDFGBIN}
 )
 target_compile_features(fixrgraphiso PRIVATE cxx_range_for)
 
@@ -42,7 +35,6 @@ add_executable(frequentitemsets
   itemSetDB.cpp
   ${PROTO_SRCS_ISO}
   ${PROTO_SRCS_ACDFG}
-  ${PROTO_SRCS_ACDFGBIN}
 )
 
 target_compile_features(frequentitemsets PRIVATE cxx_range_for)
@@ -50,28 +42,14 @@ target_link_libraries(frequentitemsets
   ${PROTOBUF_LIBRARY}
   )
 
-add_executable(frequentsubgraphs
-   frequentSubgraphsMain.cpp
-   frequentSubgraphs.cpp
-   frequentSubgraphs.h
-   acdfgBin.cpp
-   isomorphismClass.cpp
-   acdfg.cpp
-   serialization.cpp
-   ${PROTO_SRCS_ISO}
-   ${PROTO_SRCS_ACDFG}
-   ${PROTO_SRCS_ACDFGBIN}
-)
-target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
-
 set(CMAKE_MACOSX_RPATH 1)
 add_library(frequentsubgraphs_library SHARED
    frequentSubgraphs.cpp
-   frequentSubgraphs.h
    acdfgBin.cpp
    isomorphismClass.cpp
    acdfg.cpp
    serialization.cpp
+   serializationLattice.cpp
    ${PROTO_SRCS_ISO}
    ${PROTO_SRCS_ACDFG}
    ${PROTO_SRCS_ACDFGBIN}
@@ -81,6 +59,10 @@ target_link_libraries(frequentsubgraphs_library
   ${PROTOBUF_LIBRARY}
   ${Z3_LIBRARY})
 
+add_executable(frequentsubgraphs
+   frequentSubgraphsMain.cpp
+)
+target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
 
 if (NOT GUROBI_FOUND)
    target_link_libraries(fixrgraphiso
@@ -90,11 +72,11 @@ if (NOT GUROBI_FOUND)
     )
 
     target_link_libraries(frequentsubgraphs
+    frequentsubgraphs_library
     ${GLPK_LIBRARY}
     ${PROTOBUF_LIBRARY}
     ${Z3_LIBRARY}
     )
-
 endif(NOT GUROBI_FOUND)
 
 if (GUROBI_FOUND)
@@ -107,6 +89,7 @@ if (GUROBI_FOUND)
    )
 
 target_link_libraries(frequentsubgraphs
+    frequentsubgraphs_library
     ${PROTOBUF_LIBRARY}
     ${Z3_LIBRARY}
     )

@@ -36,6 +36,11 @@ namespace fixrgraphiso {
     acdfgNames.push_back(b->getName());
   }
 
+  void insertEquivalentACDFG(const string b){
+    acdfgNames.push_back(b);
+  }
+
+
   int getFrequency() const {
     return acdfgNames.size() ;
   }
@@ -69,6 +74,7 @@ namespace fixrgraphiso {
   void computeImmediatelySubsumingBins();
 
   bool isSubsuming() const { return subsuming; }
+  void setSubsuming() { subsuming = true; }
   bool isAnomalous() const {return anomalous; }
   void setAnomalous() { anomalous = true; }
   void setPopular() ;
@@ -89,8 +95,6 @@ namespace fixrgraphiso {
   const std::set<AcdfgBin*> & getIncomingEdges() const {
     return incomingEdges;
   }
-
-
 
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;

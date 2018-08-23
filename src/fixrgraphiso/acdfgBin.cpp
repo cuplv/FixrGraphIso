@@ -141,7 +141,6 @@ namespace fixrgraphiso {
     return false;
   }
 
-
   void Lattice::addBin(AcdfgBin* bin) {
     allBins.push_back(bin);
   }
