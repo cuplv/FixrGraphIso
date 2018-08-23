@@ -121,7 +121,8 @@ int main (int argc, char *argv[])
       return 1;
     }
 
-    acdfg_a = serializer.create_acdfg(proto_acdfg_a);
+    acdfg_a =
+      serializer.create_acdfg((const acdfg_protobuf::Acdfg &) proto_acdfg_a);
     if (NULL == acdfg_a) {
       std::cerr << "Error building the acdfg for " << argv[1] << "\n";
       clean(proto_acdfg_a, proto_acdfg_b, acdfg_a, acdfg_b);
@@ -129,7 +130,8 @@ int main (int argc, char *argv[])
       return 1;
     }
 
-    acdfg_b = serializer.create_acdfg(proto_acdfg_b);
+    acdfg_b =
+      serializer.create_acdfg((const acdfg_protobuf::Acdfg &) proto_acdfg_b);
     if (NULL == acdfg_b) {
       std::cerr << "Error building the acdfg for " << argv[2] << "\n";
       clean(proto_acdfg_a, proto_acdfg_b, acdfg_a, acdfg_b);

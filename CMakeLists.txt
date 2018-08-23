@@ -77,6 +77,22 @@ set(incdirs
   "${PROJECT_BINARY_DIR}"
   "${PROJECT_BINARY_DIR}/fixrgraphiso"
   "${PROJECT_SOURCE_DIR}/src/fixrgraphiso"
-)  
+)
 
+
+################################################################################
+# Configure testing
+#
+
+include(FindGTest)
+find_package(GTest)
+
+if(GTEST_FOUND)
+  enable_testing()
+  add_subdirectory(test)
+  include_directories(${GTEST_INCLUDE_DIR},
+                      ${source_dir}/test/iso)
+else(GTEST_FOUND)
+  message("WARNING: the Google testing framework (gtest) was not found, tests can't be built")
+endif(GTEST_FOUND)
 

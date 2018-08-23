@@ -35,3 +35,27 @@ The project assumes the following external dependencies:
 
 The optimization solver is used in the `fixrgraphiso` executable.
 
+
+# Testing
+```
+$> git clone https://github.com/google/googletest
+$> mkdir build
+$> cd build
+$> cmake ../
+$> make
+```
+
+To enable GTest:
+```
+$> mkdir build
+$> cd build
+$> cmake ../ -DFIXR_GRAPH_EXTRACTOR_DIRECTORY=<path to the FixrGraphExtractor project> -DGTEST_ROOT=<path-to-googletest>/build/googlemock/gtest -DGTEST_INCLUDE_DIR=<path-to-googletest>/googletest/include
+```
+
+To run the test:
+```
+$> cd build
+$> make 
+$> make test
+```
+

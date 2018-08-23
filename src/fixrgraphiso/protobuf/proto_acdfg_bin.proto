@@ -1,0 +1,21 @@
+package edu.colorado.plv.fixr.protobuf;
+
+import "proto_acdfg.proto";
+
+message Lattice {
+  message AcdfgBin {
+    required uint64 id = 1;
+    required Acdfg acdfg_repr = 2;
+    repeated string acdfg_names = 3;
+    repeated uint64 subsuming_bins = 4;
+    repeated uint64 incoming_edges = 5;
+    required bool subsuming = 6;
+    required bool anomalous = 7;
+    required bool popular = 8;
+  }
+
+  repeated AcdfgBin bins = 2;
+  repeated uint64 popular_bins = 3;
+  repeated uint64 anomalous_bins = 4;
+  repeated uint64 isolated_bins = 5;
+}

@@ -11,14 +11,12 @@ include_directories(.)
 #############################################################################
 # process the protobuf file
 #############################################################################
+set(FIXRISO_PROTOBUF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/protobuf")
+message("${FIXRISO_PROTOBUF_DIR}/proto_acdfg_bin.proto")
+
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFG PROTO_HDRS_ACDFG ${PROTOBUF_IMPORT_DIRS}/proto_acdfg.proto)
 PROTOBUF_GENERATE_CPP(PROTO_SRCS_ISO PROTO_HDRS_ISO ${PROTOBUF_IMPORT_DIRS}/proto_iso.proto)
-
-#MESSAGE("PROTO SOURCES: ${PROTO_SRCS}")
-#MESSAGE("PROTO HDRS: ${PROTO_HDRS}")
-
-# TODO: create a library for reuse
-
+PROTOBUF_GENERATE_CPP(PROTO_SRCS_ACDFGBIN PROTO_HDRS_ACDFGBIN ${FIXRISO_PROTOBUF_DIR}/proto_acdfg_bin.proto)
 
 add_executable(fixrgraphiso
   main.cpp
@@ -41,20 +39,30 @@ add_executable(frequentitemsets
 
 target_compile_features(frequentitemsets PRIVATE cxx_range_for)
 target_link_libraries(frequentitemsets
-	${PROTOBUF_LIBRARY}
-	)
-	
-add_executable(frequentsubgraphs
-   frequentSubgraphsMain.cpp
+  ${PROTOBUF_LIBRARY}
+  )
+
+set(CMAKE_MACOSX_RPATH 1)
+add_library(frequentsubgraphs_library SHARED
+   frequentSubgraphs.cpp
    acdfgBin.cpp
    isomorphismClass.cpp
    acdfg.cpp
    serialization.cpp
+   serializationLattice.cpp
    ${PROTO_SRCS_ISO}
    ${PROTO_SRCS_ACDFG}
+   ${PROTO_SRCS_ACDFGBIN}
+)
+target_compile_features(frequentsubgraphs_library PRIVATE cxx_range_for)
+target_link_libraries(frequentsubgraphs_library
+  ${PROTOBUF_LIBRARY}
+  ${Z3_LIBRARY})
+
+add_executable(frequentsubgraphs
+   frequentSubgraphsMain.cpp
 )
 target_compile_features(frequentsubgraphs PRIVATE cxx_range_for)
-
 
 if (NOT GUROBI_FOUND)
    target_link_libraries(fixrgraphiso
@@ -64,11 +72,11 @@ if (NOT GUROBI_FOUND)
     )
 
     target_link_libraries(frequentsubgraphs
+    frequentsubgraphs_library
     ${GLPK_LIBRARY}
     ${PROTOBUF_LIBRARY}
     ${Z3_LIBRARY}
-    )   
- 
+    )
 endif(NOT GUROBI_FOUND)
 
 if (GUROBI_FOUND)
@@ -81,9 +89,10 @@ if (GUROBI_FOUND)
    )
 
 target_link_libraries(frequentsubgraphs
+    frequentsubgraphs_library
     ${PROTOBUF_LIBRARY}
     ${Z3_LIBRARY}
-    ) 
+    )
 
 endif(GUROBI_FOUND)
 

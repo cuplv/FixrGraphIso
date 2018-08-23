@@ -1,0 +1,203 @@
+Popular Bins: 
+Popular Bin # 1
+Dot: pop_1.dot
+Bin: pop_1.acdfg.bin
+Frequency: 7, 35
+com.dagwaging.rosewidgets.db.widget.UpdateService_update.acdfg.bin
+com.dagwaging.rosewidgets.netreg.widget.UpdateService_update.acdfg.bin
+com.douglasinfoweb.bandecodroid.AppWidgetService_updateAppWidget.acdfg.bin
+com.matburt.mobileorg.Services.MobileOrgWidget$MobileOrgWidgetService_genUpdateDisplay.acdfg.bin
+com.orange.memoplayer.WidgetUpdate_getRemoteView.acdfg.bin
+com.vlara.honeyhide.HoneyHideWidget_onUpdate.acdfg.bin
+org.fairphone.peaceofmind.widget.WidgetProvider_updateUI.acdfg.bin
+net.kuwalab.android.galaxymanner.Widget_onUpdate.acdfg.bin
+me.sunphiz.WidgetProvider_onUpdate.acdfg.bin
+org.adonai.nolife.FourLongWidget_updateWidget.acdfg.bin
+org.adonai.nolife.OneLineWidget_updateWidget.acdfg.bin
+com.matoski.adbm.service.ManagerService_showNotification.acdfg.bin
+de.ub0r.android.portaltimer.UpdateReceiver_updateNotification.acdfg.bin
+org.kreed.vanilla.FourLongWidget_updateWidget.acdfg.bin
+com.chinaece.gaia.service.UpdateService_UpdateWidget.acdfg.bin
+com.voidcode.diasporawebclient.WidgetActivity_onUpdate.acdfg.bin
+com.mopoo.MyAppWidgetProvider_reloadData.acdfg.bin
+org.kreed.vanilla.FourSquareWidget_updateWidget.acdfg.bin
+ada.bilkent.transport.BilkentTransportWidget_onUpdate.acdfg.bin
+com.fourpool.flashlight.FlashlightAppWidgetProvider_onUpdate.acdfg.bin
+com.matoski.adbm.service.ManagerService_updateWidgets.acdfg.bin
+com.qandro.flashlight.QFlashlightWidgetProvider_onUpdate.acdfg.bin
+com.smpaine.portknocker.PortKnockerWidgetProvider_onUpdate.acdfg.bin
+com.swijaya.galaxytorch.GalaxyTorchWidgetProvider_onUpdate.acdfg.bin
+net.tapi.handynotes.HandyNotes_onUpdate.acdfg.bin
+moontime.droid.WidgetProvider_updateView.acdfg.bin
+com.pongal.aathichudi.AathichudiAppWidgetProvider_onUpdate.acdfg.bin
+edu.bupt.calendar.widget.CalendarAppWidgetProvider_performUpdate.acdfg.bin
+com.time.reminder.ButtonWidget_onUpdate.acdfg.bin
+fi.mikuz.boarder.gui.SoundboardMenu_updateNotification.acdfg.bin
+org.uguess.android.sysinfo.WidgetProvider_update.acdfg.bin
+net.tapi.handynotes.NewNote_addWidget.acdfg.bin
+com.mirrorlabs.widgets.UpdateWidgetService1_onStart.acdfg.bin
+com.mirrorlabs.widgets.UpdateWidgetService_onStart.acdfg.bin
+org.kreed.vanilla.WidgetD_updateWidget.acdfg.bin
+Popular Bin # 2
+Dot: pop_2.dot
+Bin: pop_2.acdfg.bin
+Frequency: 2, 22
+com.codeskraps.lolo.home.UpdateWidgetReceiver$MyRunnable_run.acdfg.bin
+com.nolanlawson.apptracker.WidgetUpdater_buildUpdate.acdfg.bin
+net.kuwalab.android.galaxymanner.Widget_onUpdate.acdfg.bin
+me.sunphiz.WidgetProvider_onUpdate.acdfg.bin
+de.ub0r.android.portaltimer.UpdateReceiver_updateNotification.acdfg.bin
+com.codeskraps.lolo.home.LoloProvider_updateWidget.acdfg.bin
+com.voidcode.diasporawebclient.WidgetActivity_onUpdate.acdfg.bin
+ada.bilkent.transport.BilkentTransportWidget_onUpdate.acdfg.bin
+com.fourpool.flashlight.FlashlightAppWidgetProvider_onUpdate.acdfg.bin
+com.matoski.adbm.service.ManagerService_updateWidgets.acdfg.bin
+com.qandro.flashlight.QFlashlightWidgetProvider_onUpdate.acdfg.bin
+com.smpaine.portknocker.PortKnockerWidgetProvider_onUpdate.acdfg.bin
+com.swijaya.galaxytorch.GalaxyTorchWidgetProvider_onUpdate.acdfg.bin
+net.tapi.handynotes.HandyNotes_onUpdate.acdfg.bin
+moontime.droid.WidgetProvider_updateView.acdfg.bin
+com.pongal.aathichudi.AathichudiAppWidgetProvider_onUpdate.acdfg.bin
+com.marakana.android.yamba.YambaWidget_onUpdate.acdfg.bin
+com.twitter.yamba.YambaWidget_onUpdate.acdfg.bin
+edu.bupt.calendar.widget.CalendarAppWidgetProvider_performUpdate.acdfg.bin
+org.uguess.android.sysinfo.WidgetProvider_update.acdfg.bin
+com.mirrorlabs.widgets.UpdateWidgetService1_onStart.acdfg.bin
+com.mirrorlabs.widgets.UpdateWidgetService_onStart.acdfg.bin
+Popular Bin # 3
+Dot: pop_3.dot
+Bin: pop_3.acdfg.bin
+Frequency: 1, 20
+com.idunnolol.headsetblocker.ToggleWidgetProvider_buildUpdate.acdfg.bin
+me.sunphiz.WidgetProvider_onUpdate.acdfg.bin
+com.matoski.adbm.service.ManagerService_showNotification.acdfg.bin
+de.ub0r.android.portaltimer.UpdateReceiver_updateNotification.acdfg.bin
+com.ldw.music.service.MediaService_updateNotification.acdfg.bin
+com.voidcode.diasporawebclient.WidgetActivity_onUpdate.acdfg.bin
+ada.bilkent.transport.BilkentTransportWidget_onUpdate.acdfg.bin
+com.fourpool.flashlight.FlashlightAppWidgetProvider_onUpdate.acdfg.bin
+com.matoski.adbm.service.ManagerService_updateWidgets.acdfg.bin
+com.qandro.flashlight.QFlashlightWidgetProvider_onUpdate.acdfg.bin
+com.smpaine.portknocker.PortKnockerWidgetProvider_onUpdate.acdfg.bin
+com.swijaya.galaxytorch.GalaxyTorchWidgetProvider_onUpdate.acdfg.bin
+net.tapi.handynotes.HandyNotes_onUpdate.acdfg.bin
+com.marakana.android.yamba.YambaWidget_onUpdate.acdfg.bin
+com.twitter.yamba.YambaWidget_onUpdate.acdfg.bin
+edu.bupt.calendar.widget.CalendarAppWidgetProvider_performUpdate.acdfg.bin
+org.reber.agenda.AgendaWidgetProvider_updateAppWidget.acdfg.bin
+org.uguess.android.sysinfo.WidgetProvider_update.acdfg.bin
+com.mirrorlabs.widgets.UpdateWidgetService1_onStart.acdfg.bin
+com.mirrorlabs.widgets.UpdateWidgetService_onStart.acdfg.bin
+Anomalous Bin # 1
+Dot: anom_1.dot
+Bin: anom_1.acdfg.bin
+Frequency: 5
+com.josegd.monthcalwidget.MCWUpdateService_setViewAction.acdfg.bin
+com.josegd.monthcalwidget.MCWUpdateService_setViewActivityAction.acdfg.bin
+com.pilot51.voicenotify.WidgetProvider_updateViews.acdfg.bin
+edu.feri.jager.soslokator.widget.MyWidgetProvider_updateView.acdfg.bin
+org.xbmc.android.remote.presentation.controller.AppWidgetRemoteController_setupWidgetButton.acdfg.bin
+Anomalous Bin # 2
+Dot: anom_2.dot
+Bin: anom_2.acdfg.bin
+Frequency: 5
+com.devoxy.fgawidget.widget.FGAWidgetProvider_buildUpdate.acdfg.bin
+com.devoxy.fgawidget.widget.FGAWidgetProvider_updateView.acdfg.bin
+com.evancharlton.quicklumos.Wand_draw.acdfg.bin
+com.swijaya.android.rotatecontrol.RotateControlWidgetProvider_createWidgetWithState.acdfg.bin
+net.mafro.android.wakeonlan.WidgetProvider_configureWidget.acdfg.bin
+Anomalous Bin # 3
+Dot: anom_3.dot
+Bin: anom_3.acdfg.bin
+Frequency: 5
+com.ccf.feige.activity.MyFeiGeBaseActivity_onCreate.acdfg.bin
+com.mopoo.action.FetchToCacheAction_doFetch.acdfg.bin
+com.racoon.ampdroid.Mp3PlayerService_setNotifiction.acdfg.bin
+gingermodupdaterapp.service.DownloadService_onProgressUpdate.acdfg.bin
+org.metawatch.manager.MetaWatchService_createNotification.acdfg.bin
+Anomalous Bin # 4
+Dot: anom_4.dot
+Bin: anom_4.acdfg.bin
+Frequency: 4
+b.r.b.HomeScreenActivity_disableMessage.acdfg.bin
+b.r.b.HomeScreenActivity_enableMessage.acdfg.bin
+com.mirrorlabs.filebrowser.FilebrowserULTRAActivity_displayNotification.acdfg.bin
+me.openphoto.android.app.service.UploaderService_showUploadNotification.acdfg.bin
+Isolated Bin # 1
+Dot: isol_1.dot
+Bin: isol_1.acdfg.bin
+Frequency: 5ada.bilkent.transport.BilkentTransportWidgetConfigure$2_onClick.acdfg.bin
+com.commonsware.android.appwidget.lorem.LoremViewsFactory_getViewAt.acdfg.bin
+com.nolanlawson.apptracker.AppTrackerWidgetConfiguration_sendOutBroadcast.acdfg.bin
+com.notriddle.budget.WidgetService$1_getViewAt.acdfg.bin
+com.wzystal.dynamicloader.PluginsWidgetService$GridRemoteViewsFactory_getViewAt.acdfg.bin
+Isolated Bin # 2
+Dot: isol_2.dot
+Bin: isol_2.acdfg.bin
+Frequency: 3com.mopoo.MyAppWidgetProvider_onUpdate.acdfg.bin
+com.zhaoshouren.android.apps.clock.service.DigitalClockService_onStartCommand.acdfg.bin
+x.x.x.AnalogClockWidget_onReceive.acdfg.bin
+Isolated Bin # 3
+Dot: isol_3.dot
+Bin: isol_3.acdfg.bin
+Frequency: 2mobiric.demo.wifiwidget.WifiWidgetService$WidgetUpdateThread_run.acdfg.bin
+org.kreed.vanilla.OneCellWidget_updateWidget.acdfg.bin
+Isolated Bin # 4
+Dot: isol_4.dot
+Bin: isol_4.acdfg.bin
+Frequency: 2com.commonsware.android.appwidget.lorem.WidgetProvider_onUpdate.acdfg.bin
+com.notriddle.budget.WidgetProvider_onUpdate.acdfg.bin
+Isolated Bin # 5
+Dot: isol_5.dot
+Bin: isol_5.acdfg.bin
+Frequency: 1com.appaholics.email.widget.EmailWidget_updateHeader.acdfg.bin
+Isolated Bin # 6
+Dot: isol_6.dot
+Bin: isol_6.acdfg.bin
+Frequency: 1com.dvuckovic.busplus.BalanceWidget_myUpdate.acdfg.bin
+Isolated Bin # 7
+Dot: isol_7.dot
+Bin: isol_7.acdfg.bin
+Frequency: 1com.example.com.simpleyyt.shutteroff.ShutterOffWidget_onUpdate.acdfg.bin
+Isolated Bin # 8
+Dot: isol_8.dot
+Bin: isol_8.acdfg.bin
+Frequency: 1b.r.b.Widget_onUpdate.acdfg.bin
+Isolated Bin # 9
+Dot: isol_9.dot
+Bin: isol_9.acdfg.bin
+Frequency: 1com.kneejah.notely.NotelyWidgetProvider_onUpdate.acdfg.bin
+Isolated Bin # 10
+Dot: isol_10.dot
+Bin: isol_10.acdfg.bin
+Frequency: 1com.demo.android.bmi.NewWidgetProvider_onUpdate.acdfg.bin
+Isolated Bin # 11
+Dot: isol_11.dot
+Bin: isol_11.acdfg.bin
+Frequency: 1com.bunniestudios.NeTV.NeTVWidget_onUpdate.acdfg.bin
+Isolated Bin # 12
+Dot: isol_12.dot
+Bin: isol_12.acdfg.bin
+Frequency: 1com.rhomobile.rhodes.RhodesService_updateDownloadNotification.acdfg.bin
+Isolated Bin # 13
+Dot: isol_13.dot
+Bin: isol_13.acdfg.bin
+Frequency: 1com.rocketmaso.maltine.PlayerService_createAppWidget.acdfg.bin
+Isolated Bin # 14
+Dot: isol_14.dot
+Bin: isol_14.acdfg.bin
+Frequency: 1com.wzystal.dynamicloader.PluginsWidgetProvider_onUpdate.acdfg.bin
+Isolated Bin # 15
+Dot: isol_15.dot
+Bin: isol_15.acdfg.bin
+Frequency: 1hram.android.PhotoOfTheDay.appwidget.SdSaverAppWidgetProvider_onUpdate.acdfg.bin
+Total Time (s): 9
+# Graphs : 85
+Average # of nodes: 13
+Average # of edges: 22
+Max. # of nodes : 49
+Max. # of edges : 200
+# Subsumption checks: 5036
+
+# SAT calls: 292
+# satSolverTime (ms): 4659

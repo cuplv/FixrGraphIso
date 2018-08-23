@@ -1,8 +1,8 @@
-/*--
-    1. Load a list of computed isomorphisms from a file
-    2. For each iso get the feature list
-    3. Build frequent item sets
---*/
+/**
+  1. Load a list of computed isomorphisms from a file
+  2. For each iso get the feature list
+  3. Build frequent item sets
+*/
 
 
 #include <fstream>
@@ -60,78 +60,42 @@ namespace fixrgraphiso{
     if (debug) cout << endl;
     items -> addRecord(filename, mCalls);
   }
-
-#ifdef OLD__UNUSED_CODE
-
-  // iso_protobuf::Iso * loadIsomorphismFromFile(std::string const & file_name){
-  //   std::ifstream inp_file(file_name.c_str(), std::ios::in | std::ios::binary);
-  //   iso_protobuf::Iso * proto_iso = new iso_protobuf::Iso();
-  //   if (inp_file.is_open())
-  //     proto_iso -> ParseFromIstream (&inp_file);
-  //   else
-  //     assert (false);
-  //   inp_file.close();
-  //   return proto_iso;
-  // }
-
-  // void captureItemSetFromIsomorphism(iso_protobuf::Iso * proto_iso, const string & filename, ItemSetDB* items ){
-  //   int n = proto_iso -> methodcallnames_size();
-  //   int i;
-  //   std::set<string> mCalls;
-  //   string sep="";
-  //   if (debug) cout << endl;
-  //   for (i = 0; i < n ; ++i){
-  //     std::string const & str = proto_iso -> methodcallnames(i);
-  //     if (debug) cout << sep<< str ;
-  //     mCalls.insert(str);
-  //   }
-  //   if (debug) cout << endl;
-  //   items-> addRecord(filename, mCalls);
-  // }
-  
-#endif
-  
 }
 
 
 
 
 int main (int argc, char *argv[]) {
-   /* input should be a name of a list of iso files to be processed */
-  
+  /* input should be a name of a list of iso files to be processed */
+
   const char * fName = NULL;
-  while	(optind	< argc){
+  while (optind < argc){
     char c;
     if ( (c = getopt(argc, argv, "f:m:o:dic:")) != -1){
       switch (c){
       case 'f':
-	fixrgraphiso::freq = strtol(optarg, NULL, 10);
-	cout << "Setting minimum frequency to " << fixrgraphiso::freq << endl;
-	break;
+        fixrgraphiso::freq = strtol(optarg, NULL, 10);
+        cout << "Setting minimum frequency to " << fixrgraphiso::freq << endl;
+        break;
       case 'm':
-	fixrgraphiso::min_size = strtol(optarg, NULL, 10);
-	cout << "Setting minimum set size cutoff to " << fixrgraphiso::min_size << endl;
-	break;
+        fixrgraphiso::min_size = strtol(optarg, NULL, 10);
+        cout << "Setting minimum set size cutoff to " << fixrgraphiso::min_size << endl;
+        break;
       case 'd':
-	fixrgraphiso::debug = true;
-	
-	break;
+        fixrgraphiso::debug = true;
+
+        break;
       case 'c':
-	fixrgraphiso::cutoff_percentage = strtol(optarg, NULL, 10);
-	break;
-#ifdef OLD__UNUSED_CODE
-      // case 'i':
-      // 	fixrgraphiso::loadACDFG = false;
-      // 	break;
-#endif
+        fixrgraphiso::cutoff_percentage = strtol(optarg, NULL, 10);
+        break;
       case 'o':
-	fixrgraphiso::outputFileName = string(optarg);
-	cout << "Setting output file to : " << fixrgraphiso::outputFileName << endl;
-	break;
+        fixrgraphiso::outputFileName = string(optarg);
+        cout << "Setting output file to : " << fixrgraphiso::outputFileName << endl;
+        break;
       default:
-	cout << "unknown option:" << c << endl;
-	optind++;
-	break;
+        cout << "unknown option:" << c << endl;
+        optind++;
+        break;
       }
     } else {
       fName = argv[optind];
@@ -139,12 +103,10 @@ int main (int argc, char *argv[]) {
     }
   }
 
-
   if (fName == NULL){
     cout << "Usage: " << argv[0] << "[-f freq -m min_size -o out_file_name -c cutoff_percentage_for_merging -d] name_of_file" << endl;
     return 1;
   }
-  
 
   std::ifstream inp_file(fName);
   std::string line;
@@ -154,24 +116,16 @@ int main (int argc, char *argv[]) {
     if (!line.empty() && line[line.length() -1] == '\n')
       line.erase(line.length() -1);
     if (fixrgraphiso::debug) cout << "Reading file" << line << endl;
-#ifndef OLD__UNUSED_CODE
-    assert(fixrgraphiso::loadACDFG);
-#endif
     if (fixrgraphiso::loadACDFG){
       iso_protobuf::Acdfg * acdfg = fixrgraphiso::loadACDFGFromFile(line);
       fixrgraphiso::captureItemSetFromACDFG(acdfg,line, &allItems);
-    } else {
-#ifdef OLD__UNUSED_CODE
-      // iso_protobuf::Iso * iso = fixrgraphiso::loadIsomorphismFromFile(line);
-      // fixrgraphiso::captureItemSetFromIsomorphism(iso,line, &allItems);
-#endif
     }
     if(fcount %1000 == 0)
       cout << ".";
     fcount++;
   }
   cout << endl;
-  
+
   cout << "All files loaded " << std::endl;
   /* output should be a list of frequent item sets and corresponding
      list of the isomorphisms under those */

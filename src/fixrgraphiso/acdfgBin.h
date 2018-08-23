@@ -15,86 +15,142 @@
 #include <set>
 #include "fixrgraphiso/acdfg.h"
 
-namespace fixrgraphiso{
+namespace fixrgraphiso {
   using std::vector;
   using std::string;
   using std::endl;
   using std::cout;
   using std::set;
+
   class AcdfgBin {
   public:
 
-    AcdfgBin(Acdfg* a):subsuming(false), anomalous(false), popular(false){
-      acdfgs.push_back(a);
-    }
+  AcdfgBin(Acdfg* a) : subsuming(false),
+      anomalous(false), popular(false) {
+    acdfgRepr = a;
+    acdfgNames.push_back(a->getName());
+  }
 
-    bool isACDFGEquivalent(Acdfg *b);
+  bool isACDFGEquivalent(Acdfg *b);
 
-    void insertEquivalentACDFG(Acdfg * b){
-      acdfgs.push_back(b);
-    }
+  void insertEquivalentACDFG(Acdfg * b){
+    acdfgNames.push_back(b->getName());
+  }
 
-    int getFrequency() const {
-      return acdfgs.size() ;
-    }
+  void insertEquivalentACDFG(const string b){
+    acdfgNames.push_back(b);
+  }
 
 
-    int getPopularity() const;
+  int getFrequency() const {
+    return acdfgNames.size() ;
+  }
 
-    const Acdfg* getRepresentative() const{
-      assert(acdfgs.size() > 0);
-      return *(acdfgs.begin());
-    }
+  int getPopularity() const;
 
-    Acdfg * getRepresentative(){
-      assert(acdfgs.size() > 0);
-      return *(acdfgs.begin());
-    }
+  const Acdfg* getRepresentative() const{
+    return acdfgRepr;
+  }
 
-    void printInfo(std::ostream & out, bool printAbove = true) const;
+  Acdfg * getRepresentative(){
+    return acdfgRepr;
+  }
 
-    void dumpToDot(string fileName) const;
-    void dumpToProtobuf(string fileName) const;
+  void printInfo(std::ostream & out, bool printAbove = true) const;
+  void dumpToDot(string fileName) const;
+  void dumpToProtobuf(string fileName) const;
 
-    bool isACDFGBinSubsuming(AcdfgBin * b);
-    void insertIncomingEdge(AcdfgBin * c){
-      incomingEdges.insert(c);
-    }
-    bool hasSubsumingBin(AcdfgBin* b){
-      return (subsumingBins.find(b) != subsumingBins.end());
-    }
-    void addSubsumingBin(AcdfgBin * b){
-      subsumingBins.insert(b);
-      b-> insertIncomingEdge(this);
-    }
+  bool isACDFGBinSubsuming(AcdfgBin * b);
+  void insertIncomingEdge(AcdfgBin * c){
+    incomingEdges.insert(c);
+  }
+  bool hasSubsumingBin(AcdfgBin* b){
+    return (subsumingBins.find(b) != subsumingBins.end());
+  }
+  void addSubsumingBin(AcdfgBin * b){
+    subsumingBins.insert(b);
+    b->insertIncomingEdge(this);
+  }
 
-    void computeImmediatelySubsumingBins();
+  void computeImmediatelySubsumingBins();
 
-    bool isSubsuming() const { return subsuming; }
-    void setSubsuming()  {subsuming = true; }
+  bool isSubsuming() const { return subsuming; }
+  void setSubsuming() { subsuming = true; }
+  bool isAnomalous() const {return anomalous; }
+  void setAnomalous() { anomalous = true; }
+  void setPopular() ;
+  bool isPopular() const { return popular;}
 
-    bool isAnomalous() const {return anomalous; }
-    void setAnomalous() { anomalous = true; }
+  const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
+  bool isAtFrontierOfPopularity(int freq_cutoff) const;
+  bool hasPopularAncestor() const;
 
-    void setPopular() ;
-    bool isPopular() const { return popular;}
+  const std::set<AcdfgBin*> & getSubsumingBins() const {
+    return subsumingBins;
+  }
 
-    const std::vector<Acdfg*>  & getACDFGs() const { return acdfgs; }
-    bool isAtFrontierOfPopularity(int freq_cutoff) const;
-    bool hasPopularAncestor() const;
+  const std::set<AcdfgBin*> & getImmediateSubsumingBins() const {
+    return immediateSubsumingBins;
+  }
+
+  const std::set<AcdfgBin*> & getIncomingEdges() const {
+    return incomingEdges;
+  }
 
   protected:
+  void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
 
-    void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
+  /* List of acdfgs contained in the Bin */
+  Acdfg* acdfgRepr;
+  vector<string> acdfgNames;
+  /* List of bins subsumed by this bin */
+  set<AcdfgBin*> subsumingBins;
+  /* List of bins that are directly subsumed by this bin
+     i.e. the set {b2 | SUB(this,b2) and does not exist a
+     b3 such that SUB(this,b3) and SUB(b3,b2)}
+  */
+  set<AcdfgBin*> immediateSubsumingBins;
+  /* List of bins that subsume this bin */
+  set<AcdfgBin*> incomingEdges;
 
-    vector<Acdfg*> acdfgs;
-    set<AcdfgBin*> subsumingBins;
-    set<AcdfgBin*> immediateSubsumingBins;
-    set<AcdfgBin*> incomingEdges;
-    bool subsuming;
-    bool anomalous;
-    bool popular;
+  /* */
+  bool subsuming;
+  bool anomalous;
+  bool popular;
+  };
 
+  class Lattice {
+  public:
+    Lattice() {
+    }
+
+    void addBin(AcdfgBin* bin);
+    void addPopular(AcdfgBin* bin);
+    void addAnomalous(AcdfgBin* bin);
+    void addIsolated(AcdfgBin* bin);
+
+    using acdfgbins_t = vector<AcdfgBin*>;
+    using bin_iterator = acdfgbins_t::const_iterator;
+    bin_iterator beginAllBins() const { return allBins.begin(); }
+    bin_iterator endAllBins() const { return allBins.end(); }
+    bin_iterator beginPopular() const { return popularBins.begin(); }
+    bin_iterator endPopular() const { return popularBins.end(); }
+    bin_iterator beginAnomalous() const { return anomalousBins.begin(); }
+    bin_iterator endAnomalous() const { return anomalousBins.end(); }
+    bin_iterator beginIsolated() const { return isolatedBins.begin(); }
+    bin_iterator endIsolated() const { return isolatedBins.end(); }
+
+    void sortByFrequency();
+
+    void dumpAllBins(std::chrono::seconds time_taken,
+                     const string & output_prefix,
+                     const string & infoFileName);
+
+  private:
+    vector<AcdfgBin*> allBins;
+    vector<AcdfgBin*> popularBins;
+    vector<AcdfgBin*> anomalousBins;
+    vector<AcdfgBin*> isolatedBins;
   };
 
 }

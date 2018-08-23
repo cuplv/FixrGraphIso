@@ -117,15 +117,14 @@ namespace fixrgraphiso {
     in the protobuf and translating them into corresponding objects in the
     Acdfg data structure we maintain
     --*/
-
-  Acdfg* AcdfgSerializer::create_acdfg(acdfg_protobuf::Acdfg* proto_acdfg)
+  Acdfg* AcdfgSerializer::create_acdfg(const acdfg_protobuf::Acdfg &proto_acdfg)
   {
     Acdfg* acdfg = new Acdfg();
     idMapType idToNodeMap;
     /* data ndoes */
-    for (int j = 0; j < proto_acdfg->data_node_size(); j++) {
+    for (int j = 0; j < proto_acdfg.data_node_size(); j++) {
       const acdfg_protobuf::Acdfg_DataNode& proto_node = \
-        proto_acdfg->data_node(j);
+        proto_acdfg.data_node(j);
       /* Extract data node type */
       data_node_type_t dtype = DATA_NODE_VAR;
       if (proto_node.has_data_type()){
@@ -142,18 +141,18 @@ namespace fixrgraphiso {
     }
 
     /* Misc Nodes */
-    for (int j = 0; j < proto_acdfg->misc_node_size(); j++) {
+    for (int j = 0; j < proto_acdfg.misc_node_size(); j++) {
       const acdfg_protobuf::Acdfg_MiscNode& proto_node =    \
-        proto_acdfg->misc_node(j);
+        proto_acdfg.misc_node(j);
       Node * node = new Node(proto_node.id(), REGULAR_NODE);
       Node *app_node = acdfg->add_node(node);
       idToNodeMap[app_node->get_id()] = app_node;
     }
 
     /* Method Nodes */
-    for (int j = 0; j < proto_acdfg->method_node_size(); j++) {
+    for (int j = 0; j < proto_acdfg.method_node_size(); j++) {
       const acdfg_protobuf::Acdfg_MethodNode& proto_node =  \
-        proto_acdfg->method_node(j);
+        proto_acdfg.method_node(j);
 
       /* read to the receiver */
       Node* r = lookup_node(idToNodeMap,        \
@@ -203,41 +202,41 @@ namespace fixrgraphiso {
 
 
     /* Def edges */
-    for (int j = 0; j < proto_acdfg->def_edge_size(); j++) {
+    for (int j = 0; j < proto_acdfg.def_edge_size(); j++) {
       const acdfg_protobuf::Acdfg_DefEdge& proto_edge = \
-        proto_acdfg->def_edge(j);
+        proto_acdfg.def_edge(j);
       addEdge(acdfg, idToNodeMap, proto_edge);
     }
 
-    for (int j = 0; j < proto_acdfg->use_edge_size(); j++) {
+    for (int j = 0; j < proto_acdfg.use_edge_size(); j++) {
       const acdfg_protobuf::Acdfg_UseEdge& proto_edge = \
-        proto_acdfg->use_edge(j);
+        proto_acdfg.use_edge(j);
       addEdge(acdfg, idToNodeMap,proto_edge);
     }
 
-    for (int j = 0; j < proto_acdfg->control_edge_size(); j++) {
+    for (int j = 0; j < proto_acdfg.control_edge_size(); j++) {
       const acdfg_protobuf::Acdfg_ControlEdge& proto_edge = \
-        proto_acdfg->control_edge(j);
+        proto_acdfg.control_edge(j);
       addEdge(acdfg, idToNodeMap,proto_edge);
     }
 
-    for (int j = 0; j < proto_acdfg->trans_edge_size(); j++) {
+    for (int j = 0; j < proto_acdfg.trans_edge_size(); j++) {
       const acdfg_protobuf::Acdfg_TransEdge& proto_edge = \
-        proto_acdfg->trans_edge(j);
+        proto_acdfg.trans_edge(j);
       addEdge(acdfg, idToNodeMap,proto_edge);
     }
 
 
-    for (int j = 0; j < proto_acdfg->exceptional_edge_size(); j++) {
+    for (int j = 0; j < proto_acdfg.exceptional_edge_size(); j++) {
       const acdfg_protobuf::Acdfg_ExceptionalControlEdge& proto_edge = \
-        proto_acdfg->exceptional_edge(j);
+        proto_acdfg.exceptional_edge(j);
       addEdge(acdfg, idToNodeMap,proto_edge);
     }
 
 
-    int nLabeledEdges = proto_acdfg -> edge_labels_size();
+    int nLabeledEdges = proto_acdfg.edge_labels_size();
     for (int j =0; j < nLabeledEdges; ++j){
-      acdfg_protobuf::Acdfg_LabelMap const& label_map = proto_acdfg -> edge_labels(j);
+      acdfg_protobuf::Acdfg_LabelMap const& label_map = proto_acdfg.edge_labels(j);
       long e_id = label_map.edge_id();
       Edge * edg = acdfg -> getEdgeFromID(e_id);
       if (edg){
@@ -355,5 +354,127 @@ namespace fixrgraphiso {
     return acdfg;
 
   }
+
+
+  void AcdfgSerializer::proto_from_acdfg_label(acdfg_protobuf::Acdfg * protoAcdfg,
+                                               const Acdfg &acdfg,
+                                               Edge * edge) {
+    acdfg_protobuf::Acdfg::LabelMap* protoLabel =
+      protoAcdfg->add_edge_labels();
+
+    protoLabel->set_edge_id(edge->get_id());
+
+    for (edge_label_t label : edge->get_labels()) {
+      if (DOMINATE == label) {
+        protoLabel->add_labels(acdfg_protobuf::Acdfg::DOMINATE);
+      } else if (POST_DOMINATED == label) {
+        protoLabel->add_labels(acdfg_protobuf::Acdfg::POSTDOMINATED);
+      }
+    }
+  }
+
+  /**
+   * Serialize a acdfg in a protobuffer
+   */
+  void AcdfgSerializer::fill_proto_from_acdfg(const Acdfg &acdfg,
+                                              acdfg_protobuf::Acdfg* protoAcdfg) {
+    /* Write the nodes */
+    for (auto it = acdfg.begin_nodes(); it != acdfg.end_nodes(); ++it) {
+      Node* node = *it;
+
+      if (node->get_type() == REGULAR_NODE) {
+        acdfg_protobuf::Acdfg::MiscNode* protoNode =
+          protoAcdfg->add_misc_node();
+        protoNode->set_id(node->get_id());
+      } else if (node->get_type() == METHOD_NODE) {
+        MethodNode* methodNode = static_cast<MethodNode*>(node);
+        acdfg_protobuf::Acdfg::MethodNode* protoNode =
+          protoAcdfg->add_method_node();
+
+        protoNode->set_id(methodNode->get_id());
+
+        if (NULL != methodNode->get_assignee()) {
+          DataNode* assignee = methodNode->get_assignee();
+          protoNode->set_assignee(assignee->get_id());
+        }
+
+        if (NULL != methodNode->get_receiver()) {
+          DataNode* receiver = methodNode->get_receiver();
+          protoNode->set_invokee(receiver->get_id());
+        }
+
+        protoNode->set_name(methodNode->get_name());
+
+        for (DataNode* argNode : methodNode->get_arguments()) {
+          protoNode->add_argument(argNode->get_id());
+        }
+
+      } else if (node->get_type() == DATA_NODE) {
+        DataNode* dataNode = static_cast<DataNode*>(node);
+
+        acdfg_protobuf::Acdfg::DataNode* protoDataNode =
+          protoAcdfg->add_data_node();
+        protoDataNode->set_id(dataNode->get_id());
+        protoDataNode->set_name(dataNode->get_name());
+
+        protoDataNode->set_type(dataNode->get_data_type());
+
+       if (dataNode->get_data_node_type() == DATA_NODE_CONST) {
+         protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_CONST);
+       } else if (dataNode->get_data_node_type() == DATA_NODE_VAR) {
+         protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_VAR);
+       } else if (dataNode->get_data_node_type() == DATA_NODE_UNKNOWN) {
+         // Do nothing - do not set the data type
+       }
+      }
+    } // end of nodes
+
+    /* convert the edges */
+    for (auto it = acdfg.begin_edges(); it != acdfg.end_edges(); ++it) {
+      Edge* edge = *it;
+
+      if (CONTROL_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::ControlEdge* protoEdge =
+          protoAcdfg->add_control_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (DEF_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::DefEdge* protoEdge =
+          protoAcdfg->add_def_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (USE_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::UseEdge* protoEdge =
+          protoAcdfg->add_use_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (TRANSITIVE_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::TransEdge* protoEdge =
+          protoAcdfg->add_trans_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+      } else if (EXCEPTIONAL_EDGE == edge->get_type()) {
+        acdfg_protobuf::Acdfg::ExceptionalControlEdge* protoEdge =
+          protoAcdfg->add_exceptional_edge();
+        protoEdge->set_id(edge->get_id());
+        protoEdge->set_from((edge->get_src())->get_id());
+        protoEdge->set_to((edge->get_dst())->get_id());
+        proto_from_acdfg_label(protoAcdfg, acdfg, edge);
+
+        for (string exc : edge->get_exceptList()) {
+          protoEdge->add_exceptions(exc);
+        }
+      }
+    } // end of edges
+  }
+
 
 } // namespace fixrgraphiso

@@ -15,7 +15,6 @@
 #include <cassert>
 #include <iostream>
 #include <set>
-#include <map>
 #include "fixrgraphiso/proto_acdfg.pb.h"
 
 namespace fixrgraphiso {
@@ -65,6 +64,8 @@ namespace fixrgraphiso {
     void setMatchFrequency(int m) { match_frequency = m; }
     void incrMatchFrequency() { match_frequency++; }
 
+    bool operator==(const Node& other) const;
+
   protected:
     long id_;
     node_type_t nType_;
@@ -91,6 +92,9 @@ namespace fixrgraphiso {
     DataNode * clone() const;
     friend std::ostream& operator<<(std::ostream&, const DataNode&);
     virtual node_type_t get_type() const { return DATA_NODE; }
+
+    bool operator==(const DataNode& other) const;
+
   protected:
     string name_;
     string data_type_;
@@ -108,9 +112,9 @@ namespace fixrgraphiso {
   class MethodNode : public CommandNode {
   public:
     MethodNode(long id, const string& name,
-           DataNode* receiver,
-           std::vector<DataNode*> arguments,
-           DataNode * assignee);
+               DataNode* receiver,
+               std::vector<DataNode*> arguments,
+               DataNode * assignee);
     MethodNode(const MethodNode& node);
     virtual ~MethodNode() {}
 
@@ -129,6 +133,9 @@ namespace fixrgraphiso {
     bool isSpecialMethod() const;
     friend std::ostream& operator<<(std::ostream&, const MethodNode&);
     virtual node_type_t get_type() const { return METHOD_NODE; }
+
+    bool operator==(const MethodNode& other) const;
+
   protected:
     // Name of the method
     string name_;
@@ -150,10 +157,10 @@ namespace fixrgraphiso {
   public:
 
     Edge(long id, edge_type_t typ, Node* src, Node* dst): id_(id),
-                              eType_(typ),
-                              src_(src),
-                              dst_(dst),
-                              match_frequency(0)
+                                                          eType_(typ),
+                                                          src_(src),
+                                                          dst_(dst),
+                                                          match_frequency(0)
     {};
 
 
@@ -167,6 +174,9 @@ namespace fixrgraphiso {
 
     void set_label( edge_label_t eNew)
     { eLabels_.push_back(eNew); };
+
+    const std::vector<std::string> & get_exceptList() const
+    { return exceptList_; };
 
     const Node* get_src() const;
     const Node* get_dst() const;
@@ -186,6 +196,8 @@ namespace fixrgraphiso {
     int getMatchFrequency() const { return match_frequency; }
     void incrMatchFrequency() { match_frequency++; }
     virtual void addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const;
+
+    bool operator==(const Edge& other) const;
 
   protected:
     long id_;
@@ -241,7 +253,7 @@ namespace fixrgraphiso {
     void addException(std::string const & what){
       exceptList_.push_back(what);
     }
-   virtual void addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const;
+    virtual void addProtoEdge(acdfg_protobuf::Acdfg* acdfg) const;
   };
 
   typedef std::vector<Node*> nodes_t;
@@ -265,8 +277,8 @@ namespace fixrgraphiso {
     int typed_node_count(node_type_t t) const {
       int rVal =0;
       for (nodes_t::const_iterator it = begin_nodes(); it != end_nodes(); ++it){
-    if ( (*it) -> get_type() == t)
-      rVal ++;
+        if ( (*it) -> get_type() == t)
+          rVal ++;
       }
       return rVal;
     }
@@ -286,8 +298,8 @@ namespace fixrgraphiso {
     int typed_edge_count(edge_type_t t) const{
       int rVal = 0;
       for (edges_t::const_iterator jt = begin_edges(); jt != end_edges(); ++jt){
-    if ( (*jt) -> get_type() == t)
-      ++rVal;
+        if ( (*jt) -> get_type() == t)
+          ++rVal;
       }
       return rVal;
     }
@@ -300,14 +312,14 @@ namespace fixrgraphiso {
 
     std::vector< std::pair<string,int> > all_counts() const {
       std::vector< std::pair<string, int> > rVal {
-    {"nodes" , node_count()} ,
-      { "edges", edge_count()},
-        {"data nodes", data_node_count()},
-          {"method nodes", method_node_count()},
-        {"control edges", (control_edge_count() + transitive_edge_count())},
-          {"use edges", use_edge_count()},
-            {"def edges", def_edge_count()},
-              {"exceptional edges", exceptional_edge_count() }
+        {"nodes" , node_count()} ,
+          { "edges", edge_count()},
+            {"data nodes", data_node_count()},
+              {"method nodes", method_node_count()},
+                {"control edges", (control_edge_count() + transitive_edge_count())},
+                  {"use edges", use_edge_count()},
+                    {"def edges", def_edge_count()},
+                      {"exceptional edges", exceptional_edge_count() }
       };
       return rVal;
     }
@@ -323,10 +335,10 @@ namespace fixrgraphiso {
     std::vector<long> getOutgoingEdgeIDs(long nodeID) const{
       node_id_to_outgoing_edges_map_t::const_iterator it = outgoingMap_.find(nodeID);
       if (it == outgoingMap_.end()){
-    vector<long> tmp;// return a dummy empty vector
-    return tmp;
+        vector<long> tmp;// return a dummy empty vector
+        return tmp;
       } else {
-    return (it -> second);
+        return (it -> second);
       }
     }
 
@@ -348,14 +360,19 @@ namespace fixrgraphiso {
 
     void dumpToDot(std::ostream & os, bool transitiveReduce=true) const;
 
-    void dumpToAcdfgProto(std::ostream & out, bool transitiveReduce=false) const;
+    void dumpToAcdfgProto(std::ostream & out,
+                          bool transitiveReduce=false) const;
 
     Acdfg * extractSubgraphWithFrequencyCutoff(int freqCutoff) const;
 
-    Acdfg *  sliceACDFG(const std::vector<MethodNode*> & targets);
+    Acdfg * sliceACDFG(const std::vector<MethodNode*> & targets);
 
-    void getMethodsFromName(const std::vector<string> & methodnames, std::vector<MethodNode*> & targets);
+    void getMethodsFromName(const std::vector<string> & methodnames,
+                            std::vector<MethodNode*> & targets);
+    void getMethodNodes(std::vector<MethodNode*> & targets);
 
+
+    bool operator==(const Acdfg& other) const;
 
 
   private:

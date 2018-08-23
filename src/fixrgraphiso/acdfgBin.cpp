@@ -5,14 +5,17 @@
 #include <iterator>
 #include "acdfgBin.h"
 #include "fixrgraphiso/isomorphismClass.h"
+#include "fixrgraphiso/collectStats.h"
 
 namespace fixrgraphiso {
 
-  bool AcdfgBin::isACDFGBinSubsuming( AcdfgBin * b){
+  using std::ofstream;
+
+  bool AcdfgBin::isACDFGBinSubsuming(AcdfgBin * b){
     // First check the graph so far
     for (AcdfgBin * c : subsumingBins){
       if (c -> hasSubsumingBin(b)){
-    return true;
+        return true;
       }
     }
 
@@ -26,25 +29,24 @@ namespace fixrgraphiso {
 
 
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b){
-    Acdfg * repr = *(acdfgs.begin());
-    IsoSubsumption dir_a (repr, b);
-    IsoSubsumption dir_b (b, repr);
+    IsoSubsumption dir_a (acdfgRepr, b);
+    IsoSubsumption dir_b (b, acdfgRepr);
     if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
       if (debug){
-    cout << "Subsumption ruled out directly " << endl;
+        cout << "Subsumption ruled out directly " << endl;
       }
       return false;
     }
     if (! dir_a.check()){
       if (debug){
-    cout << "Subsumption bin -> b ruled out " << endl;
+        cout << "Subsumption bin -> b ruled out " << endl;
       }
       return false;
     }
 
     if (!dir_b.check()){
       if (debug){
-    cout << "Subsumption b -> bin ruled out " << endl;
+        cout << "Subsumption b -> bin ruled out " << endl;
       }
       return false;
     }
@@ -64,16 +66,16 @@ namespace fixrgraphiso {
 
   void AcdfgBin::printInfo(std::ostream & out, bool printAbove) const {
 
-    for (const Acdfg * a : acdfgs){
-      out <<  a -> getName() << endl;
+    for (const string acdfgName : acdfgNames){
+      out <<  acdfgName << endl;
     }
     if (printAbove){
 
       for (const AcdfgBin * b : subsumingBins){
-    const std::vector<Acdfg*> & sub_acdfgs = b -> getACDFGs();
-    for (const Acdfg * a: sub_acdfgs){
-      out << a -> getName() << endl;
-    }
+        const std::vector<string> & sub_acdfgs = b -> getAcdfgNames();
+        for (const string a_name: sub_acdfgs){
+          out << a_name << endl;
+        }
       }
     }
 
@@ -81,18 +83,14 @@ namespace fixrgraphiso {
 
   void AcdfgBin::dumpToDot(string fileName) const{
     std::ofstream dot_out (fileName.c_str());
-    assert(acdfgs.size() >= 1);
-    Acdfg * repr = *(acdfgs.begin());
-    repr -> dumpToDot(dot_out);
+    acdfgRepr -> dumpToDot(dot_out);
     dot_out.close();
   }
 
   void AcdfgBin::dumpToProtobuf(string fileName) const{
     std::fstream output(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    assert(acdfgs.size() >= 1);
-    Acdfg * repr = *(acdfgs.begin());
-    repr -> dumpToAcdfgProto(output);
+    acdfgRepr -> dumpToAcdfgProto(output);
     output.close();
   }
 
@@ -110,8 +108,8 @@ namespace fixrgraphiso {
       b -> addSubsumingBinsToSet(transitivelySubsuming);
     }
     std::set_difference(subsumingBins.begin(), subsumingBins.end(), \
-            transitivelySubsuming.begin(), transitivelySubsuming.end(), \
-            std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
+                        transitivelySubsuming.begin(), transitivelySubsuming.end(), \
+                        std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
 
   }
 
@@ -128,7 +126,7 @@ namespace fixrgraphiso {
   void AcdfgBin::setPopular() {
     assert(! this -> subsuming);
     this -> popular = true;
-    for (AcdfgBin * b: subsumingBins){
+    for (AcdfgBin * b: subsumingBins) {
       b -> popular = false;
       b -> subsuming = true;
     }
@@ -136,11 +134,94 @@ namespace fixrgraphiso {
   }
 
   bool AcdfgBin::hasPopularAncestor() const{
-    for (const AcdfgBin* b: subsumingBins){
+    for (const AcdfgBin* b: subsumingBins) {
       if (b -> isPopular())
-    return true;
+        return true;
     }
     return false;
   }
 
+  void Lattice::addBin(AcdfgBin* bin) {
+    allBins.push_back(bin);
+  }
+
+  void Lattice::addPopular(AcdfgBin* popular) {
+    popularBins.push_back(popular);
+  }
+
+  void Lattice::addAnomalous(AcdfgBin* anomalous) {
+    anomalousBins.push_back(anomalous);
+  }
+
+  void Lattice::addIsolated(AcdfgBin* isolated) {
+    isolatedBins.push_back(isolated);
+  }
+
+  void Lattice::sortByFrequency() {
+    std::sort(allBins.begin(), allBins.end(),
+              [](const AcdfgBin  * bin1, const AcdfgBin * bin2){
+                return bin1 -> getFrequency() > bin2 -> getFrequency();
+              });
+
+  }
+
+  void Lattice::dumpAllBins(std::chrono::seconds time_taken,
+                            const string & output_prefix,
+                            const string & infoFileName) {
+    ofstream out_file(infoFileName.c_str());
+    int count = 1;
+    string iso_file_name;
+    string iso_bin_file_name;
+    out_file << "Popular Bins: " << endl;
+
+    for (AcdfgBin * a: popularBins){
+      assert (a -> isPopular());
+      iso_file_name = string("pop_")+std::to_string(count)+".dot";
+      iso_bin_file_name = string("pop_")+std::to_string(count)+".acdfg.bin";
+      out_file << "Popular Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Bin: " << iso_bin_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency() << ", "
+               << a-> getPopularity() << endl;
+      a -> dumpToDot(output_prefix + "/" + iso_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      a -> printInfo(out_file);
+      count ++;
+    }
+
+    count = 1;
+
+    for (AcdfgBin * a: anomalousBins) {
+      assert(a -> isAnomalous());
+      iso_file_name = string("anom_")+std::to_string(count)+".dot";
+      iso_bin_file_name = string("anom_")+std::to_string(count)+".acdfg.bin";
+      out_file << "Anomalous Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Bin: " << iso_bin_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency()<< endl;
+      a -> dumpToDot(output_prefix + "/" + iso_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      a -> printInfo(out_file, false);
+      count ++;
+    }
+
+    count = 1;
+    for (AcdfgBin * a: isolatedBins) {
+      iso_file_name = string("isol_")+std::to_string(count)+".dot";
+      iso_bin_file_name = string("isol_")+std::to_string(count)+".acdfg.bin";
+      out_file << "Isolated Bin # " << count << endl;
+      out_file << "Dot: " << iso_file_name << endl;
+      out_file << "Bin: " << iso_bin_file_name << endl;
+      out_file << "Frequency: " << a -> getFrequency() ;
+      a -> dumpToDot(output_prefix + "/" + iso_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      a -> printInfo(out_file, false);
+      count ++;
+    }
+
+    out_file << "Total Time (s): " << time_taken.count()<< endl;
+    printStats(out_file);
+
+    out_file.close();
+  }
 }

@@ -17,7 +17,7 @@ namespace fixrgraphiso {
   class ItemRecord;
   class FreqItemSet;
   class ItemSetDB;
-  
+
   class ItemRecord {
   protected:
     std::set<int> record_contents;
@@ -53,7 +53,7 @@ namespace fixrgraphiso {
     int getFrequency() const { return idx_record.size(); }
     void addItemRecord(ItemRecord * it){ idx_record.insert(it); }
   };
-  
+
   class ItemSetDB {
   protected:
     std::map<std::string, int> item_ids;
@@ -68,25 +68,25 @@ namespace fixrgraphiso {
     void insertRecordAndUpdateFrequencies(ItemRecord * i_rec);
     void incrFrequency(int j);
     bool findFrequentItemSetsRecursive(int freq_cutoff,
-				       int min_size_cutoff,
-				       int last_id,
-				       std::set<int> sets_so_far, 
-				       std::vector< FreqItemSet> & all_sets);
+               int min_size_cutoff,
+               int last_id,
+               std::set<int> sets_so_far,
+               std::vector< FreqItemSet> & all_sets);
     void addIndex(int j, ItemRecord * i_rec);
     void convertToStringSet(set<int> const & s, set<string> & res);
     bool is_excluded (string const & s) const;
     void addRemainingRecordsToFrequentItemSets(vector<FreqItemSet> & result, int min_size_cutoff);
-    
+
   public:
-    
+
     ItemSetDB();
     ~ItemSetDB();
     void addRecord(std::string const & filename, std::set<std::string> const & rec);
     void computeFrequentItemSets(int freq_cutoff, int min_size_cutoff, vector< FreqItemSet > & result, ostream & out);
-    
+
   };
 
- 
+
 }
 
 #endif
