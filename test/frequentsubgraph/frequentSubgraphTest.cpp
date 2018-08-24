@@ -6,6 +6,7 @@
 #include "fixrgraphiso/frequentSubgraphs.h"
 #include "fixrgraphiso/acdfgBin.h"
 #include "fixrgraphiso/serializationLattice.h"
+#include "fixrgraphiso/searchLattice.h"
 
 namespace frequentSubgraph {
   using std::string;
@@ -22,6 +23,8 @@ namespace frequentSubgraph {
   using fixrgraphiso::IsoSubsumption;
   using fixrgraphiso::LatticeSerializer;
   using fixrgraphiso::Lattice;
+  using fixrgraphiso::SearchLattice;
+  using fixrgraphiso::SearchResult;
 
   namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
 
@@ -43,18 +46,18 @@ namespace frequentSubgraph {
     miner.mine(lattice, frequency, method_file,
                output_prefix, acdfg_list);
 
-    // {
-    //   LatticeSerializer s;
-    //   string const& outFile = "/tmp/out.serialization.bin";
-    //   iso_protobuf::Lattice * proto = s.proto_from_lattice(lattice);
-    //   fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
-    //   proto->SerializeToOstream(&myfile);
-    //   myfile.close();
+    {
+      LatticeSerializer s;
+      string const& outFile = "/tmp/out.serialization.bin";
+      iso_protobuf::Lattice * proto = s.proto_from_lattice(lattice);
+      fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
+      proto->SerializeToOstream(&myfile);
+      myfile.close();
 
-    //   proto = s.read_protobuf(outFile.c_str());
-    //   s.lattice_from_proto(proto);
-    //   delete(proto);
-    // }
+      proto = s.read_protobuf(outFile.c_str());
+      s.lattice_from_proto(proto);
+      delete(proto);
+    }
 
     ifstream res(res_file.c_str());
     string out_file = "cluster-info.txt";
@@ -70,8 +73,7 @@ namespace frequentSubgraph {
   }
 
   TEST_F(FrequentSubgraphTest, LatticeSerialization) {
-    string const& inFile = "/tmp/out.serialization.bin";
-    //"../test_data/subgraph_results/lattice.bin";
+    string const& inFile = "../test_data/subgraph_results/lattice.bin";
 
     LatticeSerializer s;
 
@@ -98,5 +100,42 @@ namespace frequentSubgraph {
 
     delete(orig);
     delete(read);
+  }
+
+  TEST_F(FrequentSubgraphTest, LatticeSearch) {
+    string const& queryFile =
+      "../test_data/com.dagwaging.rosewidgets.db.widget.UpdateService_update.acdfg.bin";
+    string const& inFile = "../test_data/subgraph_results/lattice.bin";
+
+    Acdfg* query;
+    Lattice *lattice;
+
+    {
+      AcdfgSerializer s;
+      iso_protobuf::Acdfg * proto =
+        s.read_protobuf_acdfg(queryFile.c_str());
+      if (NULL == proto)
+        FAIL() << "Cannot read " + queryFile;
+      query = s.create_acdfg((const iso_protobuf::Acdfg&) *proto);
+      delete(proto);
+    }
+
+    {
+      LatticeSerializer s;
+      iso_protobuf::Lattice * proto = s.read_protobuf(inFile.c_str());
+      if (NULL == proto)
+        FAIL() << "Cannot read " + inFile;
+      lattice = s.lattice_from_proto(proto);
+      delete(proto);
+    }
+
+    {
+      SearchLattice searchLattice(query, lattice);
+      vector<SearchResult*> results;
+      searchLattice.search(results);
+    }
+
+    delete(query);
+    delete(lattice);
   }
 }

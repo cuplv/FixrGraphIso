@@ -57,7 +57,6 @@ namespace isotest {
       if (NULL == proto_acdfg) {
         FAIL() << "Cannot read " + inFile;
       }
-
       orig_acdfg = s.create_acdfg((const iso_protobuf::Acdfg&) *proto_acdfg);
       delete(proto_acdfg);
     }

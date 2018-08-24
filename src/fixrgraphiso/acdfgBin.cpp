@@ -26,8 +26,6 @@ namespace fixrgraphiso {
     return d.check();
   }
 
-
-
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b){
     IsoSubsumption dir_a (acdfgRepr, b);
     IsoSubsumption dir_b (b, acdfgRepr);
