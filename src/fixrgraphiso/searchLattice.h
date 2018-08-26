@@ -38,12 +38,16 @@ namespace fixrgraphiso {
     }
 
     void setReferencePattern(AcdfgBin* refPat) {
-      this->referencePatterns = refPat;
+      this->referencePattern = refPat;
     }
+
+    result_type_t getType() { return type; }
+    AcdfgBin* getReferencePattern() { return referencePattern;}
+    AcdfgBin* getAnomalousPattern() { return anomalousPattern;}
 
   private:
     result_type_t type;
-    AcdfgBin* referencePatterns;
+    AcdfgBin* referencePattern;
     AcdfgBin* anomalousPattern;
     // Add the isomorphism relation to the result
   };

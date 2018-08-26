@@ -22,27 +22,32 @@ namespace fixrgraphiso {
 
   void SearchLattice::findAnomalous(AcdfgBin* popBin,
                                     vector<SearchResult*> results) {
-    /* Just add the corrrect subsumed pattern once */
-    bool is_correct_subsumed = false;
+    /* assumes the query is *not* subsumed by any anomalous bin */
+    bool is_correct_subsumed = true;
 
     /* get all the reachable anomalous pattern that are
        subsumed by the popular one.
     */
     for(AcdfgBin* subsuming : popBin->getSubsumingBins()) {
       if (subsuming->isAnomalous()) {
-        if (subsumes(subsuming) && ! is_correct_subsumed) {
-          SearchResult* r = new SearchResult(CORRECT_SUBSUMED);
-          r->setReferencePattern(popBin);
-
-          results.push_back(r);
-          is_correct_subsumed = true;
-        } else if (isSubsumed(subsuming)) {
+        if (isSubsumed(subsuming)) {
           SearchResult* r = new SearchResult(ANOMALOUS_SUBSUMED);
           r->setReferencePattern(popBin);
-          r->setReferencePattern(subsuming);
+          r->setAnomalousPattern(subsuming);
           results.push_back(r);
+
+          /* the pattern is subsumed by at least an anomalous 
+             pattern */
+          is_correct_subsumed = false;
         }
       }
+    }
+
+    if (is_correct_subsumed) {
+      SearchResult* r = new SearchResult(CORRECT_SUBSUMED);
+      r->setReferencePattern(popBin);
+
+      results.push_back(r);
     }
   }
 
@@ -52,8 +57,7 @@ namespace fixrgraphiso {
 
     // Search the relative position of the query w.r.t.
     // the popular pattern
-    for (auto it = lattice->beginPopular();
-         it != lattice->endPopular(); it++) {
+    for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
       AcdfgBin* popBin = *it;
 
       if (can_subsume && subsumes(popBin)) {

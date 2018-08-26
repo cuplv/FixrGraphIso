@@ -25,6 +25,9 @@ namespace frequentSubgraph {
   using fixrgraphiso::Lattice;
   using fixrgraphiso::SearchLattice;
   using fixrgraphiso::SearchResult;
+  //using fixrgraphiso::CORRECT;
+  // using fixrgraphiso::CORRECT_ANOMALOUS;
+  // using fixrgraphiso::ANOMALOUS_SUBSUMED;
 
   namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
 
@@ -39,6 +42,30 @@ namespace frequentSubgraph {
     if (expected != vectorSize)
       FAIL() << "Wrong number of " << desc << " bins: " <<
         vectorSize << " instead of " << expected;
+  }
+
+  Lattice* readLattice(string latticeFile) {
+    LatticeSerializer s;
+    Lattice * res = NULL;
+
+    iso_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
+    if (NULL != proto) {
+      res = s.lattice_from_proto(proto);
+    }
+    delete(proto);
+    return res;
+  }
+
+  Acdfg* readAcdfg(string acdfgPath) {
+    AcdfgSerializer s;
+    Acdfg* res = NULL;
+    iso_protobuf::Acdfg * proto =
+      s.read_protobuf_acdfg(acdfgPath.c_str());
+    if (NULL != proto) {
+      res = s.create_acdfg((const iso_protobuf::Acdfg&) *proto);
+      delete(proto);
+    }
+    return res;
   }
 
   TEST_F(FrequentSubgraphTest, ByDefaultIsoIsTrue) {
@@ -63,20 +90,8 @@ namespace frequentSubgraph {
       testBinSize(15, lattice.getIsolatedBins(), "isolated");
     }
 
-    lattice.dumpToDot("/tmp/app2.dot");
-
-    {
-      LatticeSerializer s;
-      string const& outFile = "/tmp/out.serialization.bin";
-      iso_protobuf::Lattice * proto = s.proto_from_lattice(lattice);
-      fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
-      proto->SerializeToOstream(&myfile);
-      myfile.close();
-
-      proto = s.read_protobuf(outFile.c_str());
-      s.lattice_from_proto(proto);
-      delete(proto);
-    }
+    lattice.dumpToDot("/tmp/app2.dot", false);
+    lattice.dumpToDot("/tmp/app2_classified.dot", true);
 
     ifstream res(res_file.c_str());
     string out_file = "cluster-info.txt";
@@ -93,68 +108,90 @@ namespace frequentSubgraph {
 
   TEST_F(FrequentSubgraphTest, LatticeSerialization) {
     string const& inFile = "../test_data/subgraph_results/lattice.bin";
-
     LatticeSerializer s;
-
     Lattice *orig;
-    Lattice *read;
 
-    {
-      iso_protobuf::Lattice * proto = s.read_protobuf(inFile.c_str());
-      if (NULL == proto) {
-        FAIL() << "Cannot read " + inFile;
-      }
+    /* test read */
+    orig = readLattice(inFile);
 
-      orig = s.lattice_from_proto(proto);
-      delete(proto);
-    }
-
-    {
-      iso_protobuf::Lattice * proto =
+    /* test write and read back */
+    if (NULL != orig) {
+      LatticeSerializer s;
+      iso_protobuf::Lattice * protoWrite =
         s.proto_from_lattice((const Lattice&) *orig);
 
-      read = s.lattice_from_proto(proto);
-      delete(proto);
-    }
+      if (NULL != protoWrite) {
+        Lattice *read;
 
-    delete(orig);
-    delete(read);
+        string const& outFile =
+          "../test_data/subgraph_results/lattice_test.bin";
+        fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
+        protoWrite->SerializeToOstream(&myfile);
+        myfile.close();
+        delete(protoWrite);
+
+        read = readLattice(outFile);
+        if (NULL != read) {
+          delete(read);
+        }
+      }
+      delete(orig);
+    } else {
+      FAIL() << "Cannot read the lattice in " << inFile;
+    }
   }
 
   TEST_F(FrequentSubgraphTest, LatticeSearch) {
-    string const& queryFile =
-      "../test_data/com.dagwaging.rosewidgets.db.widget.UpdateService_update.acdfg.bin";
     string const& inFile = "../test_data/subgraph_results/lattice.bin";
-
-    Acdfg* query;
     Lattice *lattice;
 
-    {
-      AcdfgSerializer s;
-      iso_protobuf::Acdfg * proto =
-        s.read_protobuf_acdfg(queryFile.c_str());
-      if (NULL == proto)
-        FAIL() << "Cannot read " + queryFile;
-      query = s.create_acdfg((const iso_protobuf::Acdfg&) *proto);
-      delete(proto);
+    /* Read the searialized lattice */
+    lattice = readLattice(inFile);
+
+    if (NULL == lattice) {
+      FAIL() << "Cannot read the lattice in " << inFile;
+    } else {
+      /*
+        Input: acdfg in popular pattern
+        Output: SearchResult(CORRECT)
+                referencePattern: popular bin containing popular
+      */
+      {
+        string const& queryFile =
+          "../test_data/com.dagwaging.rosewidgets.db.widget.UpdateService_update.acdfg.bin";
+
+        Acdfg* query = readAcdfg(queryFile);
+        if (NULL == query) {
+          FAIL() << "Cannot read acdfg " << queryFile;
+        } else {
+          vector<SearchResult*> results;
+          SearchLattice searchLattice(query, lattice);
+          searchLattice.search(results);
+
+          ASSERT_EQ(1, results.size()) << "Wrong number of results";
+          SearchResult *res = results.front();
+          ASSERT_EQ(res->getType(), fixrgraphiso::CORRECT) << "Wrong result type";
+          AcdfgBin* ref = res->getReferencePattern();
+          ASSERT_TRUE(NULL != ref) << "No reference pattern!";
+          ASSERT_TRUE(ref->isACDFGEquivalent(query)) << "Pattern not equivalent";
+
+          delete(query);
+        }
+      }
+
+      /*
+        Input: acdfg from popular, less a method call from important methods
+        Output:
+        SearchResult(CORRECT_SUBSUMED), referencePattern: popular bin subsuming acdfg, no anomalous subsuming acdfg
+      */
+
+      /*
+        Input: acdfg from popular, less a method call from important methods
+        Output:
+        SearchResult(ANOMALOUS_SUBSUMED), referencePattern: popular bin subsuming acdfg, anomalousPattern: anomalous pattern subsuming the acdfg
+      */
     }
 
-    {
-      LatticeSerializer s;
-      iso_protobuf::Lattice * proto = s.read_protobuf(inFile.c_str());
-      if (NULL == proto)
-        FAIL() << "Cannot read " + inFile;
-      lattice = s.lattice_from_proto(proto);
-      delete(proto);
-    }
-
-    {
-      SearchLattice searchLattice(query, lattice);
-      vector<SearchResult*> results;
-      searchLattice.search(results);
-    }
-
-    delete(query);
     delete(lattice);
   }
 }

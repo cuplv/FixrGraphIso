@@ -83,6 +83,8 @@ namespace fixrgraphiso {
   void setPopular();
   bool isPopular() const { return popular;}
 
+  bool isClassified() const { return popular || anomalous || isolated;}
+
   const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
   bool isAtFrontierOfPopularity(int freq_cutoff) const;
   bool hasPopularAncestor() const;
@@ -154,7 +156,8 @@ namespace fixrgraphiso {
                      const string & output_prefix,
                      const string & infoFileName);
 
-    void dumpToDot(const string & dotFile);
+    void dumpToDot(const string & dotFile,
+                   const bool onlyClassified);
 
   private:
     vector<AcdfgBin*> allBins;

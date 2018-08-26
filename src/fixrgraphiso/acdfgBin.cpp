@@ -224,7 +224,8 @@ namespace fixrgraphiso {
     out_file.close();
   }
 
-  void Lattice::dumpToDot(const string & dotFile) {
+  void Lattice::dumpToDot(const string & dotFile,
+                          const bool onlyClassified) {
     ofstream out_file(dotFile.c_str());
 
     out_file << "digraph { " << endl;
@@ -233,6 +234,9 @@ namespace fixrgraphiso {
     int id = -1;
     std::map<AcdfgBin*,int> toNodeId;
     for (AcdfgBin* bin : allBins) {
+      if (onlyClassified && !bin->isClassified()) {
+        continue;
+      }
       id++;
       toNodeId[bin] = id;
 
@@ -254,11 +258,17 @@ namespace fixrgraphiso {
     }
 
     for (AcdfgBin* bin : allBins) {
+      if (onlyClassified && !bin->isClassified())
+        continue;
+
       for (AcdfgBin* subsumed : bin->getSubsumingBins()) {
+        if (onlyClassified && !subsumed->isClassified()) {
+          continue;
+        }
+
         out_file << "node_" << toNodeId[bin] << " -> node_" << toNodeId[subsumed] << ";" << endl;
       }
     }
-
 
     // Print edges
     out_file << "}" << endl;
