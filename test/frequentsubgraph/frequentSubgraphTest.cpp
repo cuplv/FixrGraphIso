@@ -9,18 +9,18 @@
 #include "fixrgraphiso/searchLattice.h"
 
 namespace frequentSubgraph {
+  using namespace std;
+
   using std::string;
   using std::cout;
   using std::ifstream;
   using std::ofstream;
   using std::fstream;
-
-  using namespace std;
+  using std::vector;
 
   using fixrgraphiso::Acdfg;
-  using fixrgraphiso::MethodNode;
+  using fixrgraphiso::AcdfgBin;
   using fixrgraphiso::AcdfgSerializer;
-  using fixrgraphiso::IsoSubsumption;
   using fixrgraphiso::LatticeSerializer;
   using fixrgraphiso::Lattice;
   using fixrgraphiso::SearchLattice;
@@ -30,6 +30,15 @@ namespace frequentSubgraph {
 
   FrequentSubgraphTest::FrequentSubgraphTest()
   {
+  }
+
+  void testBinSize(const int expected,
+                   const std::vector<AcdfgBin*> vectorBin,
+                   const string desc) {
+    int vectorSize = vectorBin.size();
+    if (expected != vectorSize)
+      FAIL() << "Wrong number of " << desc << " bins: " <<
+        vectorSize << " instead of " << expected;
   }
 
   TEST_F(FrequentSubgraphTest, ByDefaultIsoIsTrue) {
@@ -45,6 +54,16 @@ namespace frequentSubgraph {
 
     miner.mine(lattice, frequency, method_file,
                output_prefix, acdfg_list);
+
+    {
+      /* check the results */
+      testBinSize(47, lattice.getAllBins(), "all");
+      testBinSize(3, lattice.getPopularBins(), "popular");
+      testBinSize(4, lattice.getAnomalousBins(), "anomalous");
+      testBinSize(15, lattice.getIsolatedBins(), "isolated");
+    }
+
+    lattice.dumpToDot("/tmp/app2.dot");
 
     {
       LatticeSerializer s;

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include "acdfgBin.h"
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/collectStats.h"
@@ -221,5 +222,45 @@ namespace fixrgraphiso {
     printStats(out_file);
 
     out_file.close();
+  }
+
+  void Lattice::dumpToDot(const string & dotFile) {
+    ofstream out_file(dotFile.c_str());
+
+    out_file << "digraph { " << endl;
+
+    // Print nodes
+    int id = -1;
+    std::map<AcdfgBin*,int> toNodeId;
+    for (AcdfgBin* bin : allBins) {
+      id++;
+      toNodeId[bin] = id;
+
+      string color;
+      if (bin->isPopular()) {
+        color = "green";
+      } else if (bin->isAnomalous()) {
+        color = "red";
+      } else if (bin->isIsolated()) {
+        color = "yellow";
+      } else {
+        color = "gray";
+      }
+
+      out_file << "node [shape = circle, style=filled, ";
+      out_file << "color=" << color << ",";
+      out_file << "label = \"" << id;
+      out_file << "\", ] node_" << id << ";" << endl;
+    }
+
+    for (AcdfgBin* bin : allBins) {
+      for (AcdfgBin* subsumed : bin->getSubsumingBins()) {
+        out_file << "node_" << toNodeId[bin] << " -> node_" << toNodeId[subsumed] << ";" << endl;
+      }
+    }
+
+
+    // Print edges
+    out_file << "}" << endl;
   }
 }

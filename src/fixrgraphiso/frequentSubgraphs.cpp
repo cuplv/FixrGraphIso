@@ -162,11 +162,12 @@ namespace fixrgraphiso {
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
         lattice.addPopular(a);
-      } else  if (a -> getFrequency() <= anomalyCutOff &&
-                  a -> hasPopularAncestor()){
+      } else if (a -> getFrequency() <= anomalyCutOff &&
+                 a -> hasPopularAncestor()){
         a -> setAnomalous();
         lattice.addAnomalous(a);
       } else if (a -> getFrequency() <= anomalyCutOff){
+        a->setIsolated();
         lattice.addIsolated(a);
       }
     }

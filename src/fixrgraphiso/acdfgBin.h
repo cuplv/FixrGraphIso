@@ -26,7 +26,7 @@ namespace fixrgraphiso {
   public:
 
   AcdfgBin(Acdfg* a) : subsuming(false),
-      anomalous(false), popular(false) {
+      anomalous(false), popular(false), isolated(false) {
     acdfgRepr = a;
     acdfgNames.push_back(a->getName());
   }
@@ -78,7 +78,9 @@ namespace fixrgraphiso {
   void setSubsuming() { subsuming = true; }
   bool isAnomalous() const {return anomalous; }
   void setAnomalous() { anomalous = true; }
-  void setPopular() ;
+  bool isIsolated() const {return isolated; }
+  void setIsolated() { isolated = true; }
+  void setPopular();
   bool isPopular() const { return popular;}
 
   const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
@@ -116,6 +118,7 @@ namespace fixrgraphiso {
   /* */
   bool subsuming;
   bool anomalous;
+  bool isolated;
   bool popular;
   };
 
@@ -140,11 +143,18 @@ namespace fixrgraphiso {
     bin_iterator beginIsolated() const { return isolatedBins.begin(); }
     bin_iterator endIsolated() const { return isolatedBins.end(); }
 
+    const vector<AcdfgBin*> getAllBins() const {return allBins;};
+    const vector<AcdfgBin*> getPopularBins() const {return popularBins;};
+    const vector<AcdfgBin*> getAnomalousBins() const {return anomalousBins;};
+    const vector<AcdfgBin*> getIsolatedBins() const {return isolatedBins;};
+
     void sortByFrequency();
 
     void dumpAllBins(std::chrono::seconds time_taken,
                      const string & output_prefix,
                      const string & infoFileName);
+
+    void dumpToDot(const string & dotFile);
 
   private:
     vector<AcdfgBin*> allBins;
