@@ -218,8 +218,13 @@ namespace frequentSubgraph {
           FAIL() << "Cannot read acdfg " << queryFile;
         } else {
           vector<SearchResult*> results;
+
           SearchLattice searchLattice(query, lattice);
           searchLattice.search(results);
+
+          iso_protobuf::SearchResults* protoRes =
+            searchLattice.toProto(results);
+          delete(protoRes);
 
           searchLattice.printResult(results, std::cout);
           ASSERT_EQ(2, results.size()) << "Wrong number of results";

@@ -9,11 +9,13 @@
 #include <set>
 #include "fixrgraphiso/acdfgBin.h"
 #include "fixrgraphiso/acdfg.h"
+#include "fixrgraphiso/proto_search.pb.h"
 
 namespace fixrgraphiso {
   using std::vector;
   using std::set;
   using std::ostream;
+  namespace fixr_protobuf = edu::colorado::plv::fixr::protobuf;
 
   /**
    * Type of search results inferred from the position of the
@@ -54,9 +56,12 @@ namespace fixrgraphiso {
       this->isoToAnomalous = new IsoRepr(iso);
     }
 
-    result_type_t getType() { return type; }
-    AcdfgBin* getReferencePattern() { return referencePattern;}
-    AcdfgBin* getAnomalousPattern() { return anomalousPattern;}
+    result_type_t getType() const { return type; }
+    AcdfgBin* getReferencePattern() const { return referencePattern;}
+    AcdfgBin* getAnomalousPattern() const { return anomalousPattern;}
+
+    IsoRepr* getIsoToReference() const { return isoToReference; }
+    IsoRepr* getIsoToAnomalous() const { return isoToAnomalous; }
 
   private:
     result_type_t type;
@@ -92,6 +97,8 @@ namespace fixrgraphiso {
 
     void printResult(const vector<SearchResult*> &results,
                      ostream & out_stream);
+
+    fixr_protobuf::SearchResults* toProto(const vector<SearchResult*> &results);
 
     void search(vector<SearchResult*> &results);
 

@@ -282,4 +282,14 @@ namespace fixrgraphiso {
     // Print edges
     out_file << "}" << endl;
   }
+
+  void Lattice::getAcdfgBin2id(map<AcdfgBin*, int> &acdfgBin2idMap) const {
+    int id = -1;
+    for (auto it = beginAllBins();
+         it != endAllBins(); ++it) {
+      AcdfgBin * a = *it;
+      id += 1;
+      acdfgBin2idMap[a] = id;
+    };
+  }
 }

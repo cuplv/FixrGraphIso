@@ -4,6 +4,7 @@
 
 #include "fixrgraphiso/searchLattice.h"
 #include "fixrgraphiso/isomorphismClass.h"
+#include "fixrgraphiso/serializationLattice.h"
 
 
 namespace fixrgraphiso {
@@ -11,6 +12,7 @@ namespace fixrgraphiso {
   using std::endl;
   using std::map;
   using std::ostream;
+
 
   bool SearchLattice::subsumes(AcdfgBin* acdfgBin,
                                IsoRepr* &isoRepr) {
@@ -182,12 +184,74 @@ namespace fixrgraphiso {
       } else {
         out_stream << "Not set!" << endl;
       }
+    }
+  }
 
 
+  fixr_protobuf::SearchResults*
+  SearchLattice::toProto(const vector<SearchResult*> &results) {
+    LatticeSerializer serializer;
+    fixr_protobuf::SearchResults *protoResults =
+      new fixr_protobuf::SearchResults();
 
+    map<AcdfgBin*, int> acdfgBin2idMap;
+    lattice->getAcdfgBin2id(acdfgBin2idMap);
+
+    /* serialize the lattice */
+    acdfg_protobuf::Lattice* protoLattice =
+      serializer.proto_from_lattice((const Lattice&) *lattice);
+    protoResults->set_allocated_lattice(protoLattice);
+
+    /* serialize the results */
+    for(SearchResult* result : results) {
+      fixr_protobuf::SearchResults::SearchResult *protoRes = protoResults->add_results();
+
+      /* type */
+      switch (result->getType()) {
+      case CORRECT:
+        protoRes->set_type(fixr_protobuf::SearchResults::SearchResult::CORRECT);
+        break;
+      case CORRECT_SUBSUMED:
+        protoRes->set_type(fixr_protobuf::SearchResults::SearchResult::CORRECT_SUBSUMED);
+        break;
+      case ANOMALOUS_SUBSUMED:
+        protoRes->set_type(fixr_protobuf::SearchResults::SearchResult::ANOMALOUS_SUBSUMED);
+        break;
+      case ISOLATED_SUBSUMED:
+        protoRes->set_type(fixr_protobuf::SearchResults::SearchResult::ISOLATED_SUBSUMED);
+        break;
+      case ISOLATED_SUBSUMING:
+        protoRes->set_type(fixr_protobuf::SearchResults::SearchResult::ISOLATED_SUBSUMING);
+        break;
+      default:
+        assert(false);
+      }
+
+      int ref_id = acdfgBin2idMap[result->getReferencePattern()];
+      protoRes->set_referencepatternid(ref_id);
+
+      {
+        AcdfgBin* a = result->getAnomalousPattern();
+        if (NULL != a) {
+          int id = acdfgBin2idMap[a];
+          protoRes->set_anomalouspatternid(id);
+        }
+      }
+
+      {
+        IsoRepr* iso_repr = result->getIsoToReference();
+        fixr_protobuf::UnweightedIso* protoIso = iso_repr->proto_from_iso();
+        protoRes->set_allocated_isotoreference(protoIso);
+      }
+
+      if (NULL != result->getIsoToAnomalous()) {
+        IsoRepr* iso_repr = result->getIsoToAnomalous();
+        fixr_protobuf::UnweightedIso* protoIso = iso_repr->proto_from_iso();
+        protoRes->set_allocated_isotoanomalous(protoIso);
+      }
     }
 
-
+    return protoResults;
   }
 
 }

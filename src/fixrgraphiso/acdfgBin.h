@@ -177,6 +177,8 @@ namespace fixrgraphiso {
     void dumpToDot(const string & dotFile,
                    const bool onlyClassified);
 
+    void getAcdfgBin2id(map<AcdfgBin*, int> &acdfgBin2idMap) const;
+
   private:
     vector<string> methodNames;
     vector<AcdfgBin*> allBins;

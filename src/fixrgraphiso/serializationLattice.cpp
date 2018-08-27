@@ -14,6 +14,8 @@
 #include "fixrgraphiso/serializationLattice.h"
 
 namespace fixrgraphiso {
+  using std::map;
+
   /**
    * Read a lattice from the protobuffer and create a lattice data structure
    */
@@ -29,7 +31,7 @@ namespace fixrgraphiso {
 
     // 1. Create the all the AcdfgBins
     // It just creates the bins, ignoring their relations
-    std::map<int, AcdfgBin*> id2AcdfgBinMap;
+    map<int, AcdfgBin*> id2AcdfgBinMap;
     for (int i = 0; i < protoLattice->bins_size(); i++) {
       const acdfg_protobuf::Lattice::AcdfgBin & protoAcdfgBin =
         protoLattice->bins(i);
@@ -103,7 +105,6 @@ namespace fixrgraphiso {
   acdfg_protobuf::Lattice* LatticeSerializer::proto_from_lattice(const Lattice & lattice) {
     acdfg_protobuf::Lattice* protoLattice = new acdfg_protobuf::Lattice();
 
-    std::map<AcdfgBin*, int> acdfgBin2idMap;
 
     // 0. Assign the method names
     for (const string & methodName : lattice.getMethodNames()) {
@@ -111,15 +112,8 @@ namespace fixrgraphiso {
     }
 
     // 1. Assign the IDs to the bins
-    {
-      int id = -1;
-      for (auto it = lattice.beginAllBins();
-           it != lattice.endAllBins(); ++it) {
-        AcdfgBin * a = *it;
-        id += 1;
-        acdfgBin2idMap[a] = id;
-      };
-    }
+    map<AcdfgBin*, int> acdfgBin2idMap;
+    lattice.getAcdfgBin2id(acdfgBin2idMap);
 
     // 2. Populate the bins field
     for (auto it = lattice.beginAllBins();
