@@ -38,10 +38,14 @@ namespace fixrgraphiso {
       Acdfg* repr = serializer.create_acdfg(protoRepr);
 
       AcdfgBin* acdfgBin = new AcdfgBin(repr);
-      // TODO - fix
-      // for (int j = 0; j < protoAcdfgBin.acdfg_names_size(); j++) {
-      //   acdfgBin->insertEquivalentACDFG(protoAcdfgBin.acdfg_names(j));
-      // }
+      for (int j = 0; j < protoAcdfgBin.names_to_iso_size(); j++) {
+        const acdfg_protobuf::Lattice::IsoPair & protoIso =
+          protoAcdfgBin.names_to_iso(j);
+
+        IsoRepr* iso = new IsoRepr(protoIso.iso());
+
+        acdfgBin->insertEquivalentACDFG(protoIso.method_name(), iso);
+      }
 
       if (protoAcdfgBin.anomalous()) acdfgBin->setAnomalous();
       if (protoAcdfgBin.subsuming()) acdfgBin->setSubsuming();
@@ -133,8 +137,11 @@ namespace fixrgraphiso {
       Acdfg* reprAcdfg = (a->getRepresentative());
       serializer.fill_proto_from_acdfg((const Acdfg&) *reprAcdfg, proto_repr);
 
-      for (const string & acdfgName : a->getAcdfgNames()) {
-        proto_a->add_acdfg_names(acdfgName);
+      const map<string, IsoRepr*> names_to_iso = a->getAcdfgNameToIso();
+      for (auto it = names_to_iso.begin(); it != names_to_iso.end(); it++) {
+        acdfg_protobuf::Lattice::IsoPair* pair = proto_a->add_names_to_iso();
+        pair->set_method_name(it->first);
+        pair->set_allocated_iso(it->second->proto_from_iso());
       }
 
       for (AcdfgBin* subsuming : a->getSubsumingBins()) {

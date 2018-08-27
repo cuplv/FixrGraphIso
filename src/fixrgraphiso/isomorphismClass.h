@@ -59,10 +59,12 @@ namespace fixrgraphiso {
       this->acdfg_2 = acdfg_2;
     }
 
-    void addNodeRel(int node_1, int node_2) {
+    IsoRepr(const UnweightedIso& iso);
+
+    void addNodeRel(node_id_t node_1, node_id_t node_2) {
       nodesRel.insert(id_pair_t(node_1,node_2));
     }
-    void addEdgeRel(int edge_1, int edge_2) {
+    void addEdgeRel(edge_id_t edge_1, edge_id_t edge_2) {
       edgesRel.insert(id_pair_t(edge_1,edge_2));
     }
 

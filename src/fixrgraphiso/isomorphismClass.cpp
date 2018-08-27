@@ -720,4 +720,28 @@ namespace fixrgraphiso {
     return protoIso;
   };
 
+  IsoRepr::IsoRepr(const UnweightedIso& protoIso) {
+    AcdfgSerializer serializer;
+
+    const iso_protobuf::Acdfg& protoAcdfg1 = protoIso.acdfg_1();
+    acdfg_1 = serializer.create_acdfg(protoAcdfg1);
+
+    const iso_protobuf::Acdfg& protoAcdfg2 = protoIso.acdfg_2();
+    acdfg_2 = serializer.create_acdfg(protoAcdfg2);
+
+    for (int i = 0; i < protoIso.nodesmap_size(); i++) {
+      const acdfg_protobuf::UnweightedIso::RelPair & protoPair =
+        protoIso.nodesmap(i);
+
+      addNodeRel(protoPair.id_1(), protoPair.id_2());
+    }
+
+    for (int i = 0; i < protoIso.edgesmap_size(); i++) {
+      const acdfg_protobuf::UnweightedIso::RelPair & protoPair =
+        protoIso.edgesmap(i);
+
+      addNodeRel(protoPair.id_1(), protoPair.id_2());
+    }
+  }
+
 }

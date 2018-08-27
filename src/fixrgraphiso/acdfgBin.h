@@ -110,6 +110,10 @@ namespace fixrgraphiso {
     return incomingEdges;
   }
 
+  const map<string, IsoRepr*> & getAcdfgNameToIso() const {
+    return acdfgNameToIso;
+  }
+
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
 

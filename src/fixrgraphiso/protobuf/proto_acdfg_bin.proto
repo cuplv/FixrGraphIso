@@ -1,12 +1,19 @@
 package edu.colorado.plv.fixr.protobuf;
 
 import "proto_acdfg.proto";
+import "proto_unweighted_iso.proto";
+// proto_acdfg.proto_unweighted_iso.proto";
 
 message Lattice {
+  message IsoPair {
+    required string method_name = 1;
+    required UnweightedIso iso = 2;
+  }
+
   message AcdfgBin {
     required uint64 id = 1;
     required Acdfg acdfg_repr = 2;
-    repeated string acdfg_names = 3;
+    repeated IsoPair names_to_iso = 3;
     repeated uint64 subsuming_bins = 4;
     repeated uint64 incoming_edges = 5;
     required bool subsuming = 6;
