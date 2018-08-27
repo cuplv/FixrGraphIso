@@ -6,6 +6,8 @@
 namespace isotest {
   using std::string;
   using std::cout;
+  using std::vector;
+  using std::set;
 
   using fixrgraphiso::Acdfg;
   using fixrgraphiso::MethodNode;
@@ -24,11 +26,16 @@ namespace isotest {
     vector<MethodNode*> targets;
 
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(fileName.c_str());
+    if (NULL == proto_acdfg) {
+      FAIL() << "Cannot read " + fileName;
+    }
+
     Acdfg * acdfg = s.create_acdfg((const iso_protobuf::Acdfg&) *proto_acdfg);
     delete(proto_acdfg);
 
     acdfg->getMethodNodes(targets);
-    Acdfg * slicedAcdfg = acdfg->sliceACDFG(targets);
+    std::set<int> ignoreMethodIds;
+    Acdfg * slicedAcdfg = acdfg->sliceACDFG(targets, ignoreMethodIds);
     delete(acdfg);
 
     IsoSubsumption d(slicedAcdfg, slicedAcdfg);
@@ -50,6 +57,9 @@ namespace isotest {
 
     {
       iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(inFile.c_str());
+      if (NULL == proto_acdfg) {
+        FAIL() << "Cannot read " + inFile;
+      }
       orig_acdfg = s.create_acdfg((const iso_protobuf::Acdfg&) *proto_acdfg);
       delete(proto_acdfg);
     }

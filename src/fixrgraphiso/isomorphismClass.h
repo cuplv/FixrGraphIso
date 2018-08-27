@@ -5,19 +5,20 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "fixrgraphiso/proto_iso.pb.h"
+#include <set>
+#include "fixrgraphiso/proto_unweighted_iso.pb.h"
 #include "z3++.h"
 #include "fixrgraphiso/acdfg.h"
 
-namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
-using std::string;
-using std::vector;
-using std::cout;
-using std::endl;
-using std::pair;
-using std::map;
-
 namespace fixrgraphiso {
+  using std::string;
+  using std::vector;
+  using std::cout;
+  using std::endl;
+  using std::pair;
+  using std::map;
+
+  using edu::colorado::plv::fixr::protobuf::UnweightedIso;
 
   extern bool debug;
 
@@ -46,6 +47,38 @@ namespace fixrgraphiso {
     void solve();
     bool isSat();
     bool getTruthValuation(var_t x);
+  };
+
+  /**
+   * Stores the isomorphism relation between two ACDFGs
+   */
+  class IsoRepr {
+    public:
+    IsoRepr(Acdfg* acdfg_1, Acdfg* acdfg_2) {
+      this->acdfg_1 = acdfg_1;
+      this->acdfg_2 = acdfg_2;
+    }
+
+    IsoRepr(const UnweightedIso& iso);
+
+    void addNodeRel(node_id_t node_1, node_id_t node_2) {
+      nodesRel.insert(id_pair_t(node_1,node_2));
+    }
+    void addEdgeRel(edge_id_t edge_1, edge_id_t edge_2) {
+      edgesRel.insert(id_pair_t(edge_1,edge_2));
+    }
+
+    const set<id_pair_t> & getNodesRel() const {return nodesRel;}
+    const set<id_pair_t> & getEdgesRel() const {return edgesRel;}
+
+    UnweightedIso* proto_from_iso() const;
+
+    private:
+    Acdfg* acdfg_1;
+    Acdfg* acdfg_2;
+
+    set<id_pair_t> nodesRel;
+    set<id_pair_t> edgesRel;
   };
 
   /**
@@ -88,6 +121,8 @@ namespace fixrgraphiso {
 
     void createEncodingVariables();
 
+    void buildIsoRepr(IsoRepr* iso);
+
   public:
     IsoSubsumption(Acdfg * a, Acdfg * b);
     ~IsoSubsumption(){}
@@ -98,7 +133,9 @@ namespace fixrgraphiso {
     bool findCompatibleEdgePairs();
     void makeEncoding();
     bool check();
+    bool check(IsoRepr *iso);
   };
+
 
   /**
    * Check if acdfg_a is isomorphic to acdfg_b
@@ -136,7 +173,6 @@ namespace fixrgraphiso {
     }
 
   };
-
 }
 
 

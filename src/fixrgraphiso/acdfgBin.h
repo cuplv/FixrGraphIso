@@ -14,6 +14,7 @@
 #include <iostream>
 #include <set>
 #include "fixrgraphiso/acdfg.h"
+#include "fixrgraphiso/isomorphismClass.h"
 
 namespace fixrgraphiso {
   using std::vector;
@@ -26,21 +27,29 @@ namespace fixrgraphiso {
   public:
 
   AcdfgBin(Acdfg* a) : subsuming(false),
-      anomalous(false), popular(false) {
+      anomalous(false), popular(false), isolated(false) {
     acdfgRepr = a;
     acdfgNames.push_back(a->getName());
   }
 
-  bool isACDFGEquivalent(Acdfg *b);
-
-  void insertEquivalentACDFG(Acdfg * b){
-    acdfgNames.push_back(b->getName());
+  ~AcdfgBin() {
+    /* free the isomorphism relation */
+    for (auto it = acdfgNameToIso.begin();
+         it != acdfgNameToIso.end(); it++) {
+      delete(it->second);
+    }
   }
 
-  void insertEquivalentACDFG(const string b){
+  bool isACDFGEquivalent(Acdfg *b, IsoRepr* iso);
+
+  void insertEquivalentACDFG(const string b, IsoRepr* iso){
     acdfgNames.push_back(b);
+    acdfgNameToIso[b] = iso;
   }
 
+  void insertEquivalentACDFG(Acdfg * b, IsoRepr* iso){
+    insertEquivalentACDFG(b->getName(), iso);
+  }
 
   int getFrequency() const {
     return acdfgNames.size() ;
@@ -78,8 +87,12 @@ namespace fixrgraphiso {
   void setSubsuming() { subsuming = true; }
   bool isAnomalous() const {return anomalous; }
   void setAnomalous() { anomalous = true; }
-  void setPopular() ;
+  bool isIsolated() const {return isolated; }
+  void setIsolated() { isolated = true; }
+  void setPopular();
   bool isPopular() const { return popular;}
+
+  bool isClassified() const { return popular || anomalous || isolated;}
 
   const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
   bool isAtFrontierOfPopularity(int freq_cutoff) const;
@@ -97,12 +110,18 @@ namespace fixrgraphiso {
     return incomingEdges;
   }
 
+  const map<string, IsoRepr*> & getAcdfgNameToIso() const {
+    return acdfgNameToIso;
+  }
+
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
 
   /* List of acdfgs contained in the Bin */
   Acdfg* acdfgRepr;
   vector<string> acdfgNames;
+  map<string, IsoRepr*> acdfgNameToIso;
+
   /* List of bins subsumed by this bin */
   set<AcdfgBin*> subsumingBins;
   /* List of bins that are directly subsumed by this bin
@@ -116,13 +135,17 @@ namespace fixrgraphiso {
   /* */
   bool subsuming;
   bool anomalous;
+  bool isolated;
   bool popular;
   };
 
   class Lattice {
   public:
-    Lattice() {
-    }
+    Lattice() {};
+    Lattice(const vector<string> & methodNames);
+
+    void addMethodName(const string& methodName) { methodNames.push_back(methodName);}
+    const vector<string> & getMethodNames() const { return methodNames; }
 
     void addBin(AcdfgBin* bin);
     void addPopular(AcdfgBin* bin);
@@ -140,13 +163,24 @@ namespace fixrgraphiso {
     bin_iterator beginIsolated() const { return isolatedBins.begin(); }
     bin_iterator endIsolated() const { return isolatedBins.end(); }
 
+    const vector<AcdfgBin*> getAllBins() const {return allBins;};
+    const vector<AcdfgBin*> getPopularBins() const {return popularBins;};
+    const vector<AcdfgBin*> getAnomalousBins() const {return anomalousBins;};
+    const vector<AcdfgBin*> getIsolatedBins() const {return isolatedBins;};
+
     void sortByFrequency();
 
     void dumpAllBins(std::chrono::seconds time_taken,
                      const string & output_prefix,
                      const string & infoFileName);
 
+    void dumpToDot(const string & dotFile,
+                   const bool onlyClassified);
+
+    void getAcdfgBin2id(map<AcdfgBin*, int> &acdfgBin2idMap) const;
+
   private:
+    vector<string> methodNames;
     vector<AcdfgBin*> allBins;
     vector<AcdfgBin*> popularBins;
     vector<AcdfgBin*> anomalousBins;

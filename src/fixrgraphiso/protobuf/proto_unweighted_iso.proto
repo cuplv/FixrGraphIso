@@ -1,0 +1,16 @@
+package edu.colorado.plv.fixr.protobuf;
+
+import "proto_acdfg.proto";
+
+message UnweightedIso {
+  message RelPair {
+    required uint64 id_1 = 1;
+    required uint64 id_2 = 2;
+  }
+
+  required Acdfg acdfg_1 = 1;
+  required Acdfg acdfg_2 = 2;
+
+  repeated RelPair nodesMap = 3;
+  repeated RelPair edgesMap = 4;
+}

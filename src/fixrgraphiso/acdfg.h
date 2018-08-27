@@ -365,7 +365,10 @@ namespace fixrgraphiso {
 
     Acdfg * extractSubgraphWithFrequencyCutoff(int freqCutoff) const;
 
-    Acdfg * sliceACDFG(const std::vector<MethodNode*> & targets);
+    Acdfg * sliceACDFG(const std::vector<MethodNode*> & targets,
+                       const set<int> & ignoreMethodIds);
+    Acdfg * sliceACDFG(const std::vector<string>  & methodNames,
+                       const set<int> & ignoreMethodIds);
 
     void getMethodsFromName(const std::vector<string> & methodnames,
                             std::vector<MethodNode*> & targets);
