@@ -416,16 +416,15 @@ namespace fixrgraphiso {
           protoAcdfg->add_data_node();
         protoDataNode->set_id(dataNode->get_id());
         protoDataNode->set_name(dataNode->get_name());
-
         protoDataNode->set_type(dataNode->get_data_type());
 
-       if (dataNode->get_data_node_type() == DATA_NODE_CONST) {
-         protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_CONST);
-       } else if (dataNode->get_data_node_type() == DATA_NODE_VAR) {
-         protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_VAR);
-       } else if (dataNode->get_data_node_type() == DATA_NODE_UNKNOWN) {
-         // Do nothing - do not set the data type
-       }
+        if (dataNode->get_data_node_type() == DATA_NODE_CONST) {
+          protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_CONST);
+        } else if (dataNode->get_data_node_type() == DATA_NODE_VAR) {
+          protoDataNode->set_data_type(acdfg_protobuf::Acdfg::DataNode::DATA_VAR);
+        } else if (dataNode->get_data_node_type() == DATA_NODE_UNKNOWN) {
+          // Do nothing - do not set the data type
+        }
       }
     } // end of nodes
 
@@ -476,5 +475,16 @@ namespace fixrgraphiso {
     } // end of edges
   }
 
+  Acdfg* readAcdfg(string acdfgPath) {
+    AcdfgSerializer s;
+    Acdfg* res = NULL;
+    acdfg_protobuf::Acdfg * proto =
+      s.read_protobuf_acdfg(acdfgPath.c_str());
+    if (NULL != proto) {
+      res = s.create_acdfg((const acdfg_protobuf::Acdfg&) *proto);
+      delete(proto);
+    }
+    return res;
+  }
 
 } // namespace fixrgraphiso

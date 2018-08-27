@@ -3,6 +3,7 @@
 #include <fstream>
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include "acdfgBin.h"
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/collectStats.h"
@@ -26,9 +27,7 @@ namespace fixrgraphiso {
     return d.check();
   }
 
-
-
-  bool AcdfgBin::isACDFGEquivalent(Acdfg * b){
+  bool AcdfgBin::isACDFGEquivalent(Acdfg * b, IsoRepr* iso){
     IsoSubsumption dir_a (acdfgRepr, b);
     IsoSubsumption dir_b (b, acdfgRepr);
     if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
@@ -37,6 +36,7 @@ namespace fixrgraphiso {
       }
       return false;
     }
+
     if (! dir_a.check()){
       if (debug){
         cout << "Subsumption bin -> b ruled out " << endl;
@@ -53,6 +53,7 @@ namespace fixrgraphiso {
     if (debug){
       cout << "Equivalent ACDFGs ! " <<endl;
     }
+
     return true;
   }
 
@@ -141,6 +142,13 @@ namespace fixrgraphiso {
     return false;
   }
 
+  Lattice::Lattice(const vector<string> & methodNames) {
+    for (string s : methodNames) {
+      this->methodNames.push_back(s);
+    }
+  }
+
+
   void Lattice::addBin(AcdfgBin* bin) {
     allBins.push_back(bin);
   }
@@ -223,5 +231,65 @@ namespace fixrgraphiso {
     printStats(out_file);
 
     out_file.close();
+  }
+
+  void Lattice::dumpToDot(const string & dotFile,
+                          const bool onlyClassified) {
+    ofstream out_file(dotFile.c_str());
+
+    out_file << "digraph { " << endl;
+
+    // Print nodes
+    int id = -1;
+    std::map<AcdfgBin*,int> toNodeId;
+    for (AcdfgBin* bin : allBins) {
+      if (onlyClassified && !bin->isClassified()) {
+        continue;
+      }
+      id++;
+      toNodeId[bin] = id;
+
+      string color;
+      if (bin->isPopular()) {
+        color = "green";
+      } else if (bin->isAnomalous()) {
+        color = "red";
+      } else if (bin->isIsolated()) {
+        color = "yellow";
+      } else {
+        color = "gray";
+      }
+
+      out_file << "node [shape = circle, style=filled, ";
+      out_file << "color=" << color << ",";
+      out_file << "label = \"" << id;
+      out_file << "\", ] node_" << id << ";" << endl;
+    }
+
+    for (AcdfgBin* bin : allBins) {
+      if (onlyClassified && !bin->isClassified())
+        continue;
+
+      for (AcdfgBin* subsumed : bin->getSubsumingBins()) {
+        if (onlyClassified && !subsumed->isClassified()) {
+          continue;
+        }
+
+        out_file << "node_" << toNodeId[bin] << " -> node_" << toNodeId[subsumed] << ";" << endl;
+      }
+    }
+
+    // Print edges
+    out_file << "}" << endl;
+  }
+
+  void Lattice::getAcdfgBin2id(map<AcdfgBin*, int> &acdfgBin2idMap) const {
+    int id = -1;
+    for (auto it = beginAllBins();
+         it != endAllBins(); ++it) {
+      AcdfgBin * a = *it;
+      id += 1;
+      acdfgBin2idMap[a] = id;
+    };
   }
 }

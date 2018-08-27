@@ -8,12 +8,20 @@
 
 #include <iostream>
 #include <fstream>
+
 #include <map>
 #include <typeinfo>
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/serializationLattice.h"
 
 namespace fixrgraphiso {
+  using namespace std;
+  using std::map;
+  using std::ifstream;
+  using std::ofstream;
+  using std::fstream;
+
+
   /**
    * Read a lattice from the protobuffer and create a lattice data structure
    */
@@ -21,9 +29,15 @@ namespace fixrgraphiso {
     Lattice* lattice = new Lattice();
     AcdfgSerializer serializer;
 
+    /* 0. set the method names */
+    for (int i = 0; i < protoLattice->method_names_size(); i++) {
+      string methodName = protoLattice->method_names(i);
+      lattice->addMethodName(methodName);
+    }
+
     // 1. Create the all the AcdfgBins
     // It just creates the bins, ignoring their relations
-    std::map<int, AcdfgBin*> id2AcdfgBinMap;
+    map<int, AcdfgBin*> id2AcdfgBinMap;
     for (int i = 0; i < protoLattice->bins_size(); i++) {
       const acdfg_protobuf::Lattice::AcdfgBin & protoAcdfgBin =
         protoLattice->bins(i);
@@ -32,8 +46,13 @@ namespace fixrgraphiso {
       Acdfg* repr = serializer.create_acdfg(protoRepr);
 
       AcdfgBin* acdfgBin = new AcdfgBin(repr);
-      for (int j = 0; j < protoAcdfgBin.acdfg_names_size(); j++) {
-        acdfgBin->insertEquivalentACDFG(protoAcdfgBin.acdfg_names(j));
+      for (int j = 0; j < protoAcdfgBin.names_to_iso_size(); j++) {
+        const acdfg_protobuf::Lattice::IsoPair & protoIso =
+          protoAcdfgBin.names_to_iso(j);
+
+        IsoRepr* iso = new IsoRepr(protoIso.iso());
+
+        acdfgBin->insertEquivalentACDFG(protoIso.method_name(), iso);
       }
 
       if (protoAcdfgBin.anomalous()) acdfgBin->setAnomalous();
@@ -92,18 +111,15 @@ namespace fixrgraphiso {
   acdfg_protobuf::Lattice* LatticeSerializer::proto_from_lattice(const Lattice & lattice) {
     acdfg_protobuf::Lattice* protoLattice = new acdfg_protobuf::Lattice();
 
-    std::map<AcdfgBin*, int> acdfgBin2idMap;
+
+    // 0. Assign the method names
+    for (const string & methodName : lattice.getMethodNames()) {
+      protoLattice->add_method_names(methodName);
+    }
 
     // 1. Assign the IDs to the bins
-    {
-      int id = -1;
-      for (auto it = lattice.beginAllBins();
-           it != lattice.endAllBins(); ++it) {
-        AcdfgBin * a = *it;
-        id += 1;
-        acdfgBin2idMap[a] = id;
-      };
-    }
+    map<AcdfgBin*, int> acdfgBin2idMap;
+    lattice.getAcdfgBin2id(acdfgBin2idMap);
 
     // 2. Populate the bins field
     for (auto it = lattice.beginAllBins();
@@ -121,8 +137,11 @@ namespace fixrgraphiso {
       Acdfg* reprAcdfg = (a->getRepresentative());
       serializer.fill_proto_from_acdfg((const Acdfg&) *reprAcdfg, proto_repr);
 
-      for (const string & acdfgName : a->getAcdfgNames()) {
-        proto_a->add_acdfg_names(acdfgName);
+      const map<string, IsoRepr*> names_to_iso = a->getAcdfgNameToIso();
+      for (auto it = names_to_iso.begin(); it != names_to_iso.end(); it++) {
+        acdfg_protobuf::Lattice::IsoPair* pair = proto_a->add_names_to_iso();
+        pair->set_method_name(it->first);
+        pair->set_allocated_iso(it->second->proto_from_iso());
       }
 
       for (AcdfgBin* subsuming : a->getSubsumingBins()) {
@@ -173,5 +192,27 @@ namespace fixrgraphiso {
     } else {
       return NULL;
     }
+  }
+
+  Lattice* readLattice(string latticeFile) {
+    LatticeSerializer s;
+    Lattice * res = NULL;
+
+    acdfg_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
+    if (NULL != proto) {
+      res = s.lattice_from_proto(proto);
+    }
+    delete(proto);
+    return res;
+  }
+
+  void writeLattice(const Lattice& lattice, string const& outFile) {
+    LatticeSerializer s;
+    acdfg_protobuf::Lattice * protoWrite = s.proto_from_lattice(lattice);
+
+    fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
+    protoWrite->SerializeToOstream(&myfile);
+    myfile.close();
+    delete(protoWrite);
   }
 }

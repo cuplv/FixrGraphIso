@@ -162,11 +162,12 @@ namespace fixrgraphiso {
       if (a -> isSubsuming()) continue;
       if (a -> isPopular()) {
         lattice.addPopular(a);
-      } else  if (a -> getFrequency() <= anomalyCutOff &&
-                  a -> hasPopularAncestor()){
+      } else if (a -> getFrequency() <= anomalyCutOff &&
+                 a -> hasPopularAncestor()){
         a -> setAnomalous();
         lattice.addAnomalous(a);
       } else if (a -> getFrequency() <= anomalyCutOff){
+        a->setIsolated();
         lattice.addIsolated(a);
       }
     }
@@ -180,6 +181,8 @@ namespace fixrgraphiso {
     // 1. Slice all the ACDFGs using the methods in the
     // method names as the target
     vector<Acdfg*> allSlicedACDFGs;
+    set<int> ignoreMethodIds;
+
     auto start = std::chrono::steady_clock::now();
     for (string f: filenames){
       Acdfg * orig_acdfg = loadACDFGFromFilename(f);
@@ -198,14 +201,14 @@ namespace fixrgraphiso {
                   << targets.size() \
                   << " -- Ignoring this file." << endl;
       } else {
-        Acdfg * new_acdfg = orig_acdfg->sliceACDFG(targets);
+        Acdfg * new_acdfg = orig_acdfg->sliceACDFG(targets, ignoreMethodIds);
+        new_acdfg -> setName(f);
         if (new_acdfg -> edge_count() >= maxEdgeSize){
           std::cerr << "Warning: Filename = " << f \
                     << "too many edges found -- " << new_acdfg->edge_count() \
                     << "-- Ignorning this file." << endl;
           delete(new_acdfg);
         } else {
-          new_acdfg -> setName(f);
           addGraphStats(new_acdfg->node_count(), new_acdfg->edge_count());
           allSlicedACDFGs.push_back(new_acdfg);
         }
@@ -220,10 +223,15 @@ namespace fixrgraphiso {
       for (auto it = lattice.beginAllBins();
            it != lattice.endAllBins(); ++it){
         AcdfgBin * bin = *it;
-        if (bin -> isACDFGEquivalent(a)) {
-          bin -> insertEquivalentACDFG(a);
+        IsoRepr* iso = new IsoRepr(bin->getRepresentative(), a);
+        if (bin -> isACDFGEquivalent(a, iso)) {
+          //TODO change
+          //assert(NULL != iso);
+          bin -> insertEquivalentACDFG(a, iso);
           acdfgSubsumed = true;
           break;
+        } else {
+          delete(iso);
         }
       }
       if (! acdfgSubsumed) {
@@ -251,12 +259,14 @@ namespace fixrgraphiso {
   void FrequentSubgraphMiner::testPairwiseSubsumption(vector<string> & filenames,
                                                       vector<string> & methodnames) {
     vector<Acdfg * > allACDFGs;
+    set<int> ignoreMethodIds;
 
     for (string f: filenames){
       Acdfg * orig_acdfg = loadACDFGFromFilename(f);
       vector<MethodNode*> targets;
       orig_acdfg -> getMethodsFromName(methodnames, targets);
-      Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets);
+      Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets,
+                                                   ignoreMethodIds);
       new_acdfg -> setName(f);
       allACDFGs.push_back(new_acdfg);
     }
@@ -284,7 +294,7 @@ namespace fixrgraphiso {
     if (runTestOfSubsumption){
       testPairwiseSubsumption(filenames, methodnames);
     } else {
-      Lattice lattice;
+      Lattice lattice(methodnames);
       computePatternsThroughSlicing(lattice, filenames, methodnames);
     }
   }
@@ -301,6 +311,15 @@ namespace fixrgraphiso {
 
     cout << "Loading methods from " << methodNamesFile << endl;
     loadNamesFromFile(methodNamesFile, methodNames);
+
+    const vector<string> & latticeMethods = lattice.getMethodNames();
+    for (string methodName : methodNames) {
+      bool hasName = std::find(latticeMethods.begin(),
+                               latticeMethods.end(),
+                               methodName) != latticeMethods.end();
+      if (! hasName)
+        lattice.addMethodName(methodName);
+    }
 
     this->output_prefix = outputPrefix;
 

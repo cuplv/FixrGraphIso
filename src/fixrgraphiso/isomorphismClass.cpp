@@ -3,6 +3,7 @@
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/collectStats.h"
+#include "fixrgraphiso/proto_iso.pb.h"
 
 using std::cout;
 using std::endl;
@@ -11,6 +12,9 @@ using std::string;
 using std::to_string;
 
 namespace fixrgraphiso {
+  namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
+  using iso_protobuf::Iso;
+
   /*--
     Constructor for IsoEncoder
     --*/
@@ -544,8 +548,11 @@ namespace fixrgraphiso {
 
   }
 
-  bool IsoSubsumption::check(){
+  bool IsoSubsumption::check() {
+    return check(NULL);
+  }
 
+  bool IsoSubsumption::check(IsoRepr *iso) {
     if (! checkNodeCounts()){
       if (debug) std::cout << "\t Node counts rule out subsumption" << endl;
       return false;
@@ -579,8 +586,40 @@ namespace fixrgraphiso {
     e.solve();
     bool retVal = e.isSat();
     auto end = std::chrono::high_resolution_clock::now();
+
+    // Construct the isomorphism model
+    if (retVal && NULL != iso) {
+      buildIsoRepr(iso);
+    }
+
     addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
     return retVal;
+  }
+
+  void IsoSubsumption::buildIsoRepr(IsoRepr *iso) {
+    for (auto it = nodes_a_to_b.begin(); it != nodes_a_to_b.end(); it++) {
+      node_id_t node_1 = it->first;
+
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+        node_id_t node_2 = *it2;
+        IsoEncoder::var_t var = getNodePairVar(node_1, node_2);
+        if (e.getTruthValuation(var)) {
+          iso->addNodeRel(node_1, node_2);
+        }
+      }
+    }
+
+    for (auto it = edges_a_to_b.begin(); it != edges_a_to_b.end(); it++) {
+      edge_id_t edge_1 = it->first;
+
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+        edge_id_t edge_2 = *it2;
+        IsoEncoder::var_t var = getEdgePairVar(edge_1, edge_2);
+        if (e.getTruthValuation(var)) {
+          iso->addEdgeRel(edge_1, edge_2);
+        }
+      }
+    }
   }
 
   /*--
@@ -593,7 +632,7 @@ namespace fixrgraphiso {
 
   IsomorphismClass::IsomorphismClass(string const & fname) :
     iso_filename(fname), freq(1) {
-    iso_protobuf::Iso iso;
+    Iso iso;
     std::fstream inp_file (fname.c_str(), std::ios::in | std::ios::binary);
     assert(inp_file.is_open());
     iso.ParseFromIstream(& inp_file);
@@ -648,7 +687,61 @@ namespace fixrgraphiso {
     return false;
   }
 
+  UnweightedIso* IsoRepr::proto_from_iso() const {
+    UnweightedIso* protoIso = new UnweightedIso();
+    AcdfgSerializer serializer;
 
+    {
+      iso_protobuf::Acdfg* protoRepr = protoIso->mutable_acdfg_1();
+      serializer.fill_proto_from_acdfg((const Acdfg&) *acdfg_1, protoRepr);
+    }
 
+    {
+      iso_protobuf::Acdfg* protoRepr = protoIso->mutable_acdfg_2();
+      serializer.fill_proto_from_acdfg((const Acdfg&) *acdfg_2, protoRepr);
+    }
+
+    for (auto it = nodesRel.begin(); it != nodesRel.end(); it++) {
+      id_pair_t pair = (*it);
+      iso_protobuf::UnweightedIso::RelPair* protoPair =
+        protoIso->add_nodesmap();
+      protoPair->set_id_1(pair.first);
+      protoPair->set_id_2(pair.second);
+    }
+
+    for (auto it = edgesRel.begin(); it != edgesRel.end(); it++) {
+      id_pair_t pair = (*it);
+      iso_protobuf::UnweightedIso::RelPair* protoPair =
+        protoIso->add_edgesmap();
+      protoPair->set_id_1(pair.first);
+      protoPair->set_id_2(pair.second);
+    }
+
+    return protoIso;
+  };
+
+  IsoRepr::IsoRepr(const UnweightedIso& protoIso) {
+    AcdfgSerializer serializer;
+
+    const iso_protobuf::Acdfg& protoAcdfg1 = protoIso.acdfg_1();
+    acdfg_1 = serializer.create_acdfg(protoAcdfg1);
+
+    const iso_protobuf::Acdfg& protoAcdfg2 = protoIso.acdfg_2();
+    acdfg_2 = serializer.create_acdfg(protoAcdfg2);
+
+    for (int i = 0; i < protoIso.nodesmap_size(); i++) {
+      const acdfg_protobuf::UnweightedIso::RelPair & protoPair =
+        protoIso.nodesmap(i);
+
+      addNodeRel(protoPair.id_1(), protoPair.id_2());
+    }
+
+    for (int i = 0; i < protoIso.edgesmap_size(); i++) {
+      const acdfg_protobuf::UnweightedIso::RelPair & protoPair =
+        protoIso.edgesmap(i);
+
+      addNodeRel(protoPair.id_1(), protoPair.id_2());
+    }
+  }
 
 }

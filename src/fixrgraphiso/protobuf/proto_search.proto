@@ -1,0 +1,26 @@
+package edu.colorado.plv.fixr.protobuf;
+
+import "proto_acdfg_bin.proto";
+import "proto_unweighted_iso.proto";
+
+message SearchResults {
+  message SearchResult {
+    required uint64 referencePatternId = 1;
+    optional uint64 anomalousPatternId = 2;
+    required ResultType type = 3;
+
+    required UnweightedIso isoToReference = 4;
+    optional UnweightedIso isoToAnomalous = 5;
+
+    enum ResultType {
+      CORRECT = 0;
+      CORRECT_SUBSUMED = 1;
+      ANOMALOUS_SUBSUMED = 2;
+      ISOLATED_SUBSUMED = 3;
+      ISOLATED_SUBSUMING = 4;
+    }
+  }
+
+  required Lattice lattice = 1;
+  repeated SearchResult results = 2;
+}
