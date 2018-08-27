@@ -222,14 +222,16 @@ namespace fixrgraphiso {
 
       for (auto it = lattice.beginAllBins();
            it != lattice.endAllBins(); ++it){
-        IsoRepr* iso = NULL;
         AcdfgBin * bin = *it;
+        IsoRepr* iso = new IsoRepr(bin->getRepresentative(), a);
         if (bin -> isACDFGEquivalent(a, iso)) {
           //TODO change
           //assert(NULL != iso);
           bin -> insertEquivalentACDFG(a, iso);
           acdfgSubsumed = true;
           break;
+        } else {
+          delete(iso);
         }
       }
       if (! acdfgSubsumed) {

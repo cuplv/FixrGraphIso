@@ -548,8 +548,11 @@ namespace fixrgraphiso {
 
   }
 
-  bool IsoSubsumption::check(){
+  bool IsoSubsumption::check() {
+    return check(NULL);
+  }
 
+  bool IsoSubsumption::check(IsoRepr *iso) {
     if (! checkNodeCounts()){
       if (debug) std::cout << "\t Node counts rule out subsumption" << endl;
       return false;
@@ -583,8 +586,40 @@ namespace fixrgraphiso {
     e.solve();
     bool retVal = e.isSat();
     auto end = std::chrono::high_resolution_clock::now();
+
+    // Construct the isomorphism model
+    if (retVal && NULL != iso) {
+      buildIsoRepr(iso);
+    }
+
     addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
     return retVal;
+  }
+
+  void IsoSubsumption::buildIsoRepr(IsoRepr *iso) {
+    for (auto it = nodes_a_to_b.begin(); it != nodes_a_to_b.end(); it++) {
+      node_id_t node_1 = it->first;
+
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); it++) {
+        node_id_t node_2 = *it2;
+        IsoEncoder::var_t var = getNodePairVar(node_1, node_2);
+        if (e.getTruthValuation(var)) {
+          iso->addNodeRel(node_1, node_2);
+        }
+      }
+    }
+
+    for (auto it = edges_a_to_b.begin(); it != edges_a_to_b.end(); it++) {
+      edge_id_t edge_1 = it->first;
+
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); it++) {
+        edge_id_t edge_2 = *it2;
+        IsoEncoder::var_t var = getEdgePairVar(edge_1, edge_2);
+        if (e.getTruthValuation(var)) {
+          iso->addEdgeRel(edge_1, edge_2);
+        }
+      }
+    }
   }
 
   /*--

@@ -36,6 +36,7 @@ namespace fixrgraphiso {
       }
       return false;
     }
+
     if (! dir_a.check()){
       if (debug){
         cout << "Subsumption bin -> b ruled out " << endl;

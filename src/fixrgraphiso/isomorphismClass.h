@@ -50,6 +50,36 @@ namespace fixrgraphiso {
   };
 
   /**
+   * Stores the isomorphism relation between two ACDFGs
+   */
+  class IsoRepr {
+    public:
+    IsoRepr(Acdfg* acdfg_1, Acdfg* acdfg_2) {
+      this->acdfg_1 = acdfg_1;
+      this->acdfg_2 = acdfg_2;
+    }
+
+    void addNodeRel(int node_1, int node_2) {
+      nodesRel.insert(id_pair_t(node_1,node_2));
+    }
+    void addEdgeRel(int edge_1, int edge_2) {
+      edgesRel.insert(id_pair_t(edge_1,edge_2));
+    }
+
+    const set<id_pair_t> & getNodesRel() const {return nodesRel;}
+    const set<id_pair_t> & getEdgesRel() const {return edgesRel;}
+
+    UnweightedIso* proto_from_iso() const;
+
+    private:
+    Acdfg* acdfg_1;
+    Acdfg* acdfg_2;
+
+    set<id_pair_t> nodesRel;
+    set<id_pair_t> edgesRel;
+  };
+
+  /**
    * Check if acdfg_a subsumes acdfg_b
    *
    * WARNING: the encoding is correct ONLY if the acdfg is sliced now
@@ -89,6 +119,8 @@ namespace fixrgraphiso {
 
     void createEncodingVariables();
 
+    void buildIsoRepr(IsoRepr* iso);
+
   public:
     IsoSubsumption(Acdfg * a, Acdfg * b);
     ~IsoSubsumption(){}
@@ -99,7 +131,7 @@ namespace fixrgraphiso {
     bool findCompatibleEdgePairs();
     void makeEncoding();
     bool check();
-//    bool check(iso_protobuf::);
+    bool check(IsoRepr *iso);
   };
 
 
@@ -138,34 +170,6 @@ namespace fixrgraphiso {
       }
     }
 
-  };
-
-
-  /**
-   * Stores the isomorphism relation between two ACDFGs
-   */
-  class IsoRepr {
-    public:
-    IsoRepr(Acdfg* acdfg_1, Acdfg* acdfg_2);
-
-    void addNode(int node_1, int node_2) {
-      nodesRel.insert(id_pair_t(node_1,node_2));
-    }
-    void addEdge(int edge_1, int edge_2) {
-      edgesRel.insert(id_pair_t(edge_1,edge_2));
-    }
-
-    const set<id_pair_t> & getNodesRel() const {return nodesRel;}
-    const set<id_pair_t> & getEdgesRel() const {return edgesRel;}
-
-    UnweightedIso* proto_from_iso() const;
-
-    private:
-    Acdfg* acdfg_1;
-    Acdfg* acdfg_2;
-
-    set<id_pair_t> nodesRel;
-    set<id_pair_t> edgesRel;
   };
 }
 
