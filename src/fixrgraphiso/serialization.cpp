@@ -475,5 +475,16 @@ namespace fixrgraphiso {
     } // end of edges
   }
 
+  Acdfg* readAcdfg(string acdfgPath) {
+    AcdfgSerializer s;
+    Acdfg* res = NULL;
+    acdfg_protobuf::Acdfg * proto =
+      s.read_protobuf_acdfg(acdfgPath.c_str());
+    if (NULL != proto) {
+      res = s.create_acdfg((const acdfg_protobuf::Acdfg&) *proto);
+      delete(proto);
+    }
+    return res;
+  }
 
 } // namespace fixrgraphiso

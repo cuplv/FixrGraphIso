@@ -43,43 +43,6 @@ namespace frequentSubgraph {
         vectorSize << " instead of " << expected;
   }
 
-  Lattice* readLattice(string latticeFile) {
-    LatticeSerializer s;
-    Lattice * res = NULL;
-
-    iso_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
-    if (NULL != proto) {
-      res = s.lattice_from_proto(proto);
-    }
-    delete(proto);
-    return res;
-  }
-
-  void writeLattice(const Lattice& lattice, string const& outFile) {
-    LatticeSerializer s;
-    iso_protobuf::Lattice * protoWrite = s.proto_from_lattice(lattice);
-
-    ASSERT_TRUE(NULL != protoWrite);
-
-    fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
-    protoWrite->SerializeToOstream(&myfile);
-    myfile.close();
-    delete(protoWrite);
-  }
-
-
-  Acdfg* readAcdfg(string acdfgPath) {
-    AcdfgSerializer s;
-    Acdfg* res = NULL;
-    iso_protobuf::Acdfg * proto =
-      s.read_protobuf_acdfg(acdfgPath.c_str());
-    if (NULL != proto) {
-      res = s.create_acdfg((const iso_protobuf::Acdfg&) *proto);
-      delete(proto);
-    }
-    return res;
-  }
-
   TEST_F(FrequentSubgraphTest, ByDefaultIsoIsTrue) {
     int frequency = 20;
     string output_prefix = "../test_data/produced_res";
@@ -102,7 +65,7 @@ namespace frequentSubgraph {
       testBinSize(15, lattice.getIsolatedBins(), "isolated");
     }
 
-    writeLattice(lattice, "/tmp/lattice.bin");
+    fixrgraphiso::writeLattice(lattice, "/tmp/lattice.bin");
 
     ifstream res(res_file.c_str());
     string out_file = "cluster-info.txt";
@@ -123,7 +86,7 @@ namespace frequentSubgraph {
     Lattice *orig;
 
     /* test read */
-    orig = readLattice(inFile);
+    orig = fixrgraphiso::readLattice(inFile);
 
     /* test write and read back */
     if (NULL != orig) {
@@ -132,12 +95,12 @@ namespace frequentSubgraph {
       string const& outFile =
         "../test_data/subgraph_results/lattice_test.bin";
 
-      writeLattice((const Lattice&) *orig, outFile);
+      fixrgraphiso::writeLattice((const Lattice&) *orig, outFile);
       orig->dumpToDot("../test_data/subgraph_results/lattice.dot", false);
       orig->dumpToDot("../test_data/subgraph_results/lattice_classified.dot",
                       false);
 
-      read = readLattice(outFile);
+      read = fixrgraphiso::readLattice(outFile);
       if (NULL != read) {
         delete(read);
       }
@@ -153,7 +116,7 @@ namespace frequentSubgraph {
     std::set<int> emptyIgnoreMethodIds;
 
     /* Read the searialized lattice */
-    lattice = readLattice(inFile);
+    lattice = fixrgraphiso::readLattice(inFile);
 
     if (NULL == lattice) {
       FAIL() << "Cannot read the lattice in " << inFile;
@@ -167,7 +130,7 @@ namespace frequentSubgraph {
         string const& queryFile =
           "../test_data/com.dagwaging.rosewidgets.db.widget.UpdateService_update.acdfg.bin";
 
-        Acdfg* query = readAcdfg(queryFile);
+        Acdfg* query = fixrgraphiso::readAcdfg(queryFile);
         if (NULL == query) {
           FAIL() << "Cannot read acdfg " << queryFile;
         } else {
@@ -198,7 +161,7 @@ namespace frequentSubgraph {
         string const& queryFile =
           "../test_data/com.dagwaging.rosewidgets.db.widget.UpdateService_update.acdfg.bin";
 
-        Acdfg* origAcdfg = readAcdfg(queryFile);
+        Acdfg* origAcdfg = fixrgraphiso::readAcdfg(queryFile);
 
         {
           vector<fixrgraphiso::MethodNode*> targets;

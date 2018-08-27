@@ -24,6 +24,8 @@ namespace fixrgraphiso {
   private:
   };
 
+  Lattice* readLattice(string latticeFile);
+  void writeLattice(const Lattice& lattice, string const& outFile);
 
 } // end fixrgraphiso namespace
 

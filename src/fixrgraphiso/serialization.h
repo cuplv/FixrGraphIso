@@ -37,6 +37,9 @@ namespace fixrgraphiso {
 
   private:
   };
+
+  Acdfg* readAcdfg(string acdfgPath);
+
 } // end fixrgraphiso namespace
 
 #endif // SERIALIZATION_H_INCLUDED

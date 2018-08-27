@@ -8,13 +8,19 @@
 
 #include <iostream>
 #include <fstream>
+
 #include <map>
 #include <typeinfo>
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/serializationLattice.h"
 
 namespace fixrgraphiso {
+  using namespace std;
   using std::map;
+  using std::ifstream;
+  using std::ofstream;
+  using std::fstream;
+
 
   /**
    * Read a lattice from the protobuffer and create a lattice data structure
@@ -186,5 +192,27 @@ namespace fixrgraphiso {
     } else {
       return NULL;
     }
+  }
+
+  Lattice* readLattice(string latticeFile) {
+    LatticeSerializer s;
+    Lattice * res = NULL;
+
+    acdfg_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
+    if (NULL != proto) {
+      res = s.lattice_from_proto(proto);
+    }
+    delete(proto);
+    return res;
+  }
+
+  void writeLattice(const Lattice& lattice, string const& outFile) {
+    LatticeSerializer s;
+    acdfg_protobuf::Lattice * protoWrite = s.proto_from_lattice(lattice);
+
+    fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
+    protoWrite->SerializeToOstream(&myfile);
+    myfile.close();
+    delete(protoWrite);
   }
 }
