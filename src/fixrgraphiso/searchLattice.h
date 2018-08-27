@@ -12,6 +12,8 @@
 
 namespace fixrgraphiso {
   using std::vector;
+  using std::set;
+  using std::ostream;
 
   /**
    * Type of search results inferred from the position of the
@@ -56,21 +58,34 @@ namespace fixrgraphiso {
    * Implement the search in the lattice
    */
   class SearchLattice {
+
   private:
     bool subsumes(AcdfgBin* acdfgBin);
     bool isSubsumed(AcdfgBin* acdfgBin);
-    void findAnomalous(AcdfgBin* popBin, vector<SearchResult*> results);
+    void findAnomalous(AcdfgBin* popBin, vector<SearchResult*> &results);
+
   public:
     SearchLattice(Acdfg* query, Lattice* lattice) {
+      set<int> ignoreMethodIds;
       this->query = query;
       this->lattice = lattice;
+      this->slicedQuery = query->sliceACDFG(lattice->getMethodNames(),
+                                            ignoreMethodIds);
     }
 
-    void search(vector<SearchResult*> results);
+    ~SearchLattice() {
+      delete(slicedQuery);
+    }
+
+    void printResult(const vector<SearchResult*> &results,
+                     ostream & out_stream);
+
+    void search(vector<SearchResult*> &results);
 
   private:
     Lattice* lattice;
     Acdfg* query;
+    Acdfg* slicedQuery;
   };
 }
 

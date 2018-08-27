@@ -18,4 +18,5 @@ message Lattice {
   repeated uint64 popular_bins = 3;
   repeated uint64 anomalous_bins = 4;
   repeated uint64 isolated_bins = 5;
+  repeated string method_names = 6;
 }

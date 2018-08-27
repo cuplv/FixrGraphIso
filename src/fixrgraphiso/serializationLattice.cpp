@@ -21,6 +21,12 @@ namespace fixrgraphiso {
     Lattice* lattice = new Lattice();
     AcdfgSerializer serializer;
 
+    /* 0. set the method names */
+    for (int i = 0; i < protoLattice->method_names_size(); i++) {
+      string methodName = protoLattice->method_names(i);
+      lattice->addMethodName(methodName);
+    }
+
     // 1. Create the all the AcdfgBins
     // It just creates the bins, ignoring their relations
     std::map<int, AcdfgBin*> id2AcdfgBinMap;
@@ -93,6 +99,11 @@ namespace fixrgraphiso {
     acdfg_protobuf::Lattice* protoLattice = new acdfg_protobuf::Lattice();
 
     std::map<AcdfgBin*, int> acdfgBin2idMap;
+
+    // 0. Assign the method names
+    for (const string & methodName : lattice.getMethodNames()) {
+      protoLattice->add_method_names(methodName);
+    }
 
     // 1. Assign the IDs to the bins
     {

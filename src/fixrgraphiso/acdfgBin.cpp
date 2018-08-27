@@ -140,6 +140,13 @@ namespace fixrgraphiso {
     return false;
   }
 
+  Lattice::Lattice(const vector<string> & methodNames) {
+    for (string s : methodNames) {
+      this->methodNames.push_back(s);
+    }
+  }
+
+
   void Lattice::addBin(AcdfgBin* bin) {
     allBins.push_back(bin);
   }

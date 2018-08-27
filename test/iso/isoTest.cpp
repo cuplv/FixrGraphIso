@@ -32,7 +32,8 @@ namespace isotest {
     delete(proto_acdfg);
 
     acdfg->getMethodNodes(targets);
-    Acdfg * slicedAcdfg = acdfg->sliceACDFG(targets);
+    std::set<int> ignoreMethodIds;
+    Acdfg * slicedAcdfg = acdfg->sliceACDFG(targets, ignoreMethodIds);
     delete(acdfg);
 
     IsoSubsumption d(slicedAcdfg, slicedAcdfg);

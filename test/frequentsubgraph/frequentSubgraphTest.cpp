@@ -25,9 +25,7 @@ namespace frequentSubgraph {
   using fixrgraphiso::Lattice;
   using fixrgraphiso::SearchLattice;
   using fixrgraphiso::SearchResult;
-  //using fixrgraphiso::CORRECT;
-  // using fixrgraphiso::CORRECT_ANOMALOUS;
-  // using fixrgraphiso::ANOMALOUS_SUBSUMED;
+  using fixrgraphiso::IsoSubsumption;
 
   namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
 
@@ -55,6 +53,19 @@ namespace frequentSubgraph {
     delete(proto);
     return res;
   }
+
+  void writeLattice(const Lattice& lattice, string const& outFile) {
+    LatticeSerializer s;
+    iso_protobuf::Lattice * protoWrite = s.proto_from_lattice(lattice);
+
+    ASSERT_TRUE(NULL != protoWrite);
+
+    fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
+    protoWrite->SerializeToOstream(&myfile);
+    myfile.close();
+    delete(protoWrite);
+  }
+
 
   Acdfg* readAcdfg(string acdfgPath) {
     AcdfgSerializer s;
@@ -90,8 +101,7 @@ namespace frequentSubgraph {
       testBinSize(15, lattice.getIsolatedBins(), "isolated");
     }
 
-    lattice.dumpToDot("/tmp/app2.dot", false);
-    lattice.dumpToDot("/tmp/app2_classified.dot", true);
+    writeLattice(lattice, "/tmp/lattice.bin");
 
     ifstream res(res_file.c_str());
     string out_file = "cluster-info.txt";
@@ -116,24 +126,19 @@ namespace frequentSubgraph {
 
     /* test write and read back */
     if (NULL != orig) {
-      LatticeSerializer s;
-      iso_protobuf::Lattice * protoWrite =
-        s.proto_from_lattice((const Lattice&) *orig);
+      Lattice *read;
 
-      if (NULL != protoWrite) {
-        Lattice *read;
+      string const& outFile =
+        "../test_data/subgraph_results/lattice_test.bin";
 
-        string const& outFile =
-          "../test_data/subgraph_results/lattice_test.bin";
-        fstream myfile(outFile.c_str(), ios::out | ios::binary | ios::trunc);
-        protoWrite->SerializeToOstream(&myfile);
-        myfile.close();
-        delete(protoWrite);
+      writeLattice((const Lattice&) *orig, outFile);
+      orig->dumpToDot("../test_data/subgraph_results/lattice.dot", false);
+      orig->dumpToDot("../test_data/subgraph_results/lattice_classified.dot",
+                      false);
 
-        read = readLattice(outFile);
-        if (NULL != read) {
-          delete(read);
-        }
+      read = readLattice(outFile);
+      if (NULL != read) {
+        delete(read);
       }
       delete(orig);
     } else {
@@ -144,6 +149,7 @@ namespace frequentSubgraph {
   TEST_F(FrequentSubgraphTest, LatticeSearch) {
     string const& inFile = "../test_data/subgraph_results/lattice.bin";
     Lattice *lattice;
+    std::set<int> emptyIgnoreMethodIds;
 
     /* Read the searialized lattice */
     lattice = readLattice(inFile);
@@ -173,8 +179,10 @@ namespace frequentSubgraph {
           ASSERT_EQ(res->getType(), fixrgraphiso::CORRECT) << "Wrong result type";
           AcdfgBin* ref = res->getReferencePattern();
           ASSERT_TRUE(NULL != ref) << "No reference pattern!";
-          ASSERT_TRUE(ref->isACDFGEquivalent(query)) << "Pattern not equivalent";
-
+          Acdfg* sliced = query->sliceACDFG(lattice->getMethodNames(),
+                                            emptyIgnoreMethodIds);
+          ASSERT_TRUE(ref->isACDFGEquivalent(sliced)) << "Pattern not equivalent";
+          delete(sliced);
           delete(query);
         }
       }
@@ -184,6 +192,48 @@ namespace frequentSubgraph {
         Output:
         SearchResult(CORRECT_SUBSUMED), referencePattern: popular bin subsuming acdfg, no anomalous subsuming acdfg
       */
+      {
+        string const& queryFile =
+          "../test_data/com.dagwaging.rosewidgets.db.widget.UpdateService_update.acdfg.bin";
+
+        Acdfg* origAcdfg = readAcdfg(queryFile);
+
+        {
+          vector<fixrgraphiso::MethodNode*> targets;
+          origAcdfg->getMethodsFromName(lattice->getMethodNames(), targets);
+
+          for (fixrgraphiso::MethodNode* methodNode : targets) {
+            std::cout << "ID: " << methodNode->get_id() << endl;
+          }
+        }
+
+        std::set<int> ignoreMethodIds;
+        ignoreMethodIds.insert(20);
+        Acdfg* query = origAcdfg->sliceACDFG(lattice->getMethodNames(),
+                                             ignoreMethodIds);
+        delete(origAcdfg);
+        if (NULL == query) {
+          FAIL() << "Cannot read acdfg " << queryFile;
+        } else {
+          vector<SearchResult*> results;
+          SearchLattice searchLattice(query, lattice);
+          searchLattice.search(results);
+
+          searchLattice.printResult(results, std::cout);
+          ASSERT_EQ(2, results.size()) << "Wrong number of results";
+
+          SearchResult *res = results.front();
+          ASSERT_EQ(res->getType(), fixrgraphiso::CORRECT_SUBSUMED) << "Wrong result type";
+          AcdfgBin* ref = res->getReferencePattern();
+          ASSERT_TRUE(NULL != ref) << "No reference pattern!";
+
+          {
+            IsoSubsumption d(ref->getRepresentative(), query);
+            ASSERT_TRUE(d.check()) << "Pattern does not subsume query";
+          }
+          delete(query);
+        }
+      }
 
       /*
         Input: acdfg from popular, less a method call from important methods

@@ -126,8 +126,11 @@ namespace fixrgraphiso {
 
   class Lattice {
   public:
-    Lattice() {
-    }
+    Lattice() {};
+    Lattice(const vector<string> & methodNames);
+
+    void addMethodName(const string& methodName) { methodNames.push_back(methodName);}
+    const vector<string> & getMethodNames() const { return methodNames; }
 
     void addBin(AcdfgBin* bin);
     void addPopular(AcdfgBin* bin);
@@ -160,6 +163,7 @@ namespace fixrgraphiso {
                    const bool onlyClassified);
 
   private:
+    vector<string> methodNames;
     vector<AcdfgBin*> allBins;
     vector<AcdfgBin*> popularBins;
     vector<AcdfgBin*> anomalousBins;
