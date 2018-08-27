@@ -38,9 +38,10 @@ namespace fixrgraphiso {
       Acdfg* repr = serializer.create_acdfg(protoRepr);
 
       AcdfgBin* acdfgBin = new AcdfgBin(repr);
-      for (int j = 0; j < protoAcdfgBin.acdfg_names_size(); j++) {
-        acdfgBin->insertEquivalentACDFG(protoAcdfgBin.acdfg_names(j));
-      }
+      // TODO - fix
+      // for (int j = 0; j < protoAcdfgBin.acdfg_names_size(); j++) {
+      //   acdfgBin->insertEquivalentACDFG(protoAcdfgBin.acdfg_names(j));
+      // }
 
       if (protoAcdfgBin.anomalous()) acdfgBin->setAnomalous();
       if (protoAcdfgBin.subsuming()) acdfgBin->setSubsuming();

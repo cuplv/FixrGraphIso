@@ -26,6 +26,7 @@ namespace frequentSubgraph {
   using fixrgraphiso::SearchLattice;
   using fixrgraphiso::SearchResult;
   using fixrgraphiso::IsoSubsumption;
+  using fixrgraphiso::IsoRepr;
 
   namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
 
@@ -181,7 +182,8 @@ namespace frequentSubgraph {
           ASSERT_TRUE(NULL != ref) << "No reference pattern!";
           Acdfg* sliced = query->sliceACDFG(lattice->getMethodNames(),
                                             emptyIgnoreMethodIds);
-          ASSERT_TRUE(ref->isACDFGEquivalent(sliced)) << "Pattern not equivalent";
+          IsoRepr *iso = NULL;
+          ASSERT_TRUE(ref->isACDFGEquivalent(sliced, iso)) << "Pattern not equivalent";
           delete(sliced);
           delete(query);
         }

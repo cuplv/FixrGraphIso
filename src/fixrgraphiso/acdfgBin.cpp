@@ -27,7 +27,7 @@ namespace fixrgraphiso {
     return d.check();
   }
 
-  bool AcdfgBin::isACDFGEquivalent(Acdfg * b){
+  bool AcdfgBin::isACDFGEquivalent(Acdfg * b, IsoRepr* iso){
     IsoSubsumption dir_a (acdfgRepr, b);
     IsoSubsumption dir_b (b, acdfgRepr);
     if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
@@ -52,6 +52,7 @@ namespace fixrgraphiso {
     if (debug){
       cout << "Equivalent ACDFGs ! " <<endl;
     }
+
     return true;
   }
 

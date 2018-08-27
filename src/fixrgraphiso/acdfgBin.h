@@ -14,6 +14,7 @@
 #include <iostream>
 #include <set>
 #include "fixrgraphiso/acdfg.h"
+#include "fixrgraphiso/isomorphismClass.h"
 
 namespace fixrgraphiso {
   using std::vector;
@@ -31,16 +32,24 @@ namespace fixrgraphiso {
     acdfgNames.push_back(a->getName());
   }
 
-  bool isACDFGEquivalent(Acdfg *b);
-
-  void insertEquivalentACDFG(Acdfg * b){
-    acdfgNames.push_back(b->getName());
+  ~AcdfgBin() {
+    /* free the isomorphism relation */
+    for (auto it = acdfgNameToIso.begin();
+         it != acdfgNameToIso.end(); it++) {
+      delete(it->second);
+    }
   }
 
-  void insertEquivalentACDFG(const string b){
+  bool isACDFGEquivalent(Acdfg *b, IsoRepr* iso);
+
+  void insertEquivalentACDFG(const string b, IsoRepr* iso){
     acdfgNames.push_back(b);
+    acdfgNameToIso[b] = iso;
   }
 
+  void insertEquivalentACDFG(Acdfg * b, IsoRepr* iso){
+    insertEquivalentACDFG(b->getName(), iso);
+  }
 
   int getFrequency() const {
     return acdfgNames.size() ;
@@ -107,6 +116,8 @@ namespace fixrgraphiso {
   /* List of acdfgs contained in the Bin */
   Acdfg* acdfgRepr;
   vector<string> acdfgNames;
+  map<string, IsoRepr*> acdfgNameToIso;
+
   /* List of bins subsumed by this bin */
   set<AcdfgBin*> subsumingBins;
   /* List of bins that are directly subsumed by this bin

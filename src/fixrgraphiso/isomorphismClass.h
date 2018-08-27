@@ -144,9 +144,9 @@ namespace fixrgraphiso {
   /**
    * Stores the isomorphism relation between two ACDFGs
    */
-  class IsomorphismRepr {
+  class IsoRepr {
     public:
-    IsomorphismRepr(Acdfg* acdfg_1, Acdfg* acdfg_2);
+    IsoRepr(Acdfg* acdfg_1, Acdfg* acdfg_2);
 
     void addNode(int node_1, int node_2) {
       nodesRel.insert(id_pair_t(node_1,node_2));

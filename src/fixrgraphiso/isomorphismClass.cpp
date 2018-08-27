@@ -652,7 +652,7 @@ namespace fixrgraphiso {
     return false;
   }
 
-  UnweightedIso* IsomorphismRepr::proto_from_iso() const {
+  UnweightedIso* IsoRepr::proto_from_iso() const {
     UnweightedIso* protoIso = new UnweightedIso();
     AcdfgSerializer serializer;
 
