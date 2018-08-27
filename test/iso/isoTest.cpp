@@ -6,6 +6,8 @@
 namespace isotest {
   using std::string;
   using std::cout;
+  using std::vector;
+  using std::set;
 
   using fixrgraphiso::Acdfg;
   using fixrgraphiso::MethodNode;

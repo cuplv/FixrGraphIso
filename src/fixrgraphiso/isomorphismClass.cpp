@@ -3,6 +3,7 @@
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/collectStats.h"
+#include "fixrgraphiso/proto_iso.pb.h"
 
 using std::cout;
 using std::endl;
@@ -11,6 +12,9 @@ using std::string;
 using std::to_string;
 
 namespace fixrgraphiso {
+  namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
+  using iso_protobuf::Iso;
+
   /*--
     Constructor for IsoEncoder
     --*/
@@ -593,7 +597,7 @@ namespace fixrgraphiso {
 
   IsomorphismClass::IsomorphismClass(string const & fname) :
     iso_filename(fname), freq(1) {
-    iso_protobuf::Iso iso;
+    Iso iso;
     std::fstream inp_file (fname.c_str(), std::ios::in | std::ios::binary);
     assert(inp_file.is_open());
     iso.ParseFromIstream(& inp_file);
@@ -648,7 +652,37 @@ namespace fixrgraphiso {
     return false;
   }
 
+  UnweightedIso* IsomorphismRepr::proto_from_iso() const {
+    UnweightedIso* protoIso = new UnweightedIso();
+    AcdfgSerializer serializer;
 
+    {
+      iso_protobuf::Acdfg* protoRepr = protoIso->mutable_acdfg_1();
+      serializer.fill_proto_from_acdfg((const Acdfg&) *acdfg_1, protoRepr);
+    }
 
+    {
+      iso_protobuf::Acdfg* protoRepr = protoIso->mutable_acdfg_2();
+      serializer.fill_proto_from_acdfg((const Acdfg&) *acdfg_2, protoRepr);
+    }
+
+    for (auto it = nodesRel.begin(); it != nodesRel.end(); it++) {
+      id_pair_t pair = (*it);
+      iso_protobuf::UnweightedIso::RelPair* protoPair =
+        protoIso->add_nodesmap();
+      protoPair->set_id_1(pair.first);
+      protoPair->set_id_2(pair.second);
+    }
+
+    for (auto it = edgesRel.begin(); it != edgesRel.end(); it++) {
+      id_pair_t pair = (*it);
+      iso_protobuf::UnweightedIso::RelPair* protoPair =
+        protoIso->add_edgesmap();
+      protoPair->set_id_1(pair.first);
+      protoPair->set_id_2(pair.second);
+    }
+
+    return protoIso;
+  };
 
 }
