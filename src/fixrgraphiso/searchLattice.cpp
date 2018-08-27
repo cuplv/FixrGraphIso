@@ -12,19 +12,45 @@ namespace fixrgraphiso {
   using std::map;
   using std::ostream;
 
-  bool SearchLattice::subsumes(AcdfgBin* acdfgBin) {
+  bool SearchLattice::subsumes(AcdfgBin* acdfgBin,
+                               IsoRepr* &isoRepr) {
+    IsoRepr *appIso = new IsoRepr(acdfgBin->getRepresentative(),
+                                  slicedQuery);
+
     IsoSubsumption d(slicedQuery,
                      acdfgBin->getRepresentative());
-    return d.check();
+
+    bool res = d.check(appIso);
+
+    if (res) {
+      isoRepr = appIso;
+    } else {
+      delete(appIso);
+    }
+
+    return res;
   }
 
-  bool SearchLattice::isSubsumed(AcdfgBin* acdfgBin) {
+  bool SearchLattice::isSubsumed(AcdfgBin* acdfgBin,
+                                 IsoRepr*& isoRepr) {
+    IsoRepr *appIso = new IsoRepr(slicedQuery,
+                                  acdfgBin->getRepresentative());
+
     IsoSubsumption d(acdfgBin->getRepresentative(),
                      slicedQuery);
-    return d.check();
+    bool res = d.check(appIso);
+
+    if (res) {
+      isoRepr = appIso;
+    } else {
+      delete(appIso);
+    }
+
+    return res;
   }
 
   void SearchLattice::findAnomalous(AcdfgBin* popBin,
+                                    const IsoRepr& isoPop,
                                     vector<SearchResult*> &results) {
     /* assumes the slicedQuery is *not* subsumed by any anomalous bin */
     bool is_correct_subsumed = true;
@@ -34,23 +60,27 @@ namespace fixrgraphiso {
     */
     for(AcdfgBin* subsuming : popBin->getSubsumingBins()) {
       if (subsuming->isAnomalous()) {
-        if (isSubsumed(subsuming)) {
+        IsoRepr* isoAnom = NULL;
+        if (isSubsumed(subsuming, isoAnom)) {
           SearchResult* r = new SearchResult(ANOMALOUS_SUBSUMED);
           r->setReferencePattern(popBin);
           r->setAnomalousPattern(subsuming);
+          r->setIsoToReference(isoPop);
+          r->setIsoToAnomalous((const IsoRepr&) *isoAnom);
           results.push_back(r);
 
-          /* the pattern is subsumed by at least an anomalous 
+          /* the pattern is subsumed by at least an anomalous
              pattern */
           is_correct_subsumed = false;
         }
+        if (NULL != isoAnom) delete(isoAnom);
       }
     }
 
     if (is_correct_subsumed) {
       SearchResult* r = new SearchResult(CORRECT_SUBSUMED);
       r->setReferencePattern(popBin);
-
+      r->setIsoToReference(isoPop);
       results.push_back(r);
     }
   }
@@ -64,21 +94,36 @@ namespace fixrgraphiso {
     for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
       AcdfgBin* popBin = *it;
 
-      if (can_subsume && subsumes(popBin)) {
-        SearchResult* r = new SearchResult(CORRECT);
-        r->setReferencePattern(popBin);
-        results.push_back(r);
+      if (can_subsume) {
+        IsoRepr* isoPop = NULL;
 
-        /* cannot be subsumed by another popular pattern */
-        can_be_subsumed = false;
+        if (subsumes(popBin, isoPop)) {
+          assert(NULL != isoPop);
+          SearchResult* r = new SearchResult(CORRECT);
+          r->setReferencePattern(popBin);
+          r->setIsoToReference((const IsoRepr&) *isoPop);
+          results.push_back(r);
+
+          /* cannot be subsumed by another popular pattern */
+          can_be_subsumed = false;
+        } else {
+          assert(NULL == isoPop);
+        }
       }
 
-      if (can_be_subsumed && isSubsumed(popBin)) {
-        /* search for anomalous patterns */
-        findAnomalous(popBin, results);
+      if (can_be_subsumed) {
+        IsoRepr* isoPop = NULL;
+        if (isSubsumed(popBin, isoPop)) {
+          /* search for anomalous patterns */
+          assert(NULL != isoPop);
+          findAnomalous(popBin, (const IsoRepr&) *isoPop, results);
+          delete(isoPop);
 
-        /* cannot subsume another popular pattern */
-        can_subsume = false;
+          /* cannot subsume another popular pattern */
+          can_subsume = false;
+        } else {
+          assert(NULL == isoPop);
+        }
       }
 
     }

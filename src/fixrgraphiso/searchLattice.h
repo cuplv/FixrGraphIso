@@ -32,7 +32,10 @@ namespace fixrgraphiso {
   public:
     SearchResult(result_type_t type) {
       this->type = type;
+      this->referencePattern = NULL;
       this->anomalousPattern = NULL;
+      this->isoToReference = NULL;
+      this->isoToAnomalous = NULL;
     }
 
     void setAnomalousPattern(AcdfgBin* anomalousPattern) {
@@ -43,6 +46,14 @@ namespace fixrgraphiso {
       this->referencePattern = refPat;
     }
 
+    void setIsoToReference(const IsoRepr& iso) {
+      this->isoToReference = new IsoRepr(iso);
+    }
+
+    void setIsoToAnomalous(const IsoRepr& iso) {
+      this->isoToAnomalous = new IsoRepr(iso);
+    }
+
     result_type_t getType() { return type; }
     AcdfgBin* getReferencePattern() { return referencePattern;}
     AcdfgBin* getAnomalousPattern() { return anomalousPattern;}
@@ -51,7 +62,8 @@ namespace fixrgraphiso {
     result_type_t type;
     AcdfgBin* referencePattern;
     AcdfgBin* anomalousPattern;
-    // Add the isomorphism relation to the result
+    IsoRepr* isoToReference;
+    IsoRepr* isoToAnomalous;
   };
 
   /**
@@ -60,9 +72,10 @@ namespace fixrgraphiso {
   class SearchLattice {
 
   private:
-    bool subsumes(AcdfgBin* acdfgBin);
-    bool isSubsumed(AcdfgBin* acdfgBin);
-    void findAnomalous(AcdfgBin* popBin, vector<SearchResult*> &results);
+    bool subsumes(AcdfgBin* acdfgBin, IsoRepr*& isoRepr);
+    bool isSubsumed(AcdfgBin* acdfgBin, IsoRepr*& isoRepr);
+    void findAnomalous(AcdfgBin* popBin, const IsoRepr& isoPop,
+                       vector<SearchResult*> &results);
 
   public:
     SearchLattice(Acdfg* query, Lattice* lattice) {

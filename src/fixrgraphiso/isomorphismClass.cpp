@@ -600,7 +600,7 @@ namespace fixrgraphiso {
     for (auto it = nodes_a_to_b.begin(); it != nodes_a_to_b.end(); it++) {
       node_id_t node_1 = it->first;
 
-      for (auto it2 = it->second.begin(); it2 != it->second.end(); it++) {
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
         node_id_t node_2 = *it2;
         IsoEncoder::var_t var = getNodePairVar(node_1, node_2);
         if (e.getTruthValuation(var)) {
@@ -612,7 +612,7 @@ namespace fixrgraphiso {
     for (auto it = edges_a_to_b.begin(); it != edges_a_to_b.end(); it++) {
       edge_id_t edge_1 = it->first;
 
-      for (auto it2 = it->second.begin(); it2 != it->second.end(); it++) {
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
         edge_id_t edge_2 = *it2;
         IsoEncoder::var_t var = getEdgePairVar(edge_1, edge_2);
         if (e.getTruthValuation(var)) {
