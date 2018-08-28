@@ -172,7 +172,8 @@ namespace fixrgraphiso {
 
     void dumpAllBins(std::chrono::seconds time_taken,
                      const string & output_prefix,
-                     const string & infoFileName);
+                     const string & infoFileName,
+                     const string & latticeFileName);
 
     void dumpToDot(const string & dotFile,
                    const bool onlyClassified);
