@@ -39,6 +39,7 @@ namespace fixrgraphiso {
     private:
     int freq_cutoff = 20;
     string info_file_name = "cluster-info.txt";
+    string lattice_filename = "lattice.bin";
     string output_prefix = ".";
     int minTargetSize = 2;
     int maxTargetSize = 100;
