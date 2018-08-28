@@ -7,6 +7,7 @@
 #include "acdfgBin.h"
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/collectStats.h"
+#include "fixrgraphiso/serializationLattice.h"
 
 namespace fixrgraphiso {
 
@@ -95,7 +96,6 @@ namespace fixrgraphiso {
     output.close();
   }
 
-
   void AcdfgBin::addSubsumingBinsToSet(set<AcdfgBin*> & what) {
     for (AcdfgBin* b: subsumingBins){
       assert(b != this);
@@ -175,7 +175,11 @@ namespace fixrgraphiso {
 
   void Lattice::dumpAllBins(std::chrono::seconds time_taken,
                             const string & output_prefix,
-                            const string & infoFileName) {
+                            const string & infoFileName,
+                            const string & latticeFileName) {
+
+    fixrgraphiso::writeLattice((const Lattice&) *this, latticeFileName);
+
     ofstream out_file(infoFileName.c_str());
     int count = 1;
     string iso_file_name;

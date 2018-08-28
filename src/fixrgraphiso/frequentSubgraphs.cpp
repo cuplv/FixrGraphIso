@@ -62,11 +62,12 @@ namespace fixrgraphiso {
     }
   }
 
-  void FrequentSubgraphMiner::processCommandLine(int argc, char * argv[] , vector<string> & filenames,
+  void FrequentSubgraphMiner::processCommandLine(int argc, char * argv[],
+                                                 vector<string> & filenames,
                                                  vector<string> & methodNames) {
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:"))!= -1){
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:"))!= -1){
       switch (c){
       case 'm': {
         string methodNamesFile = optarg;
@@ -93,6 +94,10 @@ namespace fixrgraphiso {
         info_file_name = string(optarg);
         cout << "Info will be dumped to : " << info_file_name << endl;
         break;
+      case 'l':
+        lattice_filename = string(optarg);
+        cout << "Lattice file name will be written to : " << lattice_filename << endl;
+        break;
       case 'p':
         output_prefix = string(optarg);
         cout << "Output patterns will be dumped in: " << output_prefix << endl;
@@ -111,6 +116,7 @@ namespace fixrgraphiso {
     if (filenames.size() <= 0){
       cout << "Usage:" << argv[0] <<
         " -f [frequency cutoff] -o [output info filename] " <<
+        "-l [lattice file protobuf] " <<
         "-m [file with method names] -i [file with acdfg names] " <<
         "[list of iso.bin files]" << endl;
       return;
@@ -253,7 +259,9 @@ namespace fixrgraphiso {
       std::chrono::duration_cast<std::chrono::seconds>(end -start);
 
     // 8. Print all the  patterns
-    lattice.dumpAllBins(time_taken, output_prefix, info_file_name);
+    lattice.dumpAllBins(time_taken, output_prefix,
+                        info_file_name,
+                        lattice_filename);
   }
 
   void FrequentSubgraphMiner::testPairwiseSubsumption(vector<string> & filenames,
