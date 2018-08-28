@@ -19,6 +19,7 @@ message Lattice {
     required bool subsuming = 6;
     required bool anomalous = 7;
     required bool popular = 8;
+    required bool isolated = 9;
   }
 
   repeated AcdfgBin bins = 2;

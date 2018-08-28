@@ -45,7 +45,7 @@ namespace fixrgraphiso {
       return false;
     }
 
-    if (!dir_b.check()){
+    if (!dir_b.check(iso)){
       if (debug){
         cout << "Subsumption b -> bin ruled out " << endl;
       }

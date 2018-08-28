@@ -58,6 +58,7 @@ namespace fixrgraphiso {
       if (protoAcdfgBin.anomalous()) acdfgBin->setAnomalous();
       if (protoAcdfgBin.subsuming()) acdfgBin->setSubsuming();
       if (protoAcdfgBin.popular()) acdfgBin->setPopular();
+      if (protoAcdfgBin.isolated()) acdfgBin->setIsolated();
 
       id2AcdfgBinMap[protoAcdfgBin.id()] = acdfgBin;
 
@@ -157,6 +158,7 @@ namespace fixrgraphiso {
       proto_a->set_subsuming(a->isSubsuming());
       proto_a->set_anomalous(a->isAnomalous());
       proto_a->set_popular(a->isPopular());
+      proto_a->set_isolated(a->isIsolated());
     }
 
     for (auto it = lattice.beginPopular(); it != lattice.endPopular(); ++it) {
