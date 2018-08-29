@@ -156,6 +156,13 @@ namespace fixrgraphiso {
         if (debug){
           std::cout << "Found popular bin with frequency : " <<
             a -> getPopularity() << endl;
+
+          std::cout << "Equivalent bins" <<
+            (a->getAcdfgNames()).size() << endl;
+
+          for (const string& inbin: a->getAcdfgNames()) {
+            cout << inbin << endl;
+          }
         }
       }
     }
@@ -229,11 +236,11 @@ namespace fixrgraphiso {
       for (auto it = lattice.beginAllBins();
            it != lattice.endAllBins(); ++it){
         AcdfgBin * bin = *it;
-        IsoRepr* iso = new IsoRepr(bin->getRepresentative(), a);
+        IsoRepr* iso = new IsoRepr(a, bin->getRepresentative());
         if (bin -> isACDFGEquivalent(a, iso)) {
           //TODO change
           //assert(NULL != iso);
-          bin -> insertEquivalentACDFG(a, iso);
+          bin->insertEquivalentACDFG(a, iso);
           acdfgSubsumed = true;
           break;
         } else {

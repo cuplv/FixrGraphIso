@@ -29,7 +29,8 @@ namespace fixrgraphiso {
   AcdfgBin(Acdfg* a) : subsuming(false),
       anomalous(false), popular(false), isolated(false) {
     acdfgRepr = a;
-    acdfgNames.push_back(a->getName());
+    IsoRepr* iso = new IsoRepr(a);
+    insertEquivalentACDFG(a, iso);
   }
 
   ~AcdfgBin() {
@@ -43,6 +44,9 @@ namespace fixrgraphiso {
   bool isACDFGEquivalent(Acdfg *b, IsoRepr* iso);
 
   void insertEquivalentACDFG(const string b, IsoRepr* iso){
+    /* cout << "ACDFG REPR: " << b << */
+    /*   " -- SIZE: " << (iso->getNodesRel()).size() << endl; */
+
     acdfgNames.push_back(b);
     acdfgNameToIso[b] = iso;
   }

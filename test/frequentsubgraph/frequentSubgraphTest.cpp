@@ -140,6 +140,8 @@ namespace frequentSubgraph {
 
           ASSERT_EQ(1, results.size()) << "Wrong number of results";
           SearchResult *res = results.front();
+
+          searchLattice.printResult(results, std::cout);
           ASSERT_EQ(res->getType(), fixrgraphiso::CORRECT) << "Wrong result type";
           AcdfgBin* ref = res->getReferencePattern();
           ASSERT_TRUE(NULL != ref) << "No reference pattern!";
@@ -166,10 +168,6 @@ namespace frequentSubgraph {
         {
           vector<fixrgraphiso::MethodNode*> targets;
           origAcdfg->getMethodsFromName(lattice->getMethodNames(), targets);
-
-          for (fixrgraphiso::MethodNode* methodNode : targets) {
-            std::cout << "ID: " << methodNode->get_id() << endl;
-          }
         }
 
         std::set<int> ignoreMethodIds;

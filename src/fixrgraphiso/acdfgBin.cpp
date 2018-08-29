@@ -28,36 +28,40 @@ namespace fixrgraphiso {
     return d.check();
   }
 
+  bool USE_INC_ISO = true;
+
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b, IsoRepr* iso){
-    IsoSubsumption dir_a (acdfgRepr, b);
-
-    // IsoSubsumption dir_b (b, acdfgRepr);
-    // if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
-    //   if (debug){
-    //     cout << "Subsumption ruled out directly " << endl;
-    //   }
-    //   return false;
-    // }
-
-    // if (! dir_a.check()){
-    //   if (debug){
-    //     cout << "Subsumption bin -> b ruled out " << endl;
-    //   }
-    //   return false;
-    // }
-
-    // if (!dir_b.check(iso)){
-    //   if (debug){
-    //     cout << "Subsumption b -> bin ruled out " << endl;
-    //   }
-    //   return false;
-    // }
-
-    if (! dir_a.check_iso(iso)) {
-      if (debug){
-        cout << "Subsumption bin -> b ruled out " << endl;
+    if (! USE_INC_ISO) {
+      IsoSubsumption dir_a (acdfgRepr, b);
+      IsoSubsumption dir_b (b, acdfgRepr);
+      if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
+        if (debug){
+          cout << "Subsumption ruled out directly " << endl;
+        }
+        return false;
       }
-      return false;
+
+      if (! dir_a.check()){
+        if (debug){
+          cout << "Subsumption bin -> b ruled out " << endl;
+        }
+        return false;
+      }
+
+      if (! dir_b.check(iso)){
+        if (debug){
+          cout << "Subsumption b -> bin ruled out " << endl;
+        }
+        return false;
+      }
+    } else {
+      IsoSubsumption dir_b (b, acdfgRepr);
+      if (! dir_b.check_iso(iso)) {
+        if (debug){
+          cout << "Subsumption b -> bin ruled out " << endl;
+        }
+        return false;
+      }
     }
 
     if (debug){
@@ -198,14 +202,14 @@ namespace fixrgraphiso {
     for (AcdfgBin * a: popularBins){
       assert (a -> isPopular());
       iso_file_name = string("pop_")+std::to_string(count)+".dot";
-      iso_bin_file_name = string("pop_")+std::to_string(count)+".acdfg.bin";
+      // iso_bin_file_name = string("pop_")+std::to_string(count)+".acdfg.bin";
       out_file << "Popular Bin # " << count << endl;
       out_file << "Dot: " << iso_file_name << endl;
-      out_file << "Bin: " << iso_bin_file_name << endl;
+      // out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() << ", "
                << a-> getPopularity() << endl;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      // a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file);
       count ++;
     }
@@ -215,13 +219,13 @@ namespace fixrgraphiso {
     for (AcdfgBin * a: anomalousBins) {
       assert(a -> isAnomalous());
       iso_file_name = string("anom_")+std::to_string(count)+".dot";
-      iso_bin_file_name = string("anom_")+std::to_string(count)+".acdfg.bin";
+      // iso_bin_file_name = string("anom_")+std::to_string(count)+".acdfg.bin";
       out_file << "Anomalous Bin # " << count << endl;
       out_file << "Dot: " << iso_file_name << endl;
-      out_file << "Bin: " << iso_bin_file_name << endl;
+      // out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency()<< endl;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      // a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
@@ -229,13 +233,13 @@ namespace fixrgraphiso {
     count = 1;
     for (AcdfgBin * a: isolatedBins) {
       iso_file_name = string("isol_")+std::to_string(count)+".dot";
-      iso_bin_file_name = string("isol_")+std::to_string(count)+".acdfg.bin";
+      // iso_bin_file_name = string("isol_")+std::to_string(count)+".acdfg.bin";
       out_file << "Isolated Bin # " << count << endl;
       out_file << "Dot: " << iso_file_name << endl;
-      out_file << "Bin: " << iso_bin_file_name << endl;
+      // out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() ;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      // a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
