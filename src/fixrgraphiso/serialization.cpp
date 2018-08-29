@@ -254,6 +254,42 @@ namespace fixrgraphiso {
       }
     }
 
+    // source info
+    if (proto_acdfg.has_source_info()) {
+      acdfg_protobuf::Acdfg::SourceInfo source_info =
+        proto_acdfg.source_info();
+      if (source_info.has_package_name())
+        acdfg->source_info.package_name = source_info.package_name();
+      if (source_info.has_class_name())
+        acdfg->source_info.class_name = source_info.class_name();
+      if (source_info.has_method_name())
+        acdfg->source_info.method_name = source_info.method_name();
+      if (source_info.has_class_line_number())
+        acdfg->source_info.class_line_number = source_info.class_line_number();
+      if (source_info.has_method_line_number())
+        acdfg->source_info.method_line_number = source_info.method_line_number();
+      if (source_info.has_source_class_name())
+        acdfg->source_info.source_class_name = source_info.source_class_name();
+      if (source_info.has_abs_source_class_name())
+        acdfg->source_info.abs_source_class_name = source_info.abs_source_class_name();
+    }
+
+    if (proto_acdfg.has_repo_tag()) {
+      acdfg_protobuf::Acdfg::RepoTag repo_tag =
+        proto_acdfg.repo_tag();
+
+      if (repo_tag.has_repo_name())
+        acdfg->repo_tag.repo_name = repo_tag.repo_name();
+      if (repo_tag.has_user_name())
+        acdfg->repo_tag.user_name = repo_tag.user_name();
+      if (repo_tag.has_url())
+        acdfg->repo_tag.url = repo_tag.url();
+      if (repo_tag.has_commit_hash())
+        acdfg->repo_tag.commit_hash = repo_tag.commit_hash();
+      if (repo_tag.has_commit_date())
+        acdfg->repo_tag.commit_date = repo_tag.commit_date();
+    }
+
     acdfg -> fixMissingUseDefEdges();
     return acdfg;
   }
@@ -473,6 +509,32 @@ namespace fixrgraphiso {
         }
       }
     } // end of edges
+
+
+    // source info
+
+    {
+      acdfg_protobuf::Acdfg::SourceInfo* source_info =
+        protoAcdfg->mutable_source_info();
+      source_info->set_package_name(acdfg.source_info.package_name);
+      source_info->set_class_name(acdfg.source_info.class_name);
+      source_info->set_method_name(acdfg.source_info.method_name);
+      source_info->set_class_line_number(acdfg.source_info.class_line_number);
+      source_info->set_method_line_number(acdfg.source_info.method_line_number);
+      source_info->set_source_class_name(acdfg.source_info.source_class_name);
+      source_info->set_abs_source_class_name(acdfg.source_info.abs_source_class_name);
+    }
+
+    {
+      acdfg_protobuf::Acdfg::RepoTag* repo_tag =
+        protoAcdfg->mutable_repo_tag();
+
+      repo_tag->set_repo_name(acdfg.repo_tag.repo_name);
+      repo_tag->set_user_name(acdfg.repo_tag.user_name);
+      repo_tag->set_url(acdfg.repo_tag.url);
+      repo_tag->set_commit_hash(acdfg.repo_tag.commit_hash);
+      repo_tag->set_commit_date(acdfg.repo_tag.commit_date);
+    }
   }
 
   Acdfg* readAcdfg(string acdfgPath) {

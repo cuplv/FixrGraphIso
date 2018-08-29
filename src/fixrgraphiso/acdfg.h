@@ -262,6 +262,46 @@ namespace fixrgraphiso {
   typedef std::map<long, Edge*> edge_id_to_ptr_map_t;
   typedef std::map<long, vector<long> > node_id_to_outgoing_edges_map_t;
 
+  class SourceInfo {
+    public:
+
+    SourceInfo() {
+      package_name = "";
+      class_name = "";
+      method_name = "";
+      class_line_number = 0;
+      method_line_number = 0;
+      source_class_name = "";
+      abs_source_class_name = "";
+    }
+
+    string package_name;
+    string class_name;
+    string method_name;
+    int class_line_number;
+    int method_line_number;
+    string source_class_name;
+    string abs_source_class_name;
+  };
+
+  class RepoTag {
+    public:
+
+    RepoTag() {
+      repo_name = "";
+      user_name = "";
+      url = "";
+      commit_hash = "";
+      commit_date = "";
+    }
+
+    string repo_name;
+    string user_name;
+    string url;
+    string commit_hash;
+    string commit_date;
+  };
+
   class Acdfg {
 
   public:
@@ -378,6 +418,11 @@ namespace fixrgraphiso {
     bool operator==(const Acdfg& other) const;
 
 
+
+  public:
+    SourceInfo source_info;
+    RepoTag repo_tag;
+
   private:
     nodes_t nodes_;
     edges_t edges_;
@@ -385,6 +430,7 @@ namespace fixrgraphiso {
     edge_id_to_ptr_map_t eMap_;
     node_id_to_outgoing_edges_map_t outgoingMap_;
     std::string name_;
+
     void ensureEdge(edge_type_t eType, Node * src, Node * dest);
   };
 

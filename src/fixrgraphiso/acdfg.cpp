@@ -790,6 +790,9 @@ namespace fixrgraphiso {
 
     retG->setName(getName());
 
+    retG->source_info = source_info;
+    retG->repo_tag = repo_tag;
+
     return retG;
   }
 
