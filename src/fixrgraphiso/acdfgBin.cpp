@@ -30,27 +30,36 @@ namespace fixrgraphiso {
 
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b, IsoRepr* iso){
     IsoSubsumption dir_a (acdfgRepr, b);
-    IsoSubsumption dir_b (b, acdfgRepr);
-    if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
-      if (debug){
-        cout << "Subsumption ruled out directly " << endl;
-      }
-      return false;
-    }
 
-    if (! dir_a.check()){
+    // IsoSubsumption dir_b (b, acdfgRepr);
+    // if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
+    //   if (debug){
+    //     cout << "Subsumption ruled out directly " << endl;
+    //   }
+    //   return false;
+    // }
+
+    // if (! dir_a.check()){
+    //   if (debug){
+    //     cout << "Subsumption bin -> b ruled out " << endl;
+    //   }
+    //   return false;
+    // }
+
+    // if (!dir_b.check(iso)){
+    //   if (debug){
+    //     cout << "Subsumption b -> bin ruled out " << endl;
+    //   }
+    //   return false;
+    // }
+
+    if (! dir_a.check_iso(iso)) {
       if (debug){
         cout << "Subsumption bin -> b ruled out " << endl;
       }
       return false;
     }
 
-    if (!dir_b.check(iso)){
-      if (debug){
-        cout << "Subsumption b -> bin ruled out " << endl;
-      }
-      return false;
-    }
     if (debug){
       cout << "Equivalent ACDFGs ! " <<endl;
     }

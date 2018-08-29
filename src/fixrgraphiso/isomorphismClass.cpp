@@ -57,7 +57,6 @@ namespace fixrgraphiso {
 
   IsoSubsumption::IsoSubsumption(Acdfg * a, Acdfg * b):acdfg_a(a), acdfg_b(b)
   {
-    addSubsumptionCheck();
   }
 
   /*-
@@ -148,17 +147,18 @@ namespace fixrgraphiso {
     return satisfiable;
   }
 
+  void IsoEncoder::resetSatState() {
+    alreadySolved = false;
+  }
+
   bool IsoEncoder::getTruthValuation(IsoEncoder::var_t x){
     assert(satisfiable);
     z3::model m = s.get_model();
-    z3::expr e = m.eval(x);
-    if (e == ctx.bool_val(true))
-      return true;
-    else {
-      assert (e == ctx.bool_val(false));
-      return false;
-    }
+    z3::expr e = m.eval(x, true);
+    bool is_true = (e.decl().decl_kind() == Z3_OP_TRUE);
+    return is_true;
   }
+
   /*--
     Check for each type of node and edge, that graph b has no more
     than the number in graph a. If this fails, we directly conclude
@@ -417,6 +417,7 @@ namespace fixrgraphiso {
       node_id_t id_b = p.first;
       vector<node_id_t> const & v = p.second;
       vector< IsoEncoder::var_t > var_pairs;
+
       for (node_id_t id_a: v){
         IsoEncoder::var_t var = getNodePairVar(id_a, id_b);
         var_pairs.push_back( var);
@@ -545,14 +546,42 @@ namespace fixrgraphiso {
     /*-
       That's all folks!
       -*/
-
   }
 
-  bool IsoSubsumption::check() {
-    return check(NULL);
+  /*-
+    Incrementally encode the exactly one constraint
+    to make a isomorphism
+    -*/
+  void IsoSubsumption::addIsoEncoding() {
+    /*-
+      Every node in A can be connected to exactly one node in b.
+      -*/
+    for (const auto p: nodes_a_to_b){
+      node_id_t id_a = p.first;
+      vector<node_id_t> const & v = p.second;
+      vector<IsoEncoder::var_t> var_pairs;
+      for (node_id_t id_b: v){
+        IsoEncoder::var_t var = getNodePairVar(id_a, id_b);
+        var_pairs.push_back( var);
+      }
+      e.exactlyOne(var_pairs);
+    }
+
+    // Every edge in A must be connected to exactly one edge in b.
+    for (const auto p: edges_a_to_b){
+      edge_id_t edg_a = p.first;
+      vector<edge_id_t> const & v = p.second;
+      vector<IsoEncoder::var_t > var_pairs;
+      for (edge_id_t edg_b: v){
+        IsoEncoder::var_t var = getEdgePairVar(edg_a, edg_b);
+        var_pairs.push_back(var);
+      }
+      e.exactlyOne(var_pairs);
+    }
   }
 
-  bool IsoSubsumption::check(IsoRepr *iso) {
+
+  bool IsoSubsumption::canSubsume() {
     if (! checkNodeCounts()){
       if (debug) std::cout << "\t Node counts rule out subsumption" << endl;
       return false;
@@ -581,18 +610,88 @@ namespace fixrgraphiso {
       return false;
     }
 
+    return true;
+  }
+
+  bool IsoSubsumption::check() {
+    return check(NULL);
+  }
+
+  bool IsoSubsumption::check(IsoRepr *iso) {
+    addSubsumptionCheck();
+
+    if (! canSubsume()) {
+      return false;
+    }
+
     makeEncoding();
     auto start = std::chrono::high_resolution_clock::now();
     e.solve();
     bool retVal = e.isSat();
     auto end = std::chrono::high_resolution_clock::now();
+    addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
 
     // Construct the isomorphism model
     if (retVal && NULL != iso) {
       buildIsoRepr(iso);
     }
 
+    return retVal;
+  }
+
+  bool IsoSubsumption::check_iso(IsoRepr *iso) {
+    IsoSubsumption dir_b (acdfg_b, acdfg_a);
+
+    if (! checkNodeCounts() || ! dir_b.checkNodeCounts()){
+      if (debug){
+        cout << "Subsumption ruled out directly " << endl;
+      }
+      return false;
+    }
+
+    addSubsumptionCheck();
+    if (! canSubsume()) {
+      if (debug){
+        cout << "Subsumption a -> b ruled out " << endl;
+      }
+      return false;
+    }
+
+    addSubsumptionCheck();
+    if (! dir_b.canSubsume()) {
+      if (debug) {
+        cout << "Subsumption b -> a ruled out " << endl;
+      }
+      return false;
+    }
+
+    makeEncoding();
+    auto start = std::chrono::high_resolution_clock::now();
+    e.solve();
+    bool retVal = e.isSat();
+    auto end = std::chrono::high_resolution_clock::now();
     addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+
+    if (! retVal) {
+      if (debug){
+        cout << "Subsumption a -> b ruled out " << endl;
+      }
+      return false;
+    }
+
+    addIsoEncoding();
+    e.resetSatState();
+
+    start = std::chrono::high_resolution_clock::now();
+    e.solve();
+    retVal = e.isSat();
+    end = std::chrono::high_resolution_clock::now();
+    addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+
+    if (retVal && NULL != iso) {
+      buildIsoRepr(iso);
+    }
+
     return retVal;
   }
 

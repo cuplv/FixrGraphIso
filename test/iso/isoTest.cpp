@@ -40,7 +40,9 @@ namespace isotest {
 
     IsoSubsumption d(slicedAcdfg, slicedAcdfg);
     bool result = d.check();
+    EXPECT_EQ(result, true);
 
+    result = d.check_iso(NULL);
     EXPECT_EQ(result, true);
 
     delete(slicedAcdfg);
