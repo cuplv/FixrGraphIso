@@ -63,6 +63,9 @@ namespace fixrgraphiso {
     IsoRepr(Acdfg* acdfg);
     IsoRepr(const IsoRepr& isoRepr, bool reverse);
 
+    const Acdfg& getAcdfg1() const { return (const Acdfg&) *acdfg_1;}
+    const Acdfg& getAcdfg2() const { return (const Acdfg&) *acdfg_2;}
+
     void addNodeRel(node_id_t node_1, node_id_t node_2) {
       nodesRel.insert(id_pair_t(node_1,node_2));
     }
