@@ -16,9 +16,8 @@ namespace fixrgraphiso {
 
   bool SearchLattice::subsumes(AcdfgBin* acdfgBin,
                                IsoRepr* &isoRepr) {
-    IsoRepr *appIso = new IsoRepr(acdfgBin->getRepresentative(),
-                                  slicedQuery);
-
+    IsoRepr *appIso = new IsoRepr(slicedQuery,
+                                  acdfgBin->getRepresentative());
     IsoSubsumption d(slicedQuery,
                      acdfgBin->getRepresentative());
 
@@ -35,18 +34,17 @@ namespace fixrgraphiso {
 
   bool SearchLattice::isSubsumed(AcdfgBin* acdfgBin,
                                  IsoRepr*& isoRepr) {
-    IsoRepr *appIso = new IsoRepr(slicedQuery,
-                                  acdfgBin->getRepresentative());
+    IsoRepr *appIso = new IsoRepr(acdfgBin->getRepresentative(),
+                                  slicedQuery);
 
     IsoSubsumption d(acdfgBin->getRepresentative(),
                      slicedQuery);
     bool res = d.check(appIso);
 
     if (res) {
-      isoRepr = appIso;
-    } else {
-      delete(appIso);
+      isoRepr = new IsoRepr((const IsoRepr&) *appIso, true);
     }
+    delete(appIso);
 
     return res;
   }
@@ -104,6 +102,16 @@ namespace fixrgraphiso {
           SearchResult* r = new SearchResult(CORRECT);
           r->setReferencePattern(popBin);
           r->setIsoToReference((const IsoRepr&) *isoPop);
+
+          // int isoSize = (isoPop->getNodesRel()).size();
+          // const map<string, IsoRepr*> names_to_iso = popBin->getAcdfgNameToIso();
+          // for (auto it = names_to_iso.begin(); it != names_to_iso.end(); it++) {
+          //   IsoRepr* otherIso = it->second;
+          //   int otherSize = otherIso->getNodesRel().size();
+          //   cout << "\tOther iso size " << otherSize << endl;
+          //   assert (isoSize == otherSize);
+          // }
+
           results.push_back(r);
 
           /* cannot be subsumed by another popular pattern */

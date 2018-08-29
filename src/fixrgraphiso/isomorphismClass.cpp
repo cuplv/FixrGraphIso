@@ -703,6 +703,7 @@ namespace fixrgraphiso {
         node_id_t node_2 = *it2;
         IsoEncoder::var_t var = getNodePairVar(node_1, node_2);
         if (e.getTruthValuation(var)) {
+
           iso->addNodeRel(node_1, node_2);
         }
       }
@@ -839,8 +840,53 @@ namespace fixrgraphiso {
       const acdfg_protobuf::UnweightedIso::RelPair & protoPair =
         protoIso.edgesmap(i);
 
-      addNodeRel(protoPair.id_1(), protoPair.id_2());
+      addEdgeRel(protoPair.id_1(), protoPair.id_2());
     }
   }
+
+  IsoRepr::IsoRepr(Acdfg* acdfg) {
+    this->acdfg_1 = acdfg;
+    this->acdfg_2 = acdfg;
+
+    for (auto it = acdfg->begin_nodes();
+         it != acdfg->end_nodes(); ++it) {
+      this->addNodeRel((*it)->get_id(), (*it)->get_id());
+    }
+
+    for (auto it = acdfg->begin_edges();
+         it != acdfg->end_edges(); ++it) {
+      this->addEdgeRel((*it)->get_id(), (*it)->get_id());
+    }
+  }
+
+  IsoRepr::IsoRepr(const IsoRepr& isoRepr, bool reverse) {
+    if (! reverse) {
+      this->acdfg_1 = isoRepr.acdfg_1;
+      this->acdfg_2 = isoRepr.acdfg_2;
+    } else {
+      this->acdfg_1 = isoRepr.acdfg_2;
+      this->acdfg_2 = isoRepr.acdfg_1;
+    }
+
+    for (auto it = isoRepr.nodesRel.begin();
+         it != isoRepr.nodesRel.end(); it++) {
+      if (! reverse) {
+        this->addNodeRel(it->first, it->second);
+      } else {
+        this->addNodeRel(it->second, it->first);
+      }
+    }
+
+    for (auto it = isoRepr.edgesRel.begin();
+         it != isoRepr.edgesRel.end(); it++) {
+      if (! reverse) {
+        this->addNodeRel(it->first, it->second);
+      } else {
+        this->addNodeRel(it->second, it->first);
+      }
+    }
+ 
+  }
+
 
 }

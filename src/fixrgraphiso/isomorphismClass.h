@@ -59,8 +59,9 @@ namespace fixrgraphiso {
       this->acdfg_1 = acdfg_1;
       this->acdfg_2 = acdfg_2;
     }
-
     IsoRepr(const UnweightedIso& iso);
+    IsoRepr(Acdfg* acdfg);
+    IsoRepr(const IsoRepr& isoRepr, bool reverse);
 
     void addNodeRel(node_id_t node_1, node_id_t node_2) {
       nodesRel.insert(id_pair_t(node_1,node_2));
