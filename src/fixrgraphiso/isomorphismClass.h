@@ -46,6 +46,7 @@ namespace fixrgraphiso {
     void addImplication(var_t a, var_t b);
     void solve();
     bool isSat();
+    void resetSatState();
     bool getTruthValuation(var_t x);
   };
 
@@ -120,6 +121,7 @@ namespace fixrgraphiso {
     void addCompatibleEdgePair(Edge * ea, Edge * eb);
 
     void createEncodingVariables();
+    void addIsoEncoding();
 
     void buildIsoRepr(IsoRepr* iso);
 
@@ -134,6 +136,8 @@ namespace fixrgraphiso {
     void makeEncoding();
     bool check();
     bool check(IsoRepr *iso);
+    bool check_iso(IsoRepr *iso);
+    bool canSubsume();
   };
 
 
