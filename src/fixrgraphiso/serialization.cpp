@@ -290,6 +290,14 @@ namespace fixrgraphiso {
         acdfg->repo_tag.commit_date = repo_tag.commit_date();
     }
 
+    for (int i = i; i < proto_acdfg.node_lines_size(); i++) {
+      const acdfg_protobuf::Acdfg::LineNum& line_num =
+        proto_acdfg.node_lines(i);
+
+      acdfg->addLine(line_num.id(), line_num.line());
+    }
+
+
     acdfg -> fixMissingUseDefEdges();
     return acdfg;
   }
@@ -327,7 +335,7 @@ namespace fixrgraphiso {
   }
 
 
-  Acdfg * AcdfgSerializer::create_acdfg(acdfg_protobuf::Iso * proto_iso){
+  Acdfg * AcdfgSerializer::create_acdfg(acdfg_protobuf::Iso * proto_iso) {
     Acdfg * acdfg = new Acdfg ();
     idMapType idToNodeMap;
     int j;
@@ -534,6 +542,14 @@ namespace fixrgraphiso {
       repo_tag->set_url(acdfg.repo_tag.url);
       repo_tag->set_commit_hash(acdfg.repo_tag.commit_hash);
       repo_tag->set_commit_date(acdfg.repo_tag.commit_date);
+    }
+
+    for (auto it : acdfg.getNodeToLine()) {
+      acdfg_protobuf::Acdfg::LineNum* line_num = 
+        protoAcdfg->add_node_lines();
+
+      line_num->set_id(it.first);
+      line_num->set_line(it.second);
     }
   }
 
