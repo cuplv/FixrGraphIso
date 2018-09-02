@@ -259,6 +259,7 @@ namespace fixrgraphiso {
   typedef std::vector<Node*> nodes_t;
   typedef std::vector<Edge*> edges_t;
   typedef std::map<long, Node*> node_id_to_ptr_map_t;
+  typedef std::map<long, int> node_id_to_int_t;
   typedef std::map<long, Edge*> edge_id_to_ptr_map_t;
   typedef std::map<long, vector<long> > node_id_to_outgoing_edges_map_t;
 
@@ -414,6 +415,13 @@ namespace fixrgraphiso {
                             std::vector<MethodNode*> & targets);
     void getMethodNodes(std::vector<MethodNode*> & targets);
 
+    const node_id_to_int_t getNodeToLine() const {
+      return node_to_line;
+    }
+
+    void addLine(long id, int line) {
+      node_to_line[id] = line;
+    }
 
     bool operator==(const Acdfg& other) const;
 
@@ -430,6 +438,7 @@ namespace fixrgraphiso {
     edge_id_to_ptr_map_t eMap_;
     node_id_to_outgoing_edges_map_t outgoingMap_;
     std::string name_;
+    node_id_to_int_t node_to_line;
 
     void ensureEdge(edge_type_t eType, Node * src, Node * dest);
   };
