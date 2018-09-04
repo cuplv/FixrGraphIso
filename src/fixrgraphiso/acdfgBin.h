@@ -13,6 +13,7 @@
 #include <cassert>
 #include <iostream>
 #include <set>
+#include <chrono>
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/isomorphismClass.h"
 
