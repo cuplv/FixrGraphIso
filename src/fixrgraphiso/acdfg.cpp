@@ -793,6 +793,11 @@ namespace fixrgraphiso {
     retG->source_info = source_info;
     retG->repo_tag = repo_tag;
 
+    for (node_id_to_int_t::const_iterator it = node_to_line.begin(); it != node_to_line.end(); it++) {
+      retG->node_to_line[it->first] = it->second;
+    }
+
+
     return retG;
   }
 
