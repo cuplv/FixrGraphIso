@@ -290,7 +290,7 @@ namespace fixrgraphiso {
         acdfg->repo_tag.commit_date = repo_tag.commit_date();
     }
 
-    for (int i = i; i < proto_acdfg.node_lines_size(); i++) {
+    for (int i = 0; i < proto_acdfg.node_lines_size(); i++) {
       const acdfg_protobuf::Acdfg::LineNum& line_num =
         proto_acdfg.node_lines(i);
 
