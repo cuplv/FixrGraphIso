@@ -1006,6 +1006,44 @@ namespace fixrgraphiso {
     return;
   }
 
+  void IlpApproxIsomorphism::populateResults(IsoRepr & res){
+    compatible_node_map_t::const_iterator it;
+
+    vector<node_id_t>::const_iterator jt;
+    for (it = node_map_a_to_b.begin();
+         it != node_map_a_to_b.end();
+         ++it){ // Iterate through all nodes
+      node_id_t i = it -> first;
+      vector<node_id_t> const & compats = it -> second;
+      for (jt = compats.begin(); jt != compats.end(); ++jt){
+        node_id_t j = *jt;
+        int vid = milp.lookupIsoNodeVariable(i,j);
+        // Now get the corresponding variable
+        MILPVariable var = milp.getVariableFromID(vid);
+        int wid = milp.lookupIsoWtVariable(i,j);
+        MILPVariable wtVar = milp.getVariableFromID(wid);
+        double wt = wtVar.floatVal;
+        if (var.binVal == 1){
+          res.addNodeRel(i,j);
+        }
+      }
+    }
+
+    std::vector<edge_pair_t>::const_iterator mt;
+    for (mt = compat_edges_a_to_b.begin(); mt != compat_edges_a_to_b.end(); ++mt){
+      edge_id_t eAID = mt -> first;
+      edge_id_t eBID = mt -> second;
+      int vid = milp.lookupIsoEdgeVariable(eAID, eBID);
+      MILPVariable var = milp.getVariableFromID(vid);
+      if (var.binVal == 1){
+        res.addEdgeRel(eAID,eBID);
+      }
+    }
+
+    return;
+  }
+
+
   /*
    * Prints the status of the isomorphism check
    */

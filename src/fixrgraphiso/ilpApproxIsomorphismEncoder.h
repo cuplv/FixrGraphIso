@@ -7,6 +7,8 @@
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/milpProblem.h"
 #include "fixrgraphiso/isomorphismResults.h"
+#include "fixrgraphiso/isomorphismClass.h"
+
 
 namespace fixrgraphiso {
   using std::ostream;
@@ -37,6 +39,8 @@ namespace fixrgraphiso {
     void populateResults(IsomorphismResults & res);
     void printResults(ostream &out);
     void populateFrequencies();
+
+    void populateResults(IsoRepr & res);
 
   private:
 

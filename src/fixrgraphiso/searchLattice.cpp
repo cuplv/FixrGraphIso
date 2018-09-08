@@ -6,6 +6,8 @@
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serializationLattice.h"
 
+#include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
+#include "fixrgraphiso/isomorphismResults.h"
 
 namespace fixrgraphiso {
   using std::vector;
@@ -135,7 +137,26 @@ namespace fixrgraphiso {
           assert(NULL == isoPop);
         }
       }
+    }
 
+    if (can_subsume && can_be_subsumed) {
+      for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
+        AcdfgBin* popBin = *it;
+
+        IlpApproxIsomorphism ilp(slicedQuery, popBin->getRepresentative());
+        bool stat = ilp.computeILPEncoding();
+
+        if (stat) {
+          IsoRepr *appIso = new IsoRepr(slicedQuery,
+                                        popBin->getRepresentative());
+          ilp.populateResults((IsoRepr&) *appIso);
+
+          SearchResult* r = new SearchResult(ISOLATED_SUBSUMED);
+          r->setReferencePattern(popBin);
+          r->setIsoToReference((const IsoRepr&) *appIso);
+          results.push_back(r);
+        }
+      }
     }
   }
 
