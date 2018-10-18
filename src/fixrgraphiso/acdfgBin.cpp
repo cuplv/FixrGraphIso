@@ -211,14 +211,14 @@ namespace fixrgraphiso {
     for (AcdfgBin * a: popularBins){
       assert (a -> isPopular());
       iso_file_name = string("pop_")+std::to_string(count)+".dot";
-      // iso_bin_file_name = string("pop_")+std::to_string(count)+".acdfg.bin";
+      iso_bin_file_name = string("pop_")+std::to_string(count)+".acdfg.bin";
       out_file << "Popular Bin # " << count << endl;
       out_file << "Dot: " << iso_file_name << endl;
-      // out_file << "Bin: " << iso_bin_file_name << endl;
+      out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() << ", "
                << a-> getPopularity() << endl;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      // a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file);
       count ++;
     }
@@ -228,13 +228,13 @@ namespace fixrgraphiso {
     for (AcdfgBin * a: anomalousBins) {
       assert(a -> isAnomalous());
       iso_file_name = string("anom_")+std::to_string(count)+".dot";
-      // iso_bin_file_name = string("anom_")+std::to_string(count)+".acdfg.bin";
+      iso_bin_file_name = string("anom_")+std::to_string(count)+".acdfg.bin";
       out_file << "Anomalous Bin # " << count << endl;
       out_file << "Dot: " << iso_file_name << endl;
-      // out_file << "Bin: " << iso_bin_file_name << endl;
+      out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency()<< endl;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      // a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
@@ -242,13 +242,13 @@ namespace fixrgraphiso {
     count = 1;
     for (AcdfgBin * a: isolatedBins) {
       iso_file_name = string("isol_")+std::to_string(count)+".dot";
-      // iso_bin_file_name = string("isol_")+std::to_string(count)+".acdfg.bin";
+      iso_bin_file_name = string("isol_")+std::to_string(count)+".acdfg.bin";
       out_file << "Isolated Bin # " << count << endl;
       out_file << "Dot: " << iso_file_name << endl;
-      // out_file << "Bin: " << iso_bin_file_name << endl;
+      out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() ;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      // a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
+      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
