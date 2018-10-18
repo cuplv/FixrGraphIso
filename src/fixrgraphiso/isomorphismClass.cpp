@@ -642,6 +642,9 @@ namespace fixrgraphiso {
   bool IsoSubsumption::check_iso(IsoRepr *iso) {
     IsoSubsumption dir_b (acdfg_b, acdfg_a);
 
+    addSubsumptionCheck();
+    addSubsumptionCheck();
+
     if (! checkNodeCounts() || ! dir_b.checkNodeCounts()){
       if (debug){
         cout << "Subsumption ruled out directly " << endl;
@@ -649,7 +652,6 @@ namespace fixrgraphiso {
       return false;
     }
 
-    addSubsumptionCheck();
     if (! canSubsume()) {
       if (debug){
         cout << "Subsumption a -> b ruled out " << endl;
@@ -657,7 +659,6 @@ namespace fixrgraphiso {
       return false;
     }
 
-    addSubsumptionCheck();
     if (! dir_b.canSubsume()) {
       if (debug) {
         cout << "Subsumption b -> a ruled out " << endl;

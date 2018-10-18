@@ -38,6 +38,11 @@ namespace fixrgraphiso {
         if (debug){
           cout << "Subsumption ruled out directly " << endl;
         }
+
+        /* [SM] HACK */
+        addSubsumptionCheck(); /* count a direction */
+        addSubsumptionCheck(); /* count b direction */
+
         return false;
       }
 
@@ -45,6 +50,10 @@ namespace fixrgraphiso {
         if (debug){
           cout << "Subsumption bin -> b ruled out " << endl;
         }
+
+        /* [SM] HACK */
+        addSubsumptionCheck(); /* count b direction */
+
         return false;
       }
 
