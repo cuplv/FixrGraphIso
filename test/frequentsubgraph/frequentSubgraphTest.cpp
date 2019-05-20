@@ -135,7 +135,12 @@ namespace frequentSubgraph {
           FAIL() << "Cannot read acdfg " << queryFile;
         } else {
           vector<SearchResult*> results;
-          SearchLattice searchLattice(query, lattice);
+
+#ifdef USE_GUROBI_SOLVER
+      SearchLattice searchLattice(query, lattice, false, 30);
+#else
+      SearchLattice searchLattice(query, lattice, false);
+#endif
           searchLattice.search(results);
 
           ASSERT_EQ(1, results.size()) << "Wrong number of results";
@@ -180,7 +185,11 @@ namespace frequentSubgraph {
         } else {
           vector<SearchResult*> results;
 
-          SearchLattice searchLattice(query, lattice);
+#ifdef USE_GUROBI_SOLVER
+          SearchLattice searchLattice(query, lattice, false, 30);
+#else
+          SearchLattice searchLattice(query, lattice, false);
+#endif
           searchLattice.search(results);
 
           iso_protobuf::SearchResults* protoRes =

@@ -69,10 +69,11 @@ namespace fixrgraphiso {
 
     void prettyPrintAMPLFormat(std::ostream & out);
 
-    void solveUsingGLPKLibrary();
+    void solveUsingGLPKLibrary(const bool debug);
 
     #ifdef USE_GUROBI_SOLVER
-    bool solveUsingGurobiLibrary();
+    bool solveUsingGurobiLibrary(const bool debug,
+                                 const double gurobi_timeout);
     #endif
 
     MILPVariable getVariableFromID(int i){
