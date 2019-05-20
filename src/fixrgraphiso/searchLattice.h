@@ -83,12 +83,21 @@ namespace fixrgraphiso {
                        vector<SearchResult*> &results);
 
   public:
-    SearchLattice(Acdfg* query, Lattice* lattice) {
+    SearchLattice(Acdfg* query, Lattice* lattice,
+                  const bool debug
+#ifdef USE_GUROBI_SOLVER
+                  , const double gurobi_timeout
+#endif
+                  ) {
       set<int> ignoreMethodIds;
       this->query = query;
       this->lattice = lattice;
       this->slicedQuery = query->sliceACDFG(lattice->getMethodNames(),
                                             ignoreMethodIds);
+      this->debug = debug;
+#ifdef USE_GUROBI_SOLVER
+      this->gurobi_timeout = gurobi_timeout;
+#endif
     }
 
     ~SearchLattice() {
@@ -106,6 +115,11 @@ namespace fixrgraphiso {
     Lattice* lattice;
     Acdfg* query;
     Acdfg* slicedQuery;
+
+    bool debug;
+#ifdef USE_GUROBI_SOLVER
+    double gurobi_timeout;
+#endif
   };
 }
 

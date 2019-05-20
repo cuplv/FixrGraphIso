@@ -4,7 +4,6 @@
 #include "fixrgraphiso/ilpApproxIsomorphismEncoder.h"
 
 namespace fixrgraphiso {
-  extern bool debug;
   // Recommended that you do not turn these flags on.
   bool encodeRegularNodes = false; // Turn this on if you want isomorphism to consider regular node
   bool addCompatibleDataNodes = false; // This turns on additional checks for data node compatibility
@@ -608,7 +607,12 @@ namespace fixrgraphiso {
 
   }
 
-  bool IlpApproxIsomorphism::computeILPEncoding(){
+#ifdef USE_GUROBI_SOLVER
+  bool IlpApproxIsomorphism::computeILPEncoding(const double gurobi_timeout) {
+#else
+  bool IlpApproxIsomorphism::computeILPEncoding() {
+#endif
+
     // 1. Compute the compatible nodes
     computeCompatibleNodes();
     // 2. Compute the pair of compatible edges
@@ -622,10 +626,10 @@ namespace fixrgraphiso {
 
     // 5. Solve
 #ifdef USE_GUROBI_SOLVER
-    bool stat = milp.solveUsingGurobiLibrary();
+    bool stat = milp.solveUsingGurobiLibrary(debug, gurobi_timeout);
     return stat;
 #else
-    milp.solveUsingGLPKLibrary();
+    milp.solveUsingGLPKLibrary(debug);
     return true;
 #endif
   }

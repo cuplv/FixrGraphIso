@@ -143,8 +143,13 @@ namespace fixrgraphiso {
       for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
         AcdfgBin* popBin = *it;
 
-        IlpApproxIsomorphism ilp(slicedQuery, popBin->getRepresentative());
+        IlpApproxIsomorphism ilp(slicedQuery, popBin->getRepresentative(), debug);
+
+#ifdef USE_GUROBI_SOLVER
+        bool stat = ilp.computeILPEncoding(gurobi_timeout);
+#else
         bool stat = ilp.computeILPEncoding();
+#endif
 
         if (stat) {
           IsoRepr *appIso = new IsoRepr(slicedQuery,
