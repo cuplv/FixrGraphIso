@@ -164,6 +164,14 @@ namespace fixrgraphiso {
     return false;
   }
 
+  void AcdfgBin::resetClassification() {
+    subsuming = false;
+    anomalous = false;
+    isolated = false;
+    popular = false;
+  }
+
+
   Lattice::Lattice(const vector<string> & methodNames) {
     for (string s : methodNames) {
       this->methodNames.push_back(s);
@@ -193,6 +201,16 @@ namespace fixrgraphiso {
                 return bin1 -> getFrequency() > bin2 -> getFrequency();
               });
 
+  }
+
+  void Lattice::resetClassification() {
+    popularBins.clear();
+    anomalousBins.clear();
+    isolatedBins.clear();
+
+    for (AcdfgBin * acdfgBin : allBins){
+      acdfgBin->resetClassification();
+    }
   }
 
   void Lattice::dumpAllBins(std::chrono::seconds time_taken,

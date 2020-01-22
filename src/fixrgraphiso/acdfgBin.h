@@ -119,6 +119,8 @@ namespace fixrgraphiso {
     return acdfgNameToIso;
   }
 
+  void resetClassification();
+
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
 
@@ -175,6 +177,8 @@ namespace fixrgraphiso {
 
     void sortByFrequency();
 
+    void resetClassification();
+
     void dumpAllBins(std::chrono::seconds time_taken,
                      const string & output_prefix,
                      const string & infoFileName,
@@ -195,5 +199,3 @@ namespace fixrgraphiso {
 
 }
 #endif
-
-

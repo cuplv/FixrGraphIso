@@ -10,13 +10,19 @@ namespace fixrgraphiso {
     private:
 
     protected:
-    void processCommandLine(int argc, char * argv[],
-                            vector<string> & filenames,
-                            vector<string> & methodNames);
+    int processCommandLine(int argc, char * argv[],
+                           vector<string> & filenames,
+                           vector<string> & methodNames);
+
+    void sliceAcdfgs(const vector<string> & filenames,
+                     const vector<string> & methodnames,
+                     vector<Acdfg*> & allSlicedACDFGs);
 
     void calculateLatticeGraph(Lattice & lattice);
 
     void classifyBins(Lattice & lattice);
+
+    void reClassifyBins();
 
     void computePatternsThroughSlicing(Lattice & lattice,
                                        vector<string> & filenames,
@@ -27,13 +33,13 @@ namespace fixrgraphiso {
 
     public:
     FrequentSubgraphMiner();
-    void mine(int argc, char * argv []);
+    int mine(int argc, char * argv []);
 
-    void mine(Lattice & lattice,
-              int freqCutoff,
-              string methodNames,
-              string outputPrefix,
-              string acdfgFileName);
+    int mine(Lattice & lattice,
+             int freqCutoff,
+             string methodNames,
+             string outputPrefix,
+             string acdfgFileName);
 
 
     private:
@@ -46,6 +52,7 @@ namespace fixrgraphiso {
     int maxEdgeSize = 400;
     int anomalyCutOff = 5;
     bool runTestOfSubsumption = false;
+    bool rerunClassification = false;
   };
 
 

@@ -15,6 +15,7 @@
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfgBin.h"
 #include "fixrgraphiso/frequentSubgraphs.h"
+#include "fixrgraphiso/serializationLattice.h"
 
 using std::cout;
 using std::endl;
@@ -62,12 +63,12 @@ namespace fixrgraphiso {
     }
   }
 
-  void FrequentSubgraphMiner::processCommandLine(int argc, char * argv[],
-                                                 vector<string> & filenames,
-                                                 vector<string> & methodNames) {
+  int FrequentSubgraphMiner::processCommandLine(int argc, char * argv[],
+                                                vector<string> & filenames,
+                                                vector<string> & methodNames) {
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:"))!= -1){
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:c"))!= -1) {
       switch (c){
       case 'm': {
         string methodNamesFile = optarg;
@@ -77,6 +78,9 @@ namespace fixrgraphiso {
         break;
       case 'z':
         runTestOfSubsumption = true;
+        break;
+      case 'c':
+        rerunClassification = true;
         break;
       case 'd':
         fixrgraphiso::debug = true;
@@ -113,17 +117,70 @@ namespace fixrgraphiso {
       std::cout << index <<  "--> " << fname << endl;
     }
 
-    if (filenames.size() <= 0){
-      cout << "Usage:" << argv[0] <<
+    if (filenames.size() <= 0 && (! rerunClassification) ){
+      cout << "Usage --- (default) mine frequent patterns: " << argv[0] <<
         " -f [frequency cutoff] -o [output info filename] " <<
         "-l [lattice file protobuf] " <<
         "-m [file with method names] -i [file with acdfg names] " <<
-        "[list of iso.bin files]" << endl;
-      return;
+        "-p [output path for the found patterns] " <<
+        "[list of acdfg.bin files to mine]" << endl <<
+        //
+        "Usage --- classify bins, re-run the bin classification: " << argv[0] <<
+        "-c " <<
+        "-f [frequency cutoff] -o [output info filename] " <<
+        "-l [lattice file protobuf] " <<
+        "-p [output path for the found patterns] " << endl <<
+        //
+        "Usage --- subsumption test:" << argv[0] <<
+        " -z [frequency cutoff]" <<
+        " -z [frequency cutoff]" <<
+        "-m [file with method names] -i [file with acdfg names] " <<
+        "[list of acdfg.bin files to mine]" << endl;
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+
+  void FrequentSubgraphMiner::sliceAcdfgs(const vector<string> & filenames,
+                                          const vector<string> & methodnames,
+                                          vector<Acdfg*> & allSlicedACDFGs) {
+    set<int> ignoreMethodIds;
+    for (string f: filenames){
+      Acdfg * orig_acdfg = loadACDFGFromFilename(f);
+      vector<MethodNode*> targets;
+      orig_acdfg->getMethodsFromName(methodnames, targets);
+
+      if (targets.size() < minTargetSize){
+        // File has too few methods, something is not correct.
+        std::cerr << "Warning: filename = " << f \
+                  << " Could not find " << minTargetSize \
+                  << " methods from the list of method names" \
+                  << " -- Ignoring this file." << endl;
+      } else if (targets.size() >= maxTargetSize){
+        std::cerr << "Warning: filename = " << f \
+                  << "too many matching methods found -- " \
+                  << targets.size() \
+                  << " -- Ignoring this file." << endl;
+      } else {
+        Acdfg * new_acdfg = orig_acdfg->sliceACDFG(targets, ignoreMethodIds);
+        new_acdfg -> setName(f);
+        if (new_acdfg -> edge_count() >= maxEdgeSize){
+          std::cerr << "Warning: Filename = " << f \
+                    << "too many edges found -- " << new_acdfg->edge_count() \
+                    << "-- Ignorning this file." << endl;
+          delete(new_acdfg);
+        } else {
+          addGraphStats(new_acdfg->node_count(), new_acdfg->edge_count());
+          allSlicedACDFGs.push_back(new_acdfg);
+        }
+      }
+      delete(orig_acdfg);
     }
   }
 
   void FrequentSubgraphMiner::calculateLatticeGraph(Lattice & lattice) {
+    // complete the graph adding all the subsuming relations
     for (auto it = lattice.beginAllBins();
          it != lattice.endAllBins(); ++it) {
       AcdfgBin * a = *it;
@@ -191,43 +248,12 @@ namespace fixrgraphiso {
   void FrequentSubgraphMiner::computePatternsThroughSlicing(Lattice & lattice,
                                                             vector<string> & filenames,
                                                             vector<string> & methodnames) {
-    // 1. Slice all the ACDFGs using the methods in the
-    // method names as the target
-    vector<Acdfg*> allSlicedACDFGs;
-    set<int> ignoreMethodIds;
-
+    // compute the elapsed real time for the computation (no cpu time)
     auto start = std::chrono::steady_clock::now();
-    for (string f: filenames){
-      Acdfg * orig_acdfg = loadACDFGFromFilename(f);
-      vector<MethodNode*> targets;
-      orig_acdfg->getMethodsFromName(methodnames, targets);
 
-      if (targets.size() < minTargetSize){
-        // File has too few methods, something is not correct.
-        std::cerr << "Warning: filename = " << f \
-                  << " Could not find " << minTargetSize \
-                  << " methods from the list of method names" \
-                  << " -- Ignoring this file." << endl;
-      } else if (targets.size() >= maxTargetSize){
-        std::cerr << "Warning: filename = " << f \
-                  << "too many matching methods found -- " \
-                  << targets.size() \
-                  << " -- Ignoring this file." << endl;
-      } else {
-        Acdfg * new_acdfg = orig_acdfg->sliceACDFG(targets, ignoreMethodIds);
-        new_acdfg -> setName(f);
-        if (new_acdfg -> edge_count() >= maxEdgeSize){
-          std::cerr << "Warning: Filename = " << f \
-                    << "too many edges found -- " << new_acdfg->edge_count() \
-                    << "-- Ignorning this file." << endl;
-          delete(new_acdfg);
-        } else {
-          addGraphStats(new_acdfg->node_count(), new_acdfg->edge_count());
-          allSlicedACDFGs.push_back(new_acdfg);
-        }
-      }
-      delete(orig_acdfg);
-    }
+    // 1. Slice all the ACDFGs using the methods in the method names as the target
+    vector<Acdfg*> allSlicedACDFGs;
+    sliceAcdfgs(filenames, methodnames, allSlicedACDFGs);
 
     // 2. Compute a binning of all the sliced ACDFGs using the exact isomorphism
     for (Acdfg* a: allSlicedACDFGs){
@@ -238,8 +264,6 @@ namespace fixrgraphiso {
         AcdfgBin * bin = *it;
         IsoRepr* iso = new IsoRepr(a, bin->getRepresentative());
         if (bin -> isACDFGEquivalent(a, iso)) {
-          //TODO change
-          //assert(NULL != iso);
           bin->insertEquivalentACDFG(a, iso);
           acdfgSubsumed = true;
           break;
@@ -259,18 +283,55 @@ namespace fixrgraphiso {
     // 4. Classify the bin trough lattice construction
     classifyBins(lattice);
 
-    vector<AcdfgBin*> popular, anomalous, isolated;
-
     auto end = std::chrono::steady_clock::now();
     std::chrono::seconds time_taken =
       std::chrono::duration_cast<std::chrono::seconds>(end -start);
 
-    // 8. Print all the  patterns
+    // 5. Print all the  patterns
     lattice.dumpAllBins(time_taken, output_prefix,
                         info_file_name,
                         lattice_filename);
   }
 
+  /**
+   * \brief Rerun the classification of the bin on an existing lattice
+   */
+  void FrequentSubgraphMiner::reClassifyBins() {
+
+    // 1. Read the lattice
+    Lattice *lattice_ptr;
+    lattice_ptr = fixrgraphiso::readLattice(lattice_filename);
+    if (NULL == lattice_ptr) {
+      std::cerr << "Cannot read the lattice in " << lattice_filename << endl;
+      return;
+    }
+    Lattice& lattice = *lattice_ptr;
+
+    // 2. Reset the classification in the lattice
+    lattice.resetClassification();
+
+    // 3. Sort the bins by frequency
+    lattice.sortByFrequency();
+
+    // 4. Classify the bin trough lattice construction
+    classifyBins(lattice);
+
+    // 5. Print all the  patterns
+    // Just print 0 in the info file name
+    // This means we will not have a mining time in the output file
+    auto start = std::chrono::steady_clock::now();
+    std::chrono::seconds time_taken =
+      std::chrono::duration_cast<std::chrono::seconds>(start -start);
+    lattice.dumpAllBins(time_taken, output_prefix,
+                        info_file_name,
+                        lattice_filename);
+    delete lattice_ptr;
+  }
+
+
+  /**
+   * \brief For every possible pair (a,b) of acdfg in filenames tests if a subsumes b
+   */
   void FrequentSubgraphMiner::testPairwiseSubsumption(vector<string> & filenames,
                                                       vector<string> & methodnames) {
     vector<Acdfg * > allACDFGs;
@@ -301,24 +362,29 @@ namespace fixrgraphiso {
 
   FrequentSubgraphMiner::FrequentSubgraphMiner() {}
 
-  void FrequentSubgraphMiner::mine(int argc, char * argv [] ){
+  int FrequentSubgraphMiner::mine(int argc, char * argv [] ){
     vector<string> filenames;
     vector<string> methodnames;
-    processCommandLine(argc, argv, filenames, methodnames);
-
-    if (runTestOfSubsumption){
-      testPairwiseSubsumption(filenames, methodnames);
+    if (0 == processCommandLine(argc, argv, filenames, methodnames)) {
+      if (runTestOfSubsumption){
+        testPairwiseSubsumption(filenames, methodnames);
+      } else if (rerunClassification) {
+        reClassifyBins();
+      } else {
+        Lattice lattice(methodnames);
+        computePatternsThroughSlicing(lattice, filenames, methodnames);
+      }
+      return 0;
     } else {
-      Lattice lattice(methodnames);
-      computePatternsThroughSlicing(lattice, filenames, methodnames);
+      return 1;
     }
   }
 
-  void FrequentSubgraphMiner::mine(Lattice & lattice,
-                                   int freqCutoff,
-                                   string methodNamesFile,
-                                   string outputPrefix,
-                                   string acdfgFileName) {
+  int FrequentSubgraphMiner::mine(Lattice & lattice,
+                                  int freqCutoff,
+                                  string methodNamesFile,
+                                  string outputPrefix,
+                                  string acdfgFileName) {
     vector<string> fileNames;
     vector<string> methodNames;
 
@@ -342,5 +408,7 @@ namespace fixrgraphiso {
     loadNamesFromFile(acdfgFileName, fileNames);
 
     computePatternsThroughSlicing(lattice, fileNames, methodNames);
+
+    return 0;
   }
 }
