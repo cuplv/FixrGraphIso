@@ -196,11 +196,7 @@ namespace fixrgraphiso {
   }
 
   void FrequentSubgraphMiner::classifyBins(Lattice &lattice) {
-
-    // 1. Compute the lattice of bins
-    calculateLatticeGraph(lattice);
-
-    // 2. Calculate the transitive reduction for each bin in the
+    // 1. Calculate the transitive reduction for each bin in the
     //    lattice and use it to judge popularity
     for (auto it = lattice.beginAllBins();
          it != lattice.endAllBins(); ++it){
@@ -224,7 +220,7 @@ namespace fixrgraphiso {
       }
     }
 
-    // 3. Now calculate the anomalous and isolated patterns
+    // 2. Now calculate the anomalous and isolated patterns
     for (auto it = lattice.beginAllBins();
          it != lattice.endAllBins(); ++it){
       AcdfgBin * a = *it;
@@ -251,7 +247,8 @@ namespace fixrgraphiso {
     // compute the elapsed real time for the computation (no cpu time)
     auto start = std::chrono::steady_clock::now();
 
-    // 1. Slice all the ACDFGs using the methods in the method names as the target
+    // 1. Slice all the ACDFGs using the methods in the method names as the
+    // target
     vector<Acdfg*> allSlicedACDFGs;
     sliceAcdfgs(filenames, methodnames, allSlicedACDFGs);
 
@@ -259,8 +256,7 @@ namespace fixrgraphiso {
     for (Acdfg* a: allSlicedACDFGs){
       bool acdfgSubsumed = false;
 
-      for (auto it = lattice.beginAllBins();
-           it != lattice.endAllBins(); ++it){
+      for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it){
         AcdfgBin * bin = *it;
         IsoRepr* iso = new IsoRepr(a, bin->getRepresentative());
         if (bin -> isACDFGEquivalent(a, iso)) {
@@ -280,14 +276,17 @@ namespace fixrgraphiso {
     // 3. Sort the bins by frequency
     lattice.sortByFrequency();
 
-    // 4. Classify the bin trough lattice construction
+    // 4. Compute the lattice of bins
+    calculateLatticeGraph(lattice);
+
+    // 5. Classify the bin trough lattice construction
     classifyBins(lattice);
 
     auto end = std::chrono::steady_clock::now();
     std::chrono::seconds time_taken =
       std::chrono::duration_cast<std::chrono::seconds>(end -start);
 
-    // 5. Print all the  patterns
+    // 6. Print all the  patterns
     lattice.dumpAllBins(time_taken, output_prefix,
                         info_file_name,
                         lattice_filename);
