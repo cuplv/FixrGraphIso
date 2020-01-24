@@ -86,9 +86,6 @@ namespace fixrgraphiso {
 
   int AcdfgBin::getPopularity() const {
     int f = getFrequency();
-    // [SM] this double counts elements in the latttice.
-    // Imagine a lattice shaped like a diamond, on joins you
-    // double count the frequency
     for (const AcdfgBin* a : subsumingBins){
       f += a -> getFrequency();
     }
