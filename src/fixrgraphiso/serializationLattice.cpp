@@ -60,6 +60,11 @@ namespace fixrgraphiso {
       if (protoAcdfgBin.popular()) acdfgBin->setPopular();
       if (protoAcdfgBin.isolated()) acdfgBin->setIsolated();
 
+      if (protoAcdfgBin.has_cumulative_frequency())
+        acdfgBin->setCumulativeFrequency(protoAcdfgBin.cumulative_frequency());
+      else
+        acdfgBin->setCumulativeFrequency(0);
+
       id2AcdfgBinMap[protoAcdfgBin.id()] = acdfgBin;
 
       lattice->addBin(acdfgBin);
@@ -159,6 +164,7 @@ namespace fixrgraphiso {
       proto_a->set_anomalous(a->isAnomalous());
       proto_a->set_popular(a->isPopular());
       proto_a->set_isolated(a->isIsolated());
+      proto_a->set_cumulative_frequency(a->getCumulativeFrequency());
     }
 
     for (auto it = lattice.beginPopular(); it != lattice.endPopular(); ++it) {

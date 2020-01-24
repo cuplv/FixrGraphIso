@@ -97,6 +97,10 @@ namespace fixrgraphiso {
   void setPopular();
   bool isPopular() const { return popular;}
 
+  int getCumulativeFrequency() const { return cumulativeFrequency;}
+  void setCumulativeFrequency(const int cumulativeFrequency) {
+    this->cumulativeFrequency = cumulativeFrequency;}
+
   bool isClassified() const { return popular || anomalous || isolated;}
 
   const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
@@ -129,21 +133,27 @@ namespace fixrgraphiso {
   vector<string> acdfgNames;
   map<string, IsoRepr*> acdfgNameToIso;
 
-  /* List of bins subsumed by this bin */
+  /* List of bins that subsumes this bin
+     I.e., all the bins that contains this bin
+     {b | SUBSUMES(b, this)},
+   */
   set<AcdfgBin*> subsumingBins;
   /* List of bins that are directly subsumed by this bin
      i.e. the set {b2 | SUB(this,b2) and does not exist a
      b3 such that SUB(this,b3) and SUB(b3,b2)}
   */
   set<AcdfgBin*> immediateSubsumingBins;
-  /* List of bins that subsume this bin */
+  /* List of bins that are subsumed this bin */
   set<AcdfgBin*> incomingEdges;
 
-  /* */
+  /* True if the bin subsumes a popular bin */
   bool subsuming;
   bool anomalous;
   bool isolated;
   bool popular;
+
+  // store the cumulative frequency of the bin
+  int cumulativeFrequency;
   };
 
   class Lattice {

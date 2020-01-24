@@ -13,6 +13,10 @@ namespace fixrgraphiso {
 
   using std::ofstream;
 
+  /**
+   * Return true iff the bin b subsumes this bin
+   * (i.e., this bin is submsumed by b)
+   */
   bool AcdfgBin::isACDFGBinSubsuming(AcdfgBin * b){
     // First check the graph so far
     for (AcdfgBin * c : subsumingBins){
@@ -82,6 +86,9 @@ namespace fixrgraphiso {
 
   int AcdfgBin::getPopularity() const {
     int f = getFrequency();
+    // [SM] this double counts elements in the latttice.
+    // Imagine a lattice shaped like a diamond, on joins you
+    // double count the frequency
     for (const AcdfgBin* a : subsumingBins){
       f += a -> getFrequency();
     }
@@ -125,7 +132,14 @@ namespace fixrgraphiso {
     }
   }
 
+  /**
+   * Get the bins that are immediately reachable (recall that
+   * subsumingBin contains the transitive closure...)
+   *
+   * Store the result in the immediateSubsumingBins set.
+   */
   void AcdfgBin::computeImmediatelySubsumingBins(){
+    // set of bins reached transitively through another bin
     set<AcdfgBin*> transitivelySubsuming;
     for (AcdfgBin * b : subsumingBins){
       b -> addSubsumingBinsToSet(transitivelySubsuming);
@@ -136,6 +150,11 @@ namespace fixrgraphiso {
 
   }
 
+  /**
+   * Returns true is the bin popularity is over the treshold,
+   * and there are no bin subsuming this one such that
+   * their popularity is over the treshold
+   */
   bool AcdfgBin::isAtFrontierOfPopularity(int freq_cutoff) const {
     int f = this -> getPopularity();
     if (f < freq_cutoff) return false;
@@ -169,6 +188,7 @@ namespace fixrgraphiso {
     anomalous = false;
     isolated = false;
     popular = false;
+    cumulativeFrequency = 0;
   }
 
 

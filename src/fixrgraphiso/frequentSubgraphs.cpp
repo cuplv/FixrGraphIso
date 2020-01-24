@@ -21,6 +21,7 @@ using std::cout;
 using std::endl;
 using std::vector;
 using std::set;
+using std::map;
 using std::string;
 using std::ofstream;
 using std::ifstream;
@@ -68,7 +69,7 @@ namespace fixrgraphiso {
                                                 vector<string> & methodNames) {
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:c"))!= -1) {
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:c:r:"))!= -1) {
       switch (c){
       case 'm': {
         string methodNamesFile = optarg;
@@ -105,6 +106,11 @@ namespace fixrgraphiso {
       case 'p':
         output_prefix = string(optarg);
         cout << "Output patterns will be dumped in: " << output_prefix << endl;
+        break;
+      case 'r':
+        // Use relative popularity (comulative frequency) to mark the popular pattern
+        use_relative_popularity = true;
+        relative_pop_threshold = std::stod(optarg, NULL);
         break;
       default:
         break;
@@ -181,27 +187,30 @@ namespace fixrgraphiso {
 
   void FrequentSubgraphMiner::calculateLatticeGraph(Lattice & lattice) {
     // complete the graph adding all the subsuming relations
-    for (auto it = lattice.beginAllBins();
-         it != lattice.endAllBins(); ++it) {
+    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
       AcdfgBin * a = *it;
-      for (auto jt = lattice.beginAllBins();
-           jt != lattice.endAllBins(); ++jt){
+      for (auto jt = lattice.beginAllBins(); jt != lattice.endAllBins(); ++jt){
         AcdfgBin * b = *jt;
         if (a == b) continue;
         if (a -> isACDFGBinSubsuming(b)){
+          // b subsumes a
           a -> addSubsumingBin(b);
         }
       }
     }
   }
 
-  void FrequentSubgraphMiner::classifyBins(Lattice &lattice) {
-    // 1. Calculate the transitive reduction for each bin in the
-    //    lattice and use it to judge popularity
-    for (auto it = lattice.beginAllBins();
-         it != lattice.endAllBins(); ++it){
+  /**
+   * Mark the popular patterns using the absolute frequency
+   * as threshold and popularity as measure.
+   *
+   * This is the SANER2018 approach.
+   */
+  void FrequentSubgraphMiner::findPopularByAbsFrequency(Lattice &lattice) {
+    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it){
       AcdfgBin * a = *it;
 
+      a -> setCumulativeFrequency(a->getPopularity());
       a -> computeImmediatelySubsumingBins();
       if (a -> isSubsuming()) continue;
       if (a -> isAtFrontierOfPopularity(freq_cutoff)){
@@ -218,6 +227,235 @@ namespace fixrgraphiso {
           }
         }
       }
+    }
+  }
+
+  void FrequentSubgraphMiner::deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr) {
+    for (auto const& x : tr) {
+      delete x.second;
+    }
+  }
+
+  /**
+   * \brief Builds the immediate transition relation for the lattice
+   *
+   */
+  void FrequentSubgraphMiner::buildTr(Lattice &lattice,
+                                      map<AcdfgBin*, set<AcdfgBin*>*> & tr) {
+    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
+      AcdfgBin* bin = *it;
+      set<AcdfgBin*>* binReach = new set<AcdfgBin*>();
+      for (auto it_succ : bin->getImmediateSubsumingBins()) {
+        binReach->insert(it_succ);
+      }
+      tr[bin] = binReach;
+    }
+  }
+
+  void FrequentSubgraphMiner::reverseTr(Lattice &lattice,
+                                        map<AcdfgBin*, set<AcdfgBin*>*> & tr,
+                                        map<AcdfgBin*, set<AcdfgBin*>*> & inverse) {
+    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it)
+      inverse[*it] = new set<AcdfgBin*>();
+
+    for (auto x : tr) {
+      for (auto to : *(x.second)) {
+        // from -> to in tr, add to -> from in inverse
+        inverse[to]->insert(x.first);
+      }
+    }
+
+    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
+      AcdfgBin* bin = *it;
+      set<AcdfgBin*>* binReach = new set<AcdfgBin*>();
+
+      for (auto toBin : bin->getImmediateSubsumingBins()) {
+        binReach->insert(toBin);
+      }
+      tr[bin] = binReach;
+    }
+  }
+
+  /**
+   * Compute the topological order of the lattice using the reverse
+   * transition relation (i.e., starting from the nodes that are not
+   * subsumed by any other nodes and going backward).
+   */
+  void FrequentSubgraphMiner::computeTopologicalOrder(Lattice &lattice,
+                                                      vector<AcdfgBin*> &order) {
+    map<AcdfgBin*, set<AcdfgBin*>*> tr;
+    map<AcdfgBin*, set<AcdfgBin*>*> inverseTr;
+    vector<AcdfgBin*> to_process;
+
+    // Build the non-transitive transition relation
+    // Note that the algorithm visits the DAG backward
+    buildTr(lattice, tr);
+    reverseTr(lattice, tr, inverseTr);
+
+    // Find all the top elements of the lattice
+    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
+      AcdfgBin* bin = *it;
+      if (! inverseTr[bin]->empty())
+        to_process.push_back(bin);
+    }
+
+    while (! to_process.empty()) {
+      AcdfgBin* bin = to_process.back();
+      to_process.pop_back();
+
+      // Add bin to the topological order
+      order.push_back(bin);
+
+      set<AcdfgBin*>* succBins = inverseTr[bin];
+      for (auto succ : (*succBins)) {
+        /* remove (succ, bin) from tr */
+        tr[succ]->erase(bin);
+
+        /* if succ has no other incoming edges then add succ to to_process.
+           At this point it's "safe" to process succ.
+         */
+        if (tr[succ]->empty()) {
+          to_process.push_back(succ);
+        }
+      } // End of loop on successors
+    } // End of loop on nodes
+
+    deleteTr(tr);
+    deleteTr(inverseTr);
+  }
+
+  /**
+   * Compute the popularity of the bins in the lattice, marking patterns
+   * as popular.
+   *
+   */
+  void FrequentSubgraphMiner::computePopularity(Lattice &lattice,
+                                                const vector<AcdfgBin*> &order,
+                                                const bool no_subsumed_popular,
+                                                const bool is_relative,
+                                                const double popularity_threshold) {
+    int totalFrequency = 0; // total number of samples in the lattice
+    map<AcdfgBin*, int> cumulativeFrequency; // cumulativeFrequency for each bin
+    map<AcdfgBin*, set<AcdfgBin*>*> notCountedSubsumedBinsMap;
+
+    assert((! is_relative) || (popularity_threshold >= 0 && popularity_threshold <= 1));
+
+    // Init data structures.
+    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
+      AcdfgBin* bin = *it;
+      notCountedSubsumedBinsMap[bin] = new set<AcdfgBin*>();
+      totalFrequency += bin->getFrequency();
+      cumulativeFrequency[bin] = 0;
+    }
+
+    for (auto bin : order) {
+      set<AcdfgBin*>* notCountedSubsumedBins = notCountedSubsumedBinsMap[bin];
+      set<AcdfgBin*> toRemove;
+
+      notCountedSubsumedBins->insert(bin);
+
+      for (auto toBin : bin->getImmediateSubsumingBins()) {
+        for(auto toCount : (*notCountedSubsumedBinsMap[toBin])) {
+          if (! toBin->isPopular()) {
+            // "propagates" down in the lattice all the bins that are not popular
+            notCountedSubsumedBins->insert(toCount);
+          } else {
+            // Removes all the bins already accounted for in a previous popular bin
+            // Note: we remove them later from the notCountedSubsumedBins
+            toRemove.insert(toBin);
+          }
+        }
+      }
+
+      for (auto toCount : toRemove)
+        notCountedSubsumedBins->erase(toCount);
+
+      {
+        // Compute the popularity using the bins in notCountedSubsumedBins
+        int cumulativeFrequencyBin = 0;
+        for (auto toCount : *notCountedSubsumedBins) {
+          cumulativeFrequencyBin += toCount->getFrequency();
+        }
+        cumulativeFrequency[bin] = cumulativeFrequencyBin;
+
+        double to_compare = (double) cumulativeFrequencyBin;
+        if (is_relative)
+          to_compare = to_compare / totalFrequency;
+
+        /* Popular if:
+         *   - to_compare > popularity_treshold
+         *   - if no_subsumed_popular is true, there are no
+         *     subsuming bins of bin that are popular
+         */
+        if (to_compare > popularity_threshold &&
+            ((! no_subsumed_popular) ||  (! bin->hasPopularAncestor())))
+          bin->setPopular();
+      }
+    }
+
+    // delete the sets
+    // could free the memory earlier keeping track of the dependencies in the dag
+    for (auto pair : notCountedSubsumedBinsMap) {
+      delete pair.second;
+    }
+
+    for (auto elem : cumulativeFrequency)
+      (elem.first)->setCumulativeFrequency(elem.second);
+  }
+
+  /**
+   * Mark the popular patterns using the relative frequency
+   * as threshold and popularity as measure.
+   *
+   * Furthermore, consider as popular bins that are not on the
+   * "frontier" of popularity, but consider their total contribution to
+   * poularity.
+   *
+   * For example, consider the following lattice with 4 bins and frequencies,
+   * popularity, non-subsumed popularity, relative non-subsumed popularity
+   *
+   * B1 20, 40, 50.0%, 30, 75.0
+   * B2  5,  5, 12.5%,  5, 12.5
+   * B3  5,  5, 12.5%,  5, 12.5
+   * B4 10, 10, 25.0%, 10, 25.0
+   *
+   * And the relation: (B1,B2), (B1,B3), (B1,B4)
+   *
+   * Relative and not absolute threshold: if the treshold is set to 5, then
+   * B2, B3, B4 will be popular.
+   *
+   * If we consider a relative frequency (e.g., 20% of popularity), then we
+   * get that B4 is popular.
+   *
+   * Do not just consider the frontier, but "how" much a bin contribute to a
+   * pattern.
+   *
+   * If we consider the frontier, only B4 above will be popular. But B1 should
+   * be popular too: there are other 75% of examples thare are not considered
+   * in any popular pattern, but are really captured by B1.
+   * So, not having B1 is not accetable.
+   *
+   * In this function we follow a different strategy to solve the above
+   * problems"
+   * - we consider a relative treshold for popularity.
+   * - we compute a popular measure that takes into account how "much the"
+   *   subsuming patterns are popular or not, instead of forgetting
+   *   about them.
+   */
+  void FrequentSubgraphMiner::findPopularByRelFrequency(Lattice &lattice) {
+    vector<AcdfgBin*> order;
+    computeTopologicalOrder(lattice, order);
+    computePopularity(lattice, order, false, true,
+                      relative_pop_threshold);
+  }
+
+  void FrequentSubgraphMiner::classifyBins(Lattice &lattice) {
+    // 1. Calculate the transitive reduction for each bin in the
+    //    lattice and use it to judge popularity
+    if (! use_relative_popularity) {
+      findPopularByAbsFrequency(lattice);
+    } else {
+      findPopularByRelFrequency(lattice);
     }
 
     // 2. Now calculate the anomalous and isolated patterns
@@ -279,7 +517,7 @@ namespace fixrgraphiso {
     // 4. Compute the lattice of bins
     calculateLatticeGraph(lattice);
 
-    // 5. Classify the bin trough lattice construction
+    // 5. Classify the bin
     classifyBins(lattice);
 
     auto end = std::chrono::steady_clock::now();
@@ -312,7 +550,7 @@ namespace fixrgraphiso {
     // 3. Sort the bins by frequency
     lattice.sortByFrequency();
 
-    // 4. Classify the bin trough lattice construction
+    // 4. Classify the bin
     classifyBins(lattice);
 
     // 5. Print all the  patterns

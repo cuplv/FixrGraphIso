@@ -613,6 +613,9 @@ namespace fixrgraphiso {
     return true;
   }
 
+  /**
+   * Returns true if a >= b, i.e. if a subsumes b
+   */
   bool IsoSubsumption::check() {
     return check(NULL);
   }
@@ -642,6 +645,7 @@ namespace fixrgraphiso {
   bool IsoSubsumption::check_iso(IsoRepr *iso) {
     IsoSubsumption dir_b (acdfg_b, acdfg_a);
 
+    // We do two subsumption checks, so we count each of them in the stats
     addSubsumptionCheck();
     addSubsumptionCheck();
 

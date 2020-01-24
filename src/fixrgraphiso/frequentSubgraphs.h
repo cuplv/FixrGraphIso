@@ -9,6 +9,18 @@ namespace fixrgraphiso {
   class FrequentSubgraphMiner {
     private:
 
+    void deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr);
+    void buildTr(Lattice &lattice, map<AcdfgBin*, set<AcdfgBin*>*> & tr);
+    void reverseTr(Lattice &lattice,
+                   map<AcdfgBin*, set<AcdfgBin*>*> & tr,
+                   map<AcdfgBin*, set<AcdfgBin*>*> & inverse);
+    void computeTopologicalOrder(Lattice &lattice, vector<AcdfgBin*> &order);
+    void computePopularity(Lattice &lattice,
+                           const vector<AcdfgBin*> &order,
+                           const bool no_subsumed_popular,
+                           const bool is_relative,
+                           const double popularity_threshold);
+
     protected:
     int processCommandLine(int argc, char * argv[],
                            vector<string> & filenames,
@@ -19,6 +31,10 @@ namespace fixrgraphiso {
                      vector<Acdfg*> & allSlicedACDFGs);
 
     void calculateLatticeGraph(Lattice & lattice);
+
+    void findPopularByAbsFrequency(Lattice &lattice);
+
+    void findPopularByRelFrequency(Lattice &lattice);
 
     void classifyBins(Lattice & lattice);
 
@@ -53,6 +69,9 @@ namespace fixrgraphiso {
     int anomalyCutOff = 5;
     bool runTestOfSubsumption = false;
     bool rerunClassification = false;
+
+    bool use_relative_popularity = false;
+    double relative_pop_threshold = 0.2;
   };
 
 
