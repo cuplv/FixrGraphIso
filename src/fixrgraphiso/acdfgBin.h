@@ -139,7 +139,7 @@ namespace fixrgraphiso {
      {b | SUBSUMES(b, this)},
    */
   set<AcdfgBin*> subsumingBins;
-  /* List of bins that are directly subsumed by this bin
+  /* List of bins that directly subsumes by this bin
      i.e. the set {b2 | SUB(this,b2) and does not exist a
      b3 such that SUB(this,b3) and SUB(b3,b2)}
   */
@@ -186,6 +186,12 @@ namespace fixrgraphiso {
     const vector<AcdfgBin*> & getPopularBins() const {return popularBins;};
     const vector<AcdfgBin*> & getAnomalousBins() const {return anomalousBins;};
     const vector<AcdfgBin*> & getIsolatedBins() const {return isolatedBins;};
+
+    void buildTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr) const;
+    void reverseTr(const map<AcdfgBin*, set<AcdfgBin*>*> & tr,
+                   map<AcdfgBin*, set<AcdfgBin*>*> & inverse) const;
+    static void deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr);
+    void computeTopologicalOrder(vector<AcdfgBin*> &order) const;
 
     void sortByFrequency();
 

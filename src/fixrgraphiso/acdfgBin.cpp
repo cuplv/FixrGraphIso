@@ -361,4 +361,91 @@ namespace fixrgraphiso {
     for (auto bin : allBins)
       delete bin;
   }
+
+  void Lattice::deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr) {
+    for (auto x : tr) {
+      set<AcdfgBin*>* set = x.second;
+      delete set;
+    }
+  }
+
+  /**
+   * \brief Builds the immediate transition relation for the lattice
+   *
+   */
+  void Lattice::buildTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr) const {
+    for (auto bin : allBins) {
+      set<AcdfgBin*>* binReach = new set<AcdfgBin*>();
+      for (auto it_succ : bin->getImmediateSubsumingBins()) {
+        binReach->insert(it_succ);
+      }
+      tr[bin] = binReach;
+    }
+  }
+
+  void Lattice::reverseTr(const map<AcdfgBin*, set<AcdfgBin*>*> & tr,
+                          map<AcdfgBin*, set<AcdfgBin*>*> & inverse) const {
+    for (auto bin : allBins)
+      inverse[bin] = new set<AcdfgBin*>();
+
+    for (auto x : tr) {
+      for (auto to : *(x.second)) {
+        // from -> to in tr, add to -> from in inverse
+        inverse[to]->insert(x.first);
+      }
+    }
+  }
+
+  /**
+   * Compute the topological order of the lattice using the reverse
+   * transition relation (i.e., starting from the nodes that are not
+   * subsumed by any other nodes and going backward).
+   */
+  void Lattice::computeTopologicalOrder(vector<AcdfgBin*> &order) const {
+    map<AcdfgBin*, set<AcdfgBin*>*> tr;
+    map<AcdfgBin*, set<AcdfgBin*>*> inverseTr;
+    vector<AcdfgBin*> to_process;
+
+    // Build the non-transitive transition relation
+    // Note that the algorithm visits the DAG backward
+    buildTr(tr);
+    reverseTr(tr, inverseTr);
+
+    // Find all the top elements of the lattice
+    for (auto bin : allBins) {
+      if (tr[bin]->empty())
+        to_process.push_back(bin);
+    }
+
+    while (! to_process.empty()) {
+      AcdfgBin* bin = to_process.back();
+      to_process.pop_back();
+
+      // Add bin to the topological order
+      order.push_back(bin);
+
+      set<AcdfgBin*>* succBins = inverseTr[bin];
+      for (auto succ : (*succBins)) {
+        set<AcdfgBin*>* predOfSucc = tr[succ];
+        if (predOfSucc->empty()) // already visited
+          continue;
+
+        /* remove (succ, bin) from tr */
+        predOfSucc->erase(bin);
+
+        /* if succ has no other incoming edges then add succ to to_process.
+           At this point it's "safe" to process succ.
+         */
+        if (predOfSucc->empty()) {
+          to_process.push_back(succ);
+        }
+      } // End of loop on successors
+    } // End of loop on nodes
+
+    assert(order.size() == allBins.size());
+
+    Lattice::deleteTr(tr);
+    Lattice::deleteTr(inverseTr);
+  }
+
 }
