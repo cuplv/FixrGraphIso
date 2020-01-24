@@ -1004,6 +1004,8 @@ namespace fixrgraphiso {
         std::cerr << "Failed to write acdfg." << endl;
       }
     }
+
+    delete acdfg;
   }
 
   void Node::addProtoNode(acdfg_protobuf::Acdfg* acdfg) const {

@@ -10,11 +10,11 @@ namespace fixrgraphiso {
     private:
 
     void deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr);
-    void buildTr(Lattice &lattice, map<AcdfgBin*, set<AcdfgBin*>*> & tr);
-    void reverseTr(Lattice &lattice,
-                   map<AcdfgBin*, set<AcdfgBin*>*> & tr,
+    void buildTr(const Lattice &lattice, map<AcdfgBin*, set<AcdfgBin*>*> & tr);
+    void reverseTr(const Lattice &lattice,
+                   const map<AcdfgBin*, set<AcdfgBin*>*> & tr,
                    map<AcdfgBin*, set<AcdfgBin*>*> & inverse);
-    void computeTopologicalOrder(Lattice &lattice, vector<AcdfgBin*> &order);
+    void computeTopologicalOrder(const Lattice &lattice, vector<AcdfgBin*> &order);
     void computePopularity(Lattice &lattice,
                            const vector<AcdfgBin*> &order,
                            const bool no_subsumed_popular,

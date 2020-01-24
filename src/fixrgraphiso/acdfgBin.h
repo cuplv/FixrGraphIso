@@ -38,8 +38,9 @@ namespace fixrgraphiso {
     /* free the isomorphism relation */
     for (auto it = acdfgNameToIso.begin();
          it != acdfgNameToIso.end(); it++) {
-      delete(it->second);
     }
+
+    // TODO: Free the acdfgs
   }
 
   bool isACDFGEquivalent(Acdfg *b, IsoRepr* iso);
@@ -47,7 +48,6 @@ namespace fixrgraphiso {
   void insertEquivalentACDFG(const string b, IsoRepr* iso){
     /* cout << "ACDFG REPR: " << b << */
     /*   " -- SIZE: " << (iso->getNodesRel()).size() << endl; */
-
     acdfgNames.push_back(b);
     acdfgNameToIso[b] = iso;
   }
@@ -95,6 +95,7 @@ namespace fixrgraphiso {
   bool isIsolated() const {return isolated; }
   void setIsolated() { isolated = true; }
   void setPopular();
+  void setPopular(bool allowSubsuming);
   bool isPopular() const { return popular;}
 
   int getCumulativeFrequency() const { return cumulativeFrequency;}
@@ -160,6 +161,7 @@ namespace fixrgraphiso {
   public:
     Lattice() {};
     Lattice(const vector<string> & methodNames);
+    ~Lattice();
 
     void addMethodName(const string& methodName) { methodNames.push_back(methodName);}
     const vector<string> & getMethodNames() const { return methodNames; }
@@ -180,10 +182,10 @@ namespace fixrgraphiso {
     bin_iterator beginIsolated() const { return isolatedBins.begin(); }
     bin_iterator endIsolated() const { return isolatedBins.end(); }
 
-    const vector<AcdfgBin*> getAllBins() const {return allBins;};
-    const vector<AcdfgBin*> getPopularBins() const {return popularBins;};
-    const vector<AcdfgBin*> getAnomalousBins() const {return anomalousBins;};
-    const vector<AcdfgBin*> getIsolatedBins() const {return isolatedBins;};
+    const vector<AcdfgBin*> & getAllBins() const {return allBins;};
+    const vector<AcdfgBin*> & getPopularBins() const {return popularBins;};
+    const vector<AcdfgBin*> & getAnomalousBins() const {return anomalousBins;};
+    const vector<AcdfgBin*> & getIsolatedBins() const {return isolatedBins;};
 
     void sortByFrequency();
 

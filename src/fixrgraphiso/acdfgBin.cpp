@@ -192,7 +192,6 @@ namespace fixrgraphiso {
     cumulativeFrequency = 0;
   }
 
-
   Lattice::Lattice(const vector<string> & methodNames) {
     for (string s : methodNames) {
       this->methodNames.push_back(s);
@@ -356,5 +355,10 @@ namespace fixrgraphiso {
       id += 1;
       acdfgBin2idMap[a] = id;
     };
+  }
+
+  Lattice::~Lattice() {
+    for (auto bin : allBins)
+      delete bin;
   }
 }

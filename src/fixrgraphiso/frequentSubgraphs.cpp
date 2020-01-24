@@ -50,6 +50,7 @@ namespace fixrgraphiso {
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
     Acdfg * acdfg = s.create_acdfg((const iso_protobuf::Acdfg &) *proto_acdfg);
     acdfg -> setName(filename);
+    delete proto_acdfg;
     return acdfg;
   }
 
@@ -234,8 +235,9 @@ namespace fixrgraphiso {
   }
 
   void FrequentSubgraphMiner::deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr) {
-    for (auto const& x : tr) {
-      delete x.second;
+    for (auto x : tr) {
+      set<AcdfgBin*>* set = x.second;
+      delete set;
     }
   }
 
@@ -243,7 +245,7 @@ namespace fixrgraphiso {
    * \brief Builds the immediate transition relation for the lattice
    *
    */
-  void FrequentSubgraphMiner::buildTr(Lattice &lattice,
+  void FrequentSubgraphMiner::buildTr(const Lattice &lattice,
                                       map<AcdfgBin*, set<AcdfgBin*>*> & tr) {
     for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
       AcdfgBin* bin = *it;
@@ -255,8 +257,8 @@ namespace fixrgraphiso {
     }
   }
 
-  void FrequentSubgraphMiner::reverseTr(Lattice &lattice,
-                                        map<AcdfgBin*, set<AcdfgBin*>*> & tr,
+  void FrequentSubgraphMiner::reverseTr(const Lattice &lattice,
+                                        const map<AcdfgBin*, set<AcdfgBin*>*> & tr,
                                         map<AcdfgBin*, set<AcdfgBin*>*> & inverse) {
     for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it)
       inverse[*it] = new set<AcdfgBin*>();
@@ -267,16 +269,6 @@ namespace fixrgraphiso {
         inverse[to]->insert(x.first);
       }
     }
-
-    for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
-      AcdfgBin* bin = *it;
-      set<AcdfgBin*>* binReach = new set<AcdfgBin*>();
-
-      for (auto toBin : bin->getImmediateSubsumingBins()) {
-        binReach->insert(toBin);
-      }
-      tr[bin] = binReach;
-    }
   }
 
   /**
@@ -284,7 +276,7 @@ namespace fixrgraphiso {
    * transition relation (i.e., starting from the nodes that are not
    * subsumed by any other nodes and going backward).
    */
-  void FrequentSubgraphMiner::computeTopologicalOrder(Lattice &lattice,
+  void FrequentSubgraphMiner::computeTopologicalOrder(const Lattice &lattice,
                                                       vector<AcdfgBin*> &order) {
     map<AcdfgBin*, set<AcdfgBin*>*> tr;
     map<AcdfgBin*, set<AcdfgBin*>*> inverseTr;
@@ -515,6 +507,7 @@ namespace fixrgraphiso {
     // 2. Compute a binning of all the sliced ACDFGs using the exact isomorphism
     for (Acdfg* a: allSlicedACDFGs){
       bool acdfgSubsumed = false;
+      bool delete_a = true;
 
       for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it){
         AcdfgBin * bin = *it;
@@ -527,6 +520,7 @@ namespace fixrgraphiso {
           delete(iso);
         }
       }
+
       if (! acdfgSubsumed) {
         AcdfgBin * newbin = new AcdfgBin(a);
         lattice.addBin(newbin);
@@ -602,6 +596,7 @@ namespace fixrgraphiso {
       orig_acdfg -> getMethodsFromName(methodnames, targets);
       Acdfg * new_acdfg = orig_acdfg -> sliceACDFG(targets,
                                                    ignoreMethodIds);
+      delete orig_acdfg;
       new_acdfg -> setName(f);
       allACDFGs.push_back(new_acdfg);
     }
