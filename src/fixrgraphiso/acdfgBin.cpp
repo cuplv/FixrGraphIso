@@ -162,14 +162,18 @@ namespace fixrgraphiso {
     return true;
   }
 
-  void AcdfgBin::setPopular() {
-    assert(! this -> subsuming);
+  void AcdfgBin::setPopular(bool allowSubsuming) {
+    assert(allowSubsuming || (! this -> subsuming));
     this -> popular = true;
     for (AcdfgBin * b: subsumingBins) {
-      b -> popular = false;
+      if (!allowSubsuming)
+        b -> popular = false;
       b -> subsuming = true;
     }
+  }
 
+  void AcdfgBin::setPopular() {
+    setPopular(false);
   }
 
   bool AcdfgBin::hasPopularAncestor() const{

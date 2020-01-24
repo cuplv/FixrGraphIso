@@ -57,7 +57,7 @@ namespace fixrgraphiso {
 
       if (protoAcdfgBin.anomalous()) acdfgBin->setAnomalous();
       if (protoAcdfgBin.subsuming()) acdfgBin->setSubsuming();
-      if (protoAcdfgBin.popular()) acdfgBin->setPopular();
+      if (protoAcdfgBin.popular()) acdfgBin->setPopular(true);
       if (protoAcdfgBin.isolated()) acdfgBin->setIsolated();
 
       if (protoAcdfgBin.has_cumulative_frequency())

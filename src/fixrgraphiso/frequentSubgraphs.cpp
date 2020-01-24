@@ -69,7 +69,7 @@ namespace fixrgraphiso {
                                                 vector<string> & methodNames) {
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:c:r:"))!= -1) {
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:cr:"))!= -1) {
       switch (c){
       case 'm': {
         string methodNamesFile = optarg;
@@ -88,12 +88,14 @@ namespace fixrgraphiso {
         break;
       case 'f':
         freq_cutoff = strtol(optarg, NULL, 10);
+        std::cout << "Using frequency: " << freq_cutoff << endl;
         break;
-      case 'i':{
-        string inputFileName = optarg;
-        cout << "Loading ACDFGs " << endl;
-        loadNamesFromFile(inputFileName, filenames);
-      }
+      case 'i':
+        {
+          string inputFileName = optarg;
+          cout << "Loading ACDFGs " << endl;
+          loadNamesFromFile(inputFileName, filenames);
+        }
         break;
       case 'o':
         info_file_name = string(optarg);
@@ -111,6 +113,7 @@ namespace fixrgraphiso {
         // Use relative popularity (comulative frequency) to mark the popular pattern
         use_relative_popularity = true;
         relative_pop_threshold = std::stod(optarg, NULL);
+        std::cout << "Using relative frequency " << relative_pop_threshold << endl;
         break;
       default:
         break;
@@ -295,7 +298,7 @@ namespace fixrgraphiso {
     // Find all the top elements of the lattice
     for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
       AcdfgBin* bin = *it;
-      if (! inverseTr[bin]->empty())
+      if (tr[bin]->empty())
         to_process.push_back(bin);
     }
 
@@ -308,17 +311,23 @@ namespace fixrgraphiso {
 
       set<AcdfgBin*>* succBins = inverseTr[bin];
       for (auto succ : (*succBins)) {
+        set<AcdfgBin*>* predOfSucc = tr[succ];
+        if (predOfSucc->empty()) // already visited
+          continue;
+
         /* remove (succ, bin) from tr */
-        tr[succ]->erase(bin);
+        predOfSucc->erase(bin);
 
         /* if succ has no other incoming edges then add succ to to_process.
            At this point it's "safe" to process succ.
          */
-        if (tr[succ]->empty()) {
+        if (predOfSucc->empty()) {
           to_process.push_back(succ);
         }
       } // End of loop on successors
     } // End of loop on nodes
+
+    assert(order.size() == lattice.getAllBins().size());
 
     deleteTr(tr);
     deleteTr(inverseTr);
@@ -388,8 +397,16 @@ namespace fixrgraphiso {
          *     subsuming bins of bin that are popular
          */
         if (to_compare > popularity_threshold &&
-            ((! no_subsumed_popular) ||  (! bin->hasPopularAncestor())))
-          bin->setPopular();
+            ((! no_subsumed_popular) ||  (! bin->hasPopularAncestor()))) {
+          if (debug){
+            std::cout << "Found popular: " << bin << endl <<
+              "Cumulative frequency: " << cumulativeFrequencyBin << endl <<
+              "Compared with: " << to_compare << endl <<
+              "Frequency: " << bin->getFrequency() << endl;
+          }
+
+          bin->setPopular(true);
+        }
       }
     }
 
@@ -453,8 +470,12 @@ namespace fixrgraphiso {
     // 1. Calculate the transitive reduction for each bin in the
     //    lattice and use it to judge popularity
     if (! use_relative_popularity) {
+      if (debug)
+        cout << "Classifying using absolute frequency..." << endl;
       findPopularByAbsFrequency(lattice);
     } else {
+      if (debug)
+        cout << "Classifying using relative frequency..." << endl;
       findPopularByRelFrequency(lattice);
     }
 
@@ -463,14 +484,15 @@ namespace fixrgraphiso {
          it != lattice.endAllBins(); ++it){
       AcdfgBin * a = *it;
 
-      if (a -> isSubsuming()) continue;
+      if ((! use_relative_popularity) && a -> isSubsuming()) continue;
       if (a -> isPopular()) {
         lattice.addPopular(a);
       } else if (a -> getFrequency() <= anomalyCutOff &&
                  a -> hasPopularAncestor()){
         a -> setAnomalous();
         lattice.addAnomalous(a);
-      } else if (a -> getFrequency() <= anomalyCutOff){
+      } else if ((! a -> isSubsuming()) &&
+                 a -> getFrequency() <= anomalyCutOff){
         a->setIsolated();
         lattice.addIsolated(a);
       }
