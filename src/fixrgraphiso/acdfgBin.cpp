@@ -141,6 +141,8 @@ namespace fixrgraphiso {
     for (AcdfgBin * b : subsumingBins){
       b -> addSubsumingBinsToSet(transitivelySubsuming);
     }
+
+    immediateSubsumingBins.clear();
     std::set_difference(subsumingBins.begin(), subsumingBins.end(), \
                         transitivelySubsuming.begin(), transitivelySubsuming.end(), \
                         std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
