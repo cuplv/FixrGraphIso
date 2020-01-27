@@ -57,7 +57,8 @@ int search(string& queryFile, string& latticeFileName,
 #else
       SearchLattice searchLattice(query, lattice, false);
 #endif
-      searchLattice.search(results);
+      // searchLattice.search(results);
+      searchLattice.newSearch(results);
 
       acdfg_protobuf::SearchResults* protoRes =
         searchLattice.toProto(results);
