@@ -87,9 +87,10 @@ namespace fixrgraphiso {
         AcdfgBin* other = id2AcdfgBinMap[otherId];
         currentBin->insertIncomingEdge(other);
       }
-
-      currentBin->computeImmediatelySubsumingBins();
     }
+
+    for (auto bin : lattice->getAllBins())
+      bin->computeImmediatelySubsumingBins();
 
 
     // 3. Populate popular/anomalous/isolated list
