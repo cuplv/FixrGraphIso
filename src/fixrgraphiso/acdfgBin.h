@@ -124,6 +124,17 @@ namespace fixrgraphiso {
     return acdfgNameToIso;
   }
 
+  void getRepr(std::ostream& out) const {
+    out << this <<
+      ", " << this->getCumulativeFrequency() <<
+      ", " << this->getFrequency() <<
+      ", " << this->isPopular() <<
+      ", " << this->getRepresentative()->source_info.package_name <<
+      ", " << this->getRepresentative()->source_info.method_name <<
+      endl;
+  }
+
+
   void resetClassification();
 
   protected:
