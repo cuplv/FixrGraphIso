@@ -57,8 +57,13 @@ namespace fixrgraphiso {
 
       if (protoAcdfgBin.anomalous()) acdfgBin->setAnomalous();
       if (protoAcdfgBin.subsuming()) acdfgBin->setSubsuming();
-      if (protoAcdfgBin.popular()) acdfgBin->setPopular();
+      if (protoAcdfgBin.popular()) acdfgBin->setPopular(true);
       if (protoAcdfgBin.isolated()) acdfgBin->setIsolated();
+
+      if (protoAcdfgBin.has_cumulative_frequency())
+        acdfgBin->setCumulativeFrequency(protoAcdfgBin.cumulative_frequency());
+      else
+        acdfgBin->setCumulativeFrequency(0);
 
       id2AcdfgBinMap[protoAcdfgBin.id()] = acdfgBin;
 
@@ -82,9 +87,10 @@ namespace fixrgraphiso {
         AcdfgBin* other = id2AcdfgBinMap[otherId];
         currentBin->insertIncomingEdge(other);
       }
-
-      currentBin->computeImmediatelySubsumingBins();
     }
+
+    for (auto bin : lattice->getAllBins())
+      bin->computeImmediatelySubsumingBins();
 
 
     // 3. Populate popular/anomalous/isolated list
@@ -159,6 +165,7 @@ namespace fixrgraphiso {
       proto_a->set_anomalous(a->isAnomalous());
       proto_a->set_popular(a->isPopular());
       proto_a->set_isolated(a->isIsolated());
+      proto_a->set_cumulative_frequency(a->getCumulativeFrequency());
     }
 
     for (auto it = lattice.beginPopular(); it != lattice.endPopular(); ++it) {

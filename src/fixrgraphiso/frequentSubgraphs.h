@@ -9,14 +9,30 @@ namespace fixrgraphiso {
   class FrequentSubgraphMiner {
     private:
 
+    void computePopularity(Lattice &lattice,
+                           const vector<AcdfgBin*> &order,
+                           const bool no_subsumed_popular,
+                           const bool is_relative,
+                           const double popularity_threshold);
+
     protected:
-    void processCommandLine(int argc, char * argv[],
-                            vector<string> & filenames,
-                            vector<string> & methodNames);
+    int processCommandLine(int argc, char * argv[],
+                           vector<string> & filenames,
+                           vector<string> & methodNames);
+
+    void sliceAcdfgs(const vector<string> & filenames,
+                     const vector<string> & methodnames,
+                     vector<Acdfg*> & allSlicedACDFGs);
 
     void calculateLatticeGraph(Lattice & lattice);
 
+    void findPopularByAbsFrequency(Lattice &lattice);
+
+    void findPopularByRelFrequency(Lattice &lattice);
+
     void classifyBins(Lattice & lattice);
+
+    void reClassifyBins();
 
     void computePatternsThroughSlicing(Lattice & lattice,
                                        vector<string> & filenames,
@@ -27,13 +43,13 @@ namespace fixrgraphiso {
 
     public:
     FrequentSubgraphMiner();
-    void mine(int argc, char * argv []);
+    int mine(int argc, char * argv []);
 
-    void mine(Lattice & lattice,
-              int freqCutoff,
-              string methodNames,
-              string outputPrefix,
-              string acdfgFileName);
+    int mine(Lattice & lattice,
+             int freqCutoff,
+             string methodNames,
+             string outputPrefix,
+             string acdfgFileName);
 
 
     private:
@@ -46,6 +62,10 @@ namespace fixrgraphiso {
     int maxEdgeSize = 400;
     int anomalyCutOff = 5;
     bool runTestOfSubsumption = false;
+    bool rerunClassification = false;
+
+    bool use_relative_popularity = false;
+    double relative_pop_threshold = 0.2;
   };
 
 

@@ -63,6 +63,8 @@ namespace fixrgraphiso {
     IsoRepr* getIsoToReference() const { return isoToReference; }
     IsoRepr* getIsoToAnomalous() const { return isoToAnomalous; }
 
+    static string getTypeRepr(result_type_t type);
+
   private:
     result_type_t type;
     AcdfgBin* referencePattern;
@@ -110,6 +112,7 @@ namespace fixrgraphiso {
     fixr_protobuf::SearchResults* toProto(const vector<SearchResult*> &results);
 
     void search(vector<SearchResult*> &results);
+    void newSearch(vector<SearchResult*> & results);
 
   private:
     Lattice* lattice;

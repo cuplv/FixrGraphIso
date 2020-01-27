@@ -38,8 +38,9 @@ namespace fixrgraphiso {
     /* free the isomorphism relation */
     for (auto it = acdfgNameToIso.begin();
          it != acdfgNameToIso.end(); it++) {
-      delete(it->second);
     }
+
+    // TODO: Free the acdfgs
   }
 
   bool isACDFGEquivalent(Acdfg *b, IsoRepr* iso);
@@ -47,7 +48,6 @@ namespace fixrgraphiso {
   void insertEquivalentACDFG(const string b, IsoRepr* iso){
     /* cout << "ACDFG REPR: " << b << */
     /*   " -- SIZE: " << (iso->getNodesRel()).size() << endl; */
-
     acdfgNames.push_back(b);
     acdfgNameToIso[b] = iso;
   }
@@ -95,7 +95,12 @@ namespace fixrgraphiso {
   bool isIsolated() const {return isolated; }
   void setIsolated() { isolated = true; }
   void setPopular();
+  void setPopular(bool allowSubsuming);
   bool isPopular() const { return popular;}
+
+  int getCumulativeFrequency() const { return cumulativeFrequency;}
+  void setCumulativeFrequency(const int cumulativeFrequency) {
+    this->cumulativeFrequency = cumulativeFrequency;}
 
   bool isClassified() const { return popular || anomalous || isolated;}
 
@@ -119,6 +124,19 @@ namespace fixrgraphiso {
     return acdfgNameToIso;
   }
 
+  void getRepr(std::ostream& out) const {
+    out << this <<
+      ", " << this->getCumulativeFrequency() <<
+      ", " << this->getFrequency() <<
+      ", " << this->isPopular() <<
+      ", " << this->getRepresentative()->source_info.package_name <<
+      ", " << this->getRepresentative()->source_info.method_name <<
+      endl;
+  }
+
+
+  void resetClassification();
+
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
 
@@ -127,27 +145,34 @@ namespace fixrgraphiso {
   vector<string> acdfgNames;
   map<string, IsoRepr*> acdfgNameToIso;
 
-  /* List of bins subsumed by this bin */
+  /* List of bins that subsumes this bin
+     I.e., all the bins that contains this bin
+     {b | SUBSUMES(b, this)},
+   */
   set<AcdfgBin*> subsumingBins;
-  /* List of bins that are directly subsumed by this bin
+  /* List of bins that directly subsumes by this bin
      i.e. the set {b2 | SUB(this,b2) and does not exist a
      b3 such that SUB(this,b3) and SUB(b3,b2)}
   */
   set<AcdfgBin*> immediateSubsumingBins;
-  /* List of bins that subsume this bin */
+  /* List of bins that are subsumed this bin */
   set<AcdfgBin*> incomingEdges;
 
-  /* */
+  /* True if the bin subsumes a popular bin */
   bool subsuming;
   bool anomalous;
   bool isolated;
   bool popular;
+
+  // store the cumulative frequency of the bin
+  int cumulativeFrequency;
   };
 
   class Lattice {
   public:
     Lattice() {};
     Lattice(const vector<string> & methodNames);
+    ~Lattice();
 
     void addMethodName(const string& methodName) { methodNames.push_back(methodName);}
     const vector<string> & getMethodNames() const { return methodNames; }
@@ -168,12 +193,20 @@ namespace fixrgraphiso {
     bin_iterator beginIsolated() const { return isolatedBins.begin(); }
     bin_iterator endIsolated() const { return isolatedBins.end(); }
 
-    const vector<AcdfgBin*> getAllBins() const {return allBins;};
-    const vector<AcdfgBin*> getPopularBins() const {return popularBins;};
-    const vector<AcdfgBin*> getAnomalousBins() const {return anomalousBins;};
-    const vector<AcdfgBin*> getIsolatedBins() const {return isolatedBins;};
+    const vector<AcdfgBin*> & getAllBins() const {return allBins;};
+    const vector<AcdfgBin*> & getPopularBins() const {return popularBins;};
+    const vector<AcdfgBin*> & getAnomalousBins() const {return anomalousBins;};
+    const vector<AcdfgBin*> & getIsolatedBins() const {return isolatedBins;};
+
+    void buildTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr) const;
+    void reverseTr(const map<AcdfgBin*, set<AcdfgBin*>*> & tr,
+                   map<AcdfgBin*, set<AcdfgBin*>*> & inverse) const;
+    static void deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr);
+    void computeTopologicalOrder(vector<AcdfgBin*> &order) const;
 
     void sortByFrequency();
+
+    void resetClassification();
 
     void dumpAllBins(std::chrono::seconds time_taken,
                      const string & output_prefix,
@@ -195,5 +228,3 @@ namespace fixrgraphiso {
 
 }
 #endif
-
-

@@ -16,6 +16,24 @@ namespace fixrgraphiso {
   using std::ostream;
 
 
+  string SearchResult::getTypeRepr(result_type_t type) {
+    switch (type) {
+    case CORRECT:
+      return "CORRECT";
+    case CORRECT_SUBSUMED:
+      return "CORRECT_SUBSUMED";
+    case ANOMALOUS_SUBSUMED:
+      return "ANOMALOUS_SUBSUMED";
+    case ISOLATED_SUBSUMED:
+      return "ISOLATED_SUBSUMED";
+    case ISOLATED_SUBSUMING:
+      return "ISOLATED_SUBSUMING";
+    default:
+      return "Unknown type";
+    }
+  }
+
+
   bool SearchLattice::subsumes(AcdfgBin* acdfgBin,
                                IsoRepr* &isoRepr) {
     IsoRepr *appIso = new IsoRepr(slicedQuery,
@@ -104,16 +122,6 @@ namespace fixrgraphiso {
           SearchResult* r = new SearchResult(CORRECT);
           r->setReferencePattern(popBin);
           r->setIsoToReference((const IsoRepr&) *isoPop);
-
-          // int isoSize = (isoPop->getNodesRel()).size();
-          // const map<string, IsoRepr*> names_to_iso = popBin->getAcdfgNameToIso();
-          // for (auto it = names_to_iso.begin(); it != names_to_iso.end(); it++) {
-          //   IsoRepr* otherIso = it->second;
-          //   int otherSize = otherIso->getNodesRel().size();
-          //   cout << "\tOther iso size " << otherSize << endl;
-          //   assert (isoSize == otherSize);
-          // }
-
           results.push_back(r);
 
           /* cannot be subsumed by another popular pattern */
@@ -165,6 +173,89 @@ namespace fixrgraphiso {
     }
   }
 
+  void SearchLattice::newSearch(vector<SearchResult*> & results) {
+    vector<AcdfgBin*> queue;
+    set<AcdfgBin*> visited;
+    map<AcdfgBin*, set<AcdfgBin*>*> tr;
+    map<AcdfgBin*, set<AcdfgBin*>*> inverseTr;
+
+    lattice->buildTr(tr);
+
+    for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
+      AcdfgBin* bin = *it;
+      bool has_popular_anc = false;
+
+      for (auto incomingBin : bin->getIncomingEdges()) {
+        has_popular_anc = has_popular_anc || incomingBin->isPopular();
+      }
+      if (! has_popular_anc)
+        queue.push_back(bin);
+    }
+
+    while (! queue.empty()) {
+      AcdfgBin* bin = queue.back();
+      queue.pop_back();
+
+      // avoid to visit the same element twice
+      if (visited.find(bin) != visited.end())
+        break;
+      visited.insert(bin);
+
+      IsoRepr* iso = NULL;
+
+      if (isSubsumed(bin, iso)) {
+        /* Stop, we found a place in the lattice for query:
+           query <= bin
+         */
+        // Stop the search here
+
+        IsoRepr* iso2 = NULL;
+        if (subsumes(bin, iso2)) {
+          SearchResult* r = new SearchResult(CORRECT);
+          r->setReferencePattern(bin);
+          r->setIsoToReference((const IsoRepr&) *iso2);
+          results.push_back(r);
+          delete(iso);
+        } else {
+          SearchResult* r = new SearchResult(ANOMALOUS_SUBSUMED);
+          r->setReferencePattern(bin);
+          r->setIsoToReference((const IsoRepr&) *iso);
+          results.push_back(r);
+        }
+      } else if (subsumes(bin, iso)) {
+        /* bin <= query */
+
+        /* get the "next" reachable descendant popular children */
+        bool noPopularChildren = true;
+        vector<AcdfgBin*> toVisit;
+        for (auto childBin : *tr[bin]) {
+          toVisit.push_back(childBin);
+        }
+        while (! toVisit.empty()) {
+          AcdfgBin* childBin = toVisit.back();
+          toVisit.pop_back();
+          if (childBin->isPopular()) {
+            queue.push_back(childBin);
+            noPopularChildren = false;
+          } else for (auto succ : *tr[childBin])
+                   toVisit.push_back(succ);
+        }
+
+        if (true || noPopularChildren) {
+          SearchResult* r = new SearchResult(CORRECT_SUBSUMED);
+          r->setReferencePattern(bin);
+          r->setIsoToReference((const IsoRepr&) *iso);
+          results.push_back(r);
+        }
+
+
+      } else {
+        // Do nothing, not comparable
+      }
+    }
+
+    Lattice::deleteTr(tr);
+  }
 
   void printBin(const AcdfgBin& bin, ostream& out) {
 
@@ -287,5 +378,4 @@ namespace fixrgraphiso {
 
     return protoResults;
   }
-
 }
