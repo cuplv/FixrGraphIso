@@ -84,6 +84,10 @@ add_executable(searchlattice
 )
 target_compile_features(searchlattice PRIVATE cxx_range_for)
 
+add_executable(findDuplicates
+   findDuplicatesMain.cpp
+)
+target_compile_features(findDuplicates PRIVATE cxx_range_for)
 
 target_link_libraries(fixrgraphiso
   ${FIXR_GRAPH_ISO_LINK_LIBS}
@@ -107,4 +111,9 @@ target_link_libraries(searchlattice
   ${Z3_LIBRARY}
 )
 
-
+target_link_libraries(findDuplicates
+  frequentsubgraphs_library
+  ${LP_LIBRARY}
+  ${PROTOBUF_LIBRARY}
+  ${Z3_LIBRARY}
+)
