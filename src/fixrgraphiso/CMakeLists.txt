@@ -60,6 +60,7 @@ add_library(frequentsubgraphs_library SHARED
    serialization.cpp
    serializationLattice.cpp
    searchLattice.cpp
+   findDuplicates.cpp
    ilpApproxIsomorphismEncoder.cpp
    milpProblem.cpp
    ${PROTO_SRCS_ISO}
