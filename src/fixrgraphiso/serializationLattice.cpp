@@ -25,7 +25,8 @@ namespace fixrgraphiso {
   /**
    * Read a lattice from the protobuffer and create a lattice data structure
    */
-  Lattice* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* protoLattice) {
+  Lattice* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* protoLattice,
+                                                 std::map<AcdfgBin*, int> &acdfgBin2id) {
     Lattice* lattice = new Lattice();
     AcdfgSerializer serializer;
 
@@ -66,6 +67,7 @@ namespace fixrgraphiso {
         acdfgBin->setCumulativeFrequency(0);
 
       id2AcdfgBinMap[protoAcdfgBin.id()] = acdfgBin;
+      acdfgBin2id[acdfgBin] = protoAcdfgBin.id();
 
       lattice->addBin(acdfgBin);
     }
@@ -209,7 +211,21 @@ namespace fixrgraphiso {
 
     acdfg_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
     if (NULL != proto) {
-      res = s.lattice_from_proto(proto);
+      map<AcdfgBin*, int> acdfgBin2id;
+      res = s.lattice_from_proto(proto, acdfgBin2id);
+    }
+    delete(proto);
+    return res;
+  }
+
+  Lattice* readLattice(string latticeFile,
+                       map<AcdfgBin*, int> &acdfgBin2id) {
+    LatticeSerializer s;
+    Lattice * res = NULL;
+
+    acdfg_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
+    if (NULL != proto) {
+      res = s.lattice_from_proto(proto, acdfgBin2id);
     }
     delete(proto);
     return res;
