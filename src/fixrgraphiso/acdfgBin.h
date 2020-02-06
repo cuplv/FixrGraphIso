@@ -206,6 +206,8 @@ namespace fixrgraphiso {
 
     void sortByFrequency();
 
+    void sortAllByFrequency();
+
     void resetClassification();
 
     void dumpAllBins(std::chrono::seconds time_taken,

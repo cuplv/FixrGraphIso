@@ -225,6 +225,21 @@ namespace fixrgraphiso {
 
   }
 
+  void sortHelp(vector<AcdfgBin*> &binVector) {
+    std::sort(binVector.begin(), binVector.end(),
+              [](const AcdfgBin  * bin1, const AcdfgBin * bin2){
+                return bin1 -> getFrequency() > bin2 -> getFrequency();
+              });
+  }
+
+  void Lattice::sortAllByFrequency() {
+    sortHelp(allBins);
+    sortHelp(popularBins);
+    sortHelp(anomalousBins);
+    sortHelp(isolatedBins);
+  }
+
+
   void Lattice::resetClassification() {
     popularBins.clear();
     anomalousBins.clear();

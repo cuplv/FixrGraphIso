@@ -1,10 +1,13 @@
 #include <fstream>
 #include <iostream>
+#include <vector>
+
 #include "searchTest.h"
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfgBin.h"
 #include "fixrgraphiso/serializationLattice.h"
 #include "fixrgraphiso/searchLattice.h"
+#include "fixrgraphiso/findDuplicates.h"
 
 namespace search {
   using namespace std;
@@ -114,21 +117,15 @@ namespace search {
       delRes(results);
 
       searchQuery(lattice, query2, results);
-      if (results.size() != 2)
-        FAIL() << "Q2: Unexpected number of results " << results.size() << " instead of 2" << endl;
-      res = results.back();
-      if (res->getType() != CORRECT)
-        FAIL() << "Q2: Wrong result type" << endl;
-      results.pop_back();
-      res = results.back();
-      if (res->getType() != CORRECT_SUBSUMED)
-        FAIL() << "Q2: Wrong result type" << endl;
+      if (results.size() != 4)
+        FAIL() << "Q2: Unexpected number of results " << results.size() << " instead of 4" << endl;
+      check_count(results, 1, 1, 2);
       delRes(results);
 
       searchQuery(lattice, query3, results);
-      if (results.size() != 6)
-        FAIL() << "Q3: Unexpected number of results " << results.size() << " instead of 6" << endl;
-      check_count(results, 0, 5, 1);
+      if (results.size() != 5)
+        FAIL() << "Q3: Unexpected number of results " << results.size() << " instead of 5" << endl;
+      check_count(results, 1, 4, 0);
       delRes(results);
     }
 
@@ -136,6 +133,48 @@ namespace search {
     delete(query1);
     delete(query2);
     delete(query3);
+
+    SUCCEED();
+  }
+
+  TEST_F(SearchTest, FindDuplicates) {
+    string latticeFileName = "../search_data/lattice.bin";
+    int popular_bins;
+    dup_tuple identicalBins;
+
+    {
+      Lattice *lattice;
+      lattice = fixrgraphiso::readLattice(latticeFileName);
+
+      if (NULL == lattice) {
+        FAIL() << "Cannot read the lattice in " << latticeFileName << endl;
+      }
+
+      popular_bins = std::distance(lattice->beginPopular(),
+                                   lattice->endPopular());
+      delete lattice;
+    }
+
+    int res = fixrgraphiso::findDuplicates(latticeFileName, 1,
+                                           latticeFileName, 1,
+                                           identicalBins);
+
+    if (res != 0)
+      FAIL() << "Error finding duplicates" << endl;
+    if (identicalBins.size() != popular_bins)
+      FAIL() << "Expecting " << popular_bins << " found " <<
+        identicalBins.size() << endl;
+
+    for (auto tuple : identicalBins) {
+      if (get<0>(tuple) != get<2>(tuple) ||
+          get<1>(tuple) != get<3>(tuple)) {
+        FAIL() << "Found wrong tuple of identical bins ((" <<
+          get<0>(tuple) << ", " << get<1>(tuple) <<
+          ",),(" <<
+          get<2>(tuple) << ", " << get<3>(tuple) <<
+          "))" << endl;
+      }
+    }
 
     SUCCEED();
   }
