@@ -465,4 +465,16 @@ namespace fixrgraphiso {
     Lattice::deleteTr(inverseTr);
   }
 
+  int Lattice::countCommonMethods(const Lattice &other) const {
+    vector<string> v(methodNames.size() + other.methodNames.size());
+    vector<string>::iterator it;
+
+    it = set_intersection(methodNames.begin(), 
+                          methodNames.end(), 
+                          other.methodNames.begin(), 
+                          other.methodNames.end(), 
+                          v.begin());
+    return v.size();
+
+  }
 }

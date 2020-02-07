@@ -17,6 +17,9 @@ namespace fixrgraphiso {
 
   int findDuplicatesList(const string &latticeListFileName,
                          dup_tuple &identicalBins);
+
+  int writeDuplicateList(const dup_tuple &identicalBins,
+                         const string outFileName);
 }
 
 #endif

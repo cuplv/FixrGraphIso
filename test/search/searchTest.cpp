@@ -178,4 +178,19 @@ namespace search {
 
     SUCCEED();
   }
+
+  TEST_F(SearchTest, FindDuplicatesList) {
+    string latticeListsFileName = "../search_data/lattice_list.txt";
+    dup_tuple identicalBins;
+
+    int res = fixrgraphiso::findDuplicatesList(latticeListsFileName,
+                                               identicalBins);
+
+    if (res != 0) {
+      FAIL() << "Error computing the duplicates";
+    }
+
+    SUCCEED();
+  }
+
 }

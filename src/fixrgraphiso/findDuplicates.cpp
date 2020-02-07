@@ -3,7 +3,7 @@
 #include "fixrgraphiso/serializationLattice.h"
 #include "fixrgraphiso/acdfgBin.h"
 
-
+#include <tuple>
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
@@ -99,11 +99,14 @@ namespace fixrgraphiso {
           delete lattice_1;
         }
 
-        // Find the duplicates
-        acdfgBin2id_2.insert(acdfgBin2id_1.begin(), acdfgBin2id_1.end());
-        findDuplicatesAux(*lattice_1, i1->second,
-                          *lattice_2, i2->second,
-                          acdfgBin2id_2, identicalBins);
+        if (lattice_1->countCommonMethods(*lattice_2) >= 2) {
+          // Find the duplicates
+          acdfgBin2id_2.insert(acdfgBin2id_1.begin(), acdfgBin2id_1.end());
+          findDuplicatesAux(*lattice_1, i1->second,
+                            *lattice_2, i2->second,
+                            acdfgBin2id_2, identicalBins);
+        }
+
         delete lattice_2;
       }
 
@@ -133,7 +136,7 @@ namespace fixrgraphiso {
           listFile.close();
         }
 
-        string id_str = line.substr(0, pos_delim - 1);
+        string id_str = line.substr(0, pos_delim);
         int id = std::stoi(id_str);
         string latticeFileName = line.substr(pos_delim + 1, line.size() -1);
 
@@ -149,4 +152,26 @@ namespace fixrgraphiso {
     return findDuplicatesList(latticeNamesList, identicalBins);
   }
 
+  int writeDuplicateList(const dup_tuple &identicalBins,
+                         const string outFileName) {
+    std::ofstream outFile(outFileName);
+
+    if (outFile.is_open()) {
+      for (auto t : identicalBins) {
+        outFile <<
+          std::get<0>(t) << "," <<
+          std::get<1>(t) << "," <<
+          std::get<2>(t) << "," <<
+          std::get<3>(t) << endl;
+      }
+    }
+    else {
+      cout << "Unable to create output file";
+      return 0;
+    }
+
+    outFile.close();
+
+    return 0;
+  }
 }

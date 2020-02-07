@@ -59,6 +59,10 @@ int main(int argc, char * argv[]) {
   int res = fixrgraphiso::findDuplicatesList(*latticeFileList,
                                              identicalBins);
 
+  if (res == 0) {
+    res = fixrgraphiso::writeDuplicateList(identicalBins, *outFileName);
+  }
+
   delete latticeFileList;
   delete outFileName;
 

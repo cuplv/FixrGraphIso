@@ -220,6 +220,8 @@ namespace fixrgraphiso {
 
     void getAcdfgBin2id(map<AcdfgBin*, int> &acdfgBin2idMap) const;
 
+    int countCommonMethods(const Lattice &other) const;
+
   private:
     vector<string> methodNames;
     vector<AcdfgBin*> allBins;

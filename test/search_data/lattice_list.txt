@@ -1,0 +1,2 @@
+1 ../search_data/lattice.bin
+2 ../search_data/lattice.bin
