@@ -604,7 +604,7 @@ namespace fixrgraphiso {
         if (b1 != b2) {
 
           IsoRepr* isoRepr = new IsoRepr(b2->getRepresentative(),
-                                       b1->getRepresentative());
+                                         b1->getRepresentative());
           if (b1->isACDFGEquivalent(b2->getRepresentative(), isoRepr)) {
             cout << "Found duplicate (" << b1 << "," << b2 <<
               ")" << endl;
