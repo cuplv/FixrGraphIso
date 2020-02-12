@@ -24,6 +24,10 @@ namespace fixrgraphiso {
                      const vector<string> & methodnames,
                      vector<Acdfg*> & allSlicedACDFGs);
 
+    void binAndSubs(Lattice &lattice, Acdfg* a);
+    void binAndSubs(Lattice &lattice,
+                    vector<Acdfg*> &allSlicedACDFGs);
+
     void calculateLatticeGraph(Lattice & lattice);
 
     void findPopularByAbsFrequency(Lattice &lattice);
