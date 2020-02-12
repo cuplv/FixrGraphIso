@@ -365,6 +365,8 @@ namespace fixrgraphiso {
       return rVal;
     }
 
+    bool canSubsumeB(Acdfg& b);
+
     bool hasNode (node_id_t id) const;
     bool hasEdge (edge_id_t id) const;
 

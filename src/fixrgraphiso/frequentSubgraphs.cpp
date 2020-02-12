@@ -414,6 +414,27 @@ namespace fixrgraphiso {
     return std::chrono::duration_cast<std::chrono::seconds>(end -start);
   }
 
+  /**
+   * Prune at the frontier of subsumption
+   */
+  void FrequentSubgraphMiner::pruneFrontiers(Lattice &lattice,
+                                             Acdfg* acdfgToInsert,
+                                             set<AcdfgBin*> &notSubsumedBins,
+                                             set<AcdfgBin*> &notSubsumingBins)
+
+  {
+    for (auto bin : lattice.getAllBins()) {
+      Acdfg* binAcdfg = bin->getRepresentative();
+
+      if (not acdfgToInsert->canSubsumeB(*binAcdfg)) {
+        notSubsumedBins.insert(bin);
+      }
+
+      if (not binAcdfg->canSubsumeB(*acdfgToInsert)) {
+        notSubsumingBins.insert(bin);
+      }
+    }
+  }
 
   /**
    * Add the Acdfg to the lattice.
@@ -429,6 +450,9 @@ namespace fixrgraphiso {
     // set of bins that cannot subsume acdfgToInsert
     set<AcdfgBin*> notSubsumingBins;
 
+    // Try to prune the bins that are "easily" not subsumed or subsuming
+    pruneFrontiers(lattice, acdfgToInsert,
+                   notSubsumedBins, notSubsumingBins);
 
     // Get all non-subsumed bins
     for (auto bin : lattice.getAllBins())

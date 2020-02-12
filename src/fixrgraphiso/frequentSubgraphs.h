@@ -24,6 +24,10 @@ namespace fixrgraphiso {
                      const vector<string> & methodnames,
                      vector<Acdfg*> & allSlicedACDFGs);
 
+    void pruneFrontiers(Lattice &lattice,
+                        Acdfg* acdfgToInsert,
+                        set<AcdfgBin*> &notSubsumedBins,
+                        set<AcdfgBin*> &notSubsumingBins);
     void binAndSubs(Lattice &lattice, Acdfg* a);
     void binAndSubs(Lattice &lattice,
                     vector<Acdfg*> &allSlicedACDFGs);
