@@ -33,11 +33,11 @@ namespace fixrgraphiso {
   }
 
   bool USE_INC_ISO = true;
-
-  bool AcdfgBin::isACDFGEquivalent(Acdfg * b, IsoRepr* iso){
+  bool AcdfgBin::isACDFGEquivalent(Acdfg * b, IsoRepr* iso) {
     if (! USE_INC_ISO) {
       IsoSubsumption dir_a (acdfgRepr, b);
       IsoSubsumption dir_b (b, acdfgRepr);
+
       if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
         if (debug){
           cout << "Subsumption ruled out directly " << endl;
@@ -82,6 +82,40 @@ namespace fixrgraphiso {
     }
 
     return true;
+  }
+
+  AcdfgBin::SubsRel AcdfgBin::compareACDFG(Acdfg *b,  IsoRepr* iso,
+                                           const bool canSubsume,
+                                           const bool canBeSubsumed) {
+    bool bin_subsumes_b;
+    bool b_subsumes_bin;
+
+    IsoSubsumption dir_a (acdfgRepr, b); // bin subsumes b
+    IsoSubsumption dir_b (b, acdfgRepr); // b subsumes bin
+
+
+    addSubsumptionCheck();
+    if ( (! canBeSubsumed) || (! dir_a.checkNodeCounts())) {
+      bin_subsumes_b = false;
+    } else {
+      bin_subsumes_b = dir_a.check();
+    }
+
+    addSubsumptionCheck();
+    if ((!canSubsume) || (! dir_b.checkNodeCounts())) {
+      b_subsumes_bin = false;
+    } else {
+      b_subsumes_bin = dir_b.check(iso);
+    }
+
+    if (bin_subsumes_b && b_subsumes_bin)
+      return AcdfgBin::EQUIVALENT;
+    else if (bin_subsumes_b)
+      return AcdfgBin::SUBSUMED;
+    else if (b_subsumes_bin)
+      return AcdfgBin::SUBSUMING;
+    else
+      return AcdfgBin::NONE;
   }
 
   int AcdfgBin::getPopularity() const {
@@ -146,7 +180,7 @@ namespace fixrgraphiso {
     std::set_difference(subsumingBins.begin(), subsumingBins.end(), \
                         transitivelySubsuming.begin(), transitivelySubsuming.end(), \
                         std::inserter(immediateSubsumingBins, immediateSubsumingBins.begin()));
-
+    isImmediateSubsumingUpdate = true;
   }
 
   /**
@@ -154,10 +188,10 @@ namespace fixrgraphiso {
    * and there are no bin subsuming this one such that
    * their popularity is over the treshold
    */
-  bool AcdfgBin::isAtFrontierOfPopularity(int freq_cutoff) const {
+  bool AcdfgBin::isAtFrontierOfPopularity(int freq_cutoff) {
     int f = this -> getPopularity();
     if (f < freq_cutoff) return false;
-    for (const AcdfgBin * b: immediateSubsumingBins){
+    for (const AcdfgBin * b: getImmediateSubsumingBins()){
       if (b -> getPopularity() >= freq_cutoff)
         return false;
     }
@@ -193,6 +227,37 @@ namespace fixrgraphiso {
     popular = false;
     cumulativeFrequency = 0;
   }
+
+  void AcdfgBin::getReachable(const set<AcdfgBin*> &initial,
+                              set<AcdfgBin*> &reachable,
+                              const bool invert) {
+    vector<AcdfgBin*> to_visit;
+    set<AcdfgBin*> visited;
+
+    for (auto b : initial)
+      to_visit.push_back(b);
+
+    while (to_visit.size() > 0) {
+      AcdfgBin* b = to_visit.back();
+      to_visit.pop_back();
+
+      if (reachable.find(b) != reachable.end())
+        continue;
+
+      reachable.insert(b);
+
+      if (! invert) {
+        for (AcdfgBin* next : b->getSubsumingBins()) {
+          to_visit.push_back(next);
+        }
+      } else {
+        for (AcdfgBin* prev : b->getIncomingEdges()) {
+          to_visit.push_back(prev);
+        }
+      }
+    }
+  }
+
 
   Lattice::Lattice(const vector<string> & methodNames) {
     for (string s : methodNames) {
@@ -393,7 +458,8 @@ namespace fixrgraphiso {
   void Lattice::buildTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr) const {
     for (auto bin : allBins) {
       set<AcdfgBin*>* binReach = new set<AcdfgBin*>();
-      for (auto it_succ : bin->getImmediateSubsumingBins()) {
+
+      for (AcdfgBin* it_succ : bin->getImmediateSubsumingBins()) {
         binReach->insert(it_succ);
       }
       tr[bin] = binReach;
@@ -461,8 +527,48 @@ namespace fixrgraphiso {
 
     assert(order.size() == allBins.size());
 
+    // // Check topological order -- DEBUG
+    // Lattice::deleteTr(tr);
+    // buildTr(tr);
+    // {
+    //   set<AcdfgBin*> visited;
+
+    //   for (auto bin : order) {
+    //     visited.insert(bin);
+
+    //     cout << "map is " << tr[bin] << 
+    //       " " << tr[bin]->size() << endl;
+    //     for(AcdfgBin* bin2 : bin->getImmediateSubsumingBins()) {
+
+    //       cout << "TR FIND " << bin << " " << bin2 << endl;
+
+    //       assert(tr[bin]->find(bin2) != tr[bin]->end());
+    //       assert(inverseTr[bin2]->find(bin) != inverseTr[bin2]->end());
+    //       assert(visited.find(bin2) != visited.end());
+    //     }
+    //   }
+    // }
+
     Lattice::deleteTr(tr);
     Lattice::deleteTr(inverseTr);
+  }
+
+  /**
+   * Compute the transitive closure of the lattice
+   *
+   * Could be more efficient, exploiting the lattice is a DAG
+   * using topological sort
+   */
+  void Lattice::makeClosure() {
+    for (AcdfgBin* a : allBins) {
+      set<AcdfgBin*> reachable;
+      a->getReachable(a->getSubsumingBins(),
+                      reachable, false);
+
+      for (auto b : reachable) {
+        a->addSubsumingBin(b);
+      }
+    }
   }
 
   int Lattice::countCommonMethods(const Lattice &other) const {
@@ -476,5 +582,90 @@ namespace fixrgraphiso {
                           v.begin());
     return v.size();
 
+  }
+
+  /**
+   * Check the validity of the lattice
+   *
+   * A lattice is valid if:
+   *  - There are no two bins that are equivalent
+   *  - if there is an edge from b1 to b2:
+   *    - then b2 subsumes b1
+   *    - b2 has an incoming edge from b1
+   *
+   * Not complete
+   */
+  bool Lattice::isValid() const {
+    bool valid = true;
+
+    // There are no duplicate bins
+    for (auto b1 : allBins) {
+      for (auto b2 : allBins) {
+        if (b1 != b2) {
+
+          IsoRepr* isoRepr = new IsoRepr(b2->getRepresentative(),
+                                       b1->getRepresentative());
+          if (b1->isACDFGEquivalent(b2->getRepresentative(), isoRepr)) {
+            cout << "Found duplicate (" << b1 << "," << b2 <<
+              ")" << endl;
+
+            delete isoRepr;
+            return false;
+          }
+        }
+      }
+    }
+
+    for (auto b1 : allBins) {
+      for (auto b2 : b1->getSubsumingBins()) {
+        if (b1 == b2) {
+          cout << "Self loops!" << endl;
+          return false; // no self loops
+        }
+
+        if (! b1->isACDFGBinSubsuming(b2)) {
+          // b1 not subsumed by b2
+          cout << "No propser subsumption!" << endl;
+
+          return false;
+        }
+
+        if (b2->getIncomingEdges().find(b1) == b2->getIncomingEdges().end()) {
+          // no incoming edge
+          cout << "Missing back edge!" << endl;
+          return false;
+        }
+      }
+    }
+
+    for (auto b1 : allBins) {
+      for (auto b2 : allBins) {
+        if (b1->getSubsumingBins().find(b2) == b1->getSubsumingBins().end() &&
+            b1->getIncomingEdges().find(b2) == b1->getIncomingEdges().end()) {
+
+          if (b1 == b2)
+            continue;
+
+          IsoRepr* isoRepr = new IsoRepr(b2->getRepresentative(),
+                                         b1->getRepresentative());
+
+          if (b1->compareACDFG(b2->getRepresentative(), isoRepr,
+                               true, true) !=
+              AcdfgBin::NONE) {
+            cout << b1->getRepresentative() << " unrelated to " <<
+              b2->getRepresentative() << endl;
+
+            cout << "Missing relationship" << endl;
+
+            cout << "b2 subsumes b1 " << b1->isACDFGBinSubsuming(b2) << endl;
+            cout << "b1 subsumes b2 " << b2->isACDFGBinSubsuming(b1) << endl;
+
+            return false;
+          }
+        }
+      }
+    }
+
+    return valid;
   }
 }
