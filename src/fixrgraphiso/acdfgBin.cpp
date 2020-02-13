@@ -93,19 +93,19 @@ namespace fixrgraphiso {
     IsoSubsumption dir_a (acdfgRepr, b); // bin subsumes b
     IsoSubsumption dir_b (b, acdfgRepr); // b subsumes bin
 
+    // The order depends on the search algorithm
+    addSubsumptionCheck();
+    if ((!canSubsume) || (! dir_b.checkNodeCounts())) {
+      b_subsumes_bin = false;
+    } else {
+      b_subsumes_bin = dir_b.check(iso);
+    }
 
     addSubsumptionCheck();
     if ( (! canBeSubsumed) || (! dir_a.checkNodeCounts())) {
       bin_subsumes_b = false;
     } else {
       bin_subsumes_b = dir_a.check();
-    }
-
-    addSubsumptionCheck();
-    if ((!canSubsume) || (! dir_b.checkNodeCounts())) {
-      b_subsumes_bin = false;
-    } else {
-      b_subsumes_bin = dir_b.check(iso);
     }
 
     if (bin_subsumes_b && b_subsumes_bin)
@@ -338,7 +338,6 @@ namespace fixrgraphiso {
       out_file << "Frequency: " << a -> getFrequency() << ", "
                << a-> getPopularity() << endl;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file);
       count ++;
     }
@@ -354,7 +353,6 @@ namespace fixrgraphiso {
       out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency()<< endl;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
@@ -368,7 +366,6 @@ namespace fixrgraphiso {
       out_file << "Bin: " << iso_bin_file_name << endl;
       out_file << "Frequency: " << a -> getFrequency() ;
       a -> dumpToDot(output_prefix + "/" + iso_file_name);
-      a -> dumpToProtobuf(output_prefix + "/" + iso_bin_file_name);
       a -> printInfo(out_file, false);
       count ++;
     }
