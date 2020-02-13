@@ -28,15 +28,15 @@ namespace fixrgraphiso {
     Acdfg * repr_a = getRepresentative();
     Acdfg * repr_b = b -> getRepresentative();
 
-    IsoSubsumption d(repr_b, repr_a);
+    IsoSubsumption d(repr_b, repr_a, stats);
     return d.check();
   }
 
   bool USE_INC_ISO = true;
   bool AcdfgBin::isACDFGEquivalent(Acdfg * b, IsoRepr* iso) {
     if (! USE_INC_ISO) {
-      IsoSubsumption dir_a (acdfgRepr, b);
-      IsoSubsumption dir_b (b, acdfgRepr);
+      IsoSubsumption dir_a (acdfgRepr, b, stats);
+      IsoSubsumption dir_b (b, acdfgRepr, stats);
 
       if (! dir_a.checkNodeCounts() || ! dir_b.checkNodeCounts()){
         if (debug){
@@ -44,8 +44,8 @@ namespace fixrgraphiso {
         }
 
         /* [SM] HACK */
-        addSubsumptionCheck(); /* count a direction */
-        addSubsumptionCheck(); /* count b direction */
+        stats->addSubsumptionCheck(); /* count a direction */
+        stats->addSubsumptionCheck(); /* count b direction */
 
         return false;
       }
@@ -56,7 +56,7 @@ namespace fixrgraphiso {
         }
 
         /* [SM] HACK */
-        addSubsumptionCheck(); /* count b direction */
+        stats->addSubsumptionCheck(); /* count b direction */
 
         return false;
       }
@@ -68,7 +68,7 @@ namespace fixrgraphiso {
         return false;
       }
     } else {
-      IsoSubsumption dir_b (b, acdfgRepr);
+      IsoSubsumption dir_b (b, acdfgRepr, stats);
       if (! dir_b.check_iso(iso)) {
         if (debug){
           cout << "Subsumption b -> bin ruled out " << endl;
@@ -90,19 +90,19 @@ namespace fixrgraphiso {
     bool bin_subsumes_b;
     bool b_subsumes_bin;
 
-    IsoSubsumption dir_a (acdfgRepr, b); // bin subsumes b
-    IsoSubsumption dir_b (b, acdfgRepr); // b subsumes bin
+    IsoSubsumption dir_a (acdfgRepr, b, stats); // bin subsumes b
+    IsoSubsumption dir_b (b, acdfgRepr, stats); // b subsumes bin
 
     // The order depends on the search algorithm
-    addSubsumptionCheck();
     if ((!canSubsume) || (! dir_b.checkNodeCounts())) {
+      stats->addSubsumptionCheck();
       b_subsumes_bin = false;
     } else {
       b_subsumes_bin = dir_b.check(iso);
     }
 
-    addSubsumptionCheck();
     if ( (! canBeSubsumed) || (! dir_a.checkNodeCounts())) {
+      stats->addSubsumptionCheck();
       bin_subsumes_b = false;
     } else {
       bin_subsumes_b = dir_a.check();
@@ -371,7 +371,8 @@ namespace fixrgraphiso {
     }
 
     out_file << "Total Time (s): " << time_taken.count()<< endl;
-    printStats(out_file);
+
+    stats.print(out_file);
 
     out_file.close();
   }

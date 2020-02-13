@@ -55,7 +55,8 @@ namespace fixrgraphiso {
   }
 
 
-  IsoSubsumption::IsoSubsumption(Acdfg * a, Acdfg * b):acdfg_a(a), acdfg_b(b)
+  IsoSubsumption::IsoSubsumption(Acdfg * a, Acdfg * b, Stats * stats) : 
+    acdfg_a(a), acdfg_b(b), stats(stats)
   {
   }
 
@@ -621,7 +622,7 @@ namespace fixrgraphiso {
   }
 
   bool IsoSubsumption::check(IsoRepr *iso) {
-    addSubsumptionCheck();
+    stats->addSubsumptionCheck();
 
     if (! canSubsume()) {
       return false;
@@ -632,7 +633,7 @@ namespace fixrgraphiso {
     e.solve();
     bool retVal = e.isSat();
     auto end = std::chrono::high_resolution_clock::now();
-    addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+    stats->addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
 
     // Construct the isomorphism model
     if (retVal && NULL != iso) {
@@ -643,11 +644,11 @@ namespace fixrgraphiso {
   }
 
   bool IsoSubsumption::check_iso(IsoRepr *iso) {
-    IsoSubsumption dir_b (acdfg_b, acdfg_a);
+    IsoSubsumption dir_b (acdfg_b, acdfg_a, stats);
 
     // We do two subsumption checks, so we count each of them in the stats
-    addSubsumptionCheck();
-    addSubsumptionCheck();
+    stats->addSubsumptionCheck();
+    stats->addSubsumptionCheck();
 
     if (! checkNodeCounts() || ! dir_b.checkNodeCounts()){
       if (debug){
@@ -675,7 +676,7 @@ namespace fixrgraphiso {
     e.solve();
     bool retVal = e.isSat();
     auto end = std::chrono::high_resolution_clock::now();
-    addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+    stats->addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
 
     if (! retVal) {
       if (debug){
@@ -691,7 +692,7 @@ namespace fixrgraphiso {
     e.solve();
     retVal = e.isSat();
     end = std::chrono::high_resolution_clock::now();
-    addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+    stats->addSATCallStat(std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
 
     if (retVal && NULL != iso) {
       buildIsoRepr(iso);
@@ -730,13 +731,13 @@ namespace fixrgraphiso {
   /*--
     Constructors for IsomorphismClass.
     --*/
-  IsomorphismClass::IsomorphismClass(Acdfg * what) :
-    iso_filename(what -> getName()), freq(1), acdfg(what) {
+  IsomorphismClass::IsomorphismClass(Acdfg * what, Stats * stats) :
+    iso_filename(what -> getName()), freq(1), acdfg(what), stats(stats) {
     subsumingACDFGs.push_back(what -> getName());
   }
 
-  IsomorphismClass::IsomorphismClass(string const & fname) :
-    iso_filename(fname), freq(1) {
+  IsomorphismClass::IsomorphismClass(string const & fname, Stats * stats):
+    iso_filename(fname), freq(1), stats(stats) {
     Iso iso;
     std::fstream inp_file (fname.c_str(), std::ios::in | std::ios::binary);
     assert(inp_file.is_open());
@@ -783,7 +784,7 @@ namespace fixrgraphiso {
        5. If two edges are isomorphic then their source and target nodes must be isomorphic to each other.
        ---*/
 
-    IsoSubsumption isoSub(this -> acdfg, b -> acdfg);
+    IsoSubsumption isoSub(this->acdfg, b->acdfg, stats);
     if (isoSub.check()) {
       if (debug) cout << "\t SAT solver returned SAT! " << endl;
       return true;

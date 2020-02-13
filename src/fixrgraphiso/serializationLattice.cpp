@@ -46,7 +46,7 @@ namespace fixrgraphiso {
       const acdfg_protobuf::Acdfg & protoRepr = protoAcdfgBin.acdfg_repr();
       Acdfg* repr = serializer.create_acdfg(protoRepr);
 
-      AcdfgBin* acdfgBin = new AcdfgBin(repr);
+      AcdfgBin* acdfgBin = new AcdfgBin(repr, lattice->getStats());
       for (int j = 0; j < protoAcdfgBin.names_to_iso_size(); j++) {
         const acdfg_protobuf::Lattice::IsoPair & protoIso =
           protoAcdfgBin.names_to_iso(j);

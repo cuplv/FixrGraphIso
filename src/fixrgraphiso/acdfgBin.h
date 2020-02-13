@@ -16,6 +16,7 @@
 #include <chrono>
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/isomorphismClass.h"
+#include "fixrgraphiso/collectStats.h"
 
 namespace fixrgraphiso {
   using std::vector;
@@ -35,12 +36,13 @@ namespace fixrgraphiso {
     NONE
   };
 
-  AcdfgBin(Acdfg* a) : subsuming(false),
+  AcdfgBin(Acdfg* a, Stats* stats) : subsuming(false),
       anomalous(false), popular(false), isolated(false) {
     acdfgRepr = a;
     IsoRepr* iso = new IsoRepr(a);
     insertEquivalentACDFG(a, iso);
     isImmediateSubsumingUpdate = true;
+    this->stats = stats;
   }
 
   ~AcdfgBin() {
@@ -159,6 +161,8 @@ namespace fixrgraphiso {
 
   void resetClassification();
 
+  Stats* getStats() { return stats; }
+
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
 
@@ -188,8 +192,9 @@ namespace fixrgraphiso {
 
   // store the cumulative frequency of the bin
   int cumulativeFrequency;
-
   bool isImmediateSubsumingUpdate;
+
+  Stats *stats;
   };
 
   class Lattice {
@@ -250,12 +255,15 @@ namespace fixrgraphiso {
 
     bool isValid() const;
 
+    Stats* getStats() { return &stats; }
+
   private:
     vector<string> methodNames;
     vector<AcdfgBin*> allBins;
     vector<AcdfgBin*> popularBins;
     vector<AcdfgBin*> anomalousBins;
     vector<AcdfgBin*> isolatedBins;
+    Stats stats;
   };
 
 }

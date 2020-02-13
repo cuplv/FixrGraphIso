@@ -5,8 +5,50 @@
 #include <chrono>
 
 namespace fixrgraphiso{
+  class Stats {
+    public:
+    Stats() : numSATCalls(0), numSubsumptionChecks(0), totalEdges(0),
+      totalGraphs(0), totalNodes(0), maxNodes(0), maxEdges(0), minNodes(0),
+      minEdges(0), satSolverTime(0) {}
 
-  struct stats_struct{
+    void addSubsumptionCheck(){
+      this->numSubsumptionChecks++;
+    }
+
+    void addSATCallStat(std::chrono::milliseconds t){
+      this->numSATCalls++;
+      this->satSolverTime = this->satSolverTime + t;
+    }
+
+    void addGraphStats(int n_nodes, int n_edges){
+      this->totalGraphs++;
+      this->totalNodes += n_nodes;
+      this->totalEdges += n_edges;
+      if (n_nodes >= this->maxNodes){
+        this->maxNodes = n_nodes;
+      }
+
+      if (n_edges >= this->maxEdges){
+        this->maxEdges = n_edges;
+      }
+    }
+
+    void print(std::ostream & out){
+      out << "# Graphs : " << this->totalGraphs << std::endl;
+      if (this->totalGraphs > 0){
+        out << "Average # of nodes: " << this->totalNodes/this->totalGraphs << std::endl;
+        out << "Average # of edges: " << this->totalEdges/this->totalGraphs << std::endl;
+        out << "Max. # of nodes : " << this->maxNodes << std::endl;
+        out << "Max. # of edges : " << this->maxEdges << std::endl;
+      }
+      out << "# Subsumption checks: " << this->numSubsumptionChecks << std::endl << std::endl;
+
+      out << "# SAT calls: " << this->numSATCalls << std::endl;
+
+      out << "# satSolverTime (ms): " << this->satSolverTime.count() << std::endl;
+    }
+
+    private:
     int numSATCalls;
     int numSubsumptionChecks;
     int totalGraphs;
@@ -16,54 +58,8 @@ namespace fixrgraphiso{
     int maxEdges;
     int minNodes;
     int minEdges;
-
     std::chrono::milliseconds satSolverTime;
-
-  stats_struct():numSATCalls(0), numSubsumptionChecks(0), totalEdges(0),
-      totalGraphs(0), totalNodes(0), maxNodes(0), maxEdges(0), minNodes(0),
-      minEdges(0), satSolverTime(0) {}
-
   };
-
-  extern stats_struct all_stats;
-
-
-  static void addSubsumptionCheck(){
-    all_stats.numSubsumptionChecks++;
-  }
-
-  static void addSATCallStat(std::chrono::milliseconds t){
-    all_stats.numSATCalls++;
-    all_stats.satSolverTime = all_stats.satSolverTime + t;
-  }
-
-  static void addGraphStats(int n_nodes, int n_edges){
-    all_stats.totalGraphs++;
-    all_stats.totalNodes += n_nodes;
-    all_stats.totalEdges += n_edges;
-    if (n_nodes >= all_stats.maxNodes){
-      all_stats.maxNodes = n_nodes;
-    }
-
-    if (n_edges >= all_stats.maxEdges){
-      all_stats.maxEdges = n_edges;
-    }
-  }
-
-  static void printStats(std::ostream & out){
-    out << "# Graphs : " << all_stats.totalGraphs << std::endl;
-    if (all_stats.totalGraphs > 0){
-      out << "Average # of nodes: " << all_stats.totalNodes/all_stats.totalGraphs << std::endl;
-      out << "Average # of edges: " << all_stats.totalEdges/all_stats.totalGraphs << std::endl;
-      out << "Max. # of nodes : " << all_stats.maxNodes << std::endl;
-      out << "Max. # of edges : " << all_stats.maxEdges << std::endl;
-    }
-    out << "# Subsumption checks: " << all_stats.numSubsumptionChecks << std::endl << std::endl;
-
-    out << "# SAT calls: " << all_stats.numSATCalls << std::endl;
-
-    out << "# satSolverTime (ms): " << all_stats.satSolverTime.count() << std::endl;
-  }
 }
 
 #endif

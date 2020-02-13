@@ -32,7 +32,6 @@ namespace fixrgraphiso {
   namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
 
   bool debug = false;
-  stats_struct all_stats;
 
   void loadNamesFromFile (string filename, vector<string> & listOfNames){
     ifstream ifile(filename.c_str());
@@ -43,7 +42,7 @@ namespace fixrgraphiso {
                                   [](char x){ return std::isspace(x);}),
                   line.end());
       listOfNames.push_back(line);
-      std::cout << "\t Adding: " << line << endl;
+      //std::cout << "\t Adding: " << line << endl;
     }
   }
 
@@ -156,6 +155,7 @@ namespace fixrgraphiso {
 
   void FrequentSubgraphMiner::sliceAcdfgs(const vector<string> & filenames,
                                           const vector<string> & methodnames,
+                                          Lattice& lattice,
                                           vector<Acdfg*> & allSlicedACDFGs) {
     set<int> ignoreMethodIds;
     for (string f: filenames){
@@ -183,7 +183,7 @@ namespace fixrgraphiso {
                     << "-- Ignorning this file." << endl;
           delete(new_acdfg);
         } else {
-          addGraphStats(new_acdfg->node_count(), new_acdfg->edge_count());
+          lattice.getStats()->addGraphStats(new_acdfg->node_count(), new_acdfg->edge_count());
           allSlicedACDFGs.push_back(new_acdfg);
         }
       }
@@ -414,6 +414,12 @@ namespace fixrgraphiso {
     return std::chrono::duration_cast<std::chrono::seconds>(end -start);
   }
 
+  std::chrono::milliseconds diff_times_ms(std::chrono::time_point<std::chrono::steady_clock> start,
+                                  std::chrono::time_point<std::chrono::steady_clock> end) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(end -start);
+  }
+
+
   /**
    * Prune at the frontier of subsumption
    */
@@ -568,7 +574,7 @@ namespace fixrgraphiso {
 
 
     // we have to create a new bin
-    AcdfgBin * newbin = new AcdfgBin(acdfgToInsert);
+    AcdfgBin * newbin = new AcdfgBin(acdfgToInsert, lattice.getStats());
     lattice.addBin(newbin);
 
     // newBin subsumes subsumed
@@ -596,7 +602,7 @@ namespace fixrgraphiso {
   bool compareBins(Acdfg* b1, Acdfg* b2)
   {
     return get_acdfg_counts(b1) < get_acdfg_counts(b2);
-  } 
+  }
 
   /**
    * Add the Acdfgs to the lattice.
@@ -629,7 +635,7 @@ namespace fixrgraphiso {
     // 1. Slice all the ACDFGs using the methods in the method names as the
     // target
     vector<Acdfg*> allSlicedACDFGs;
-    sliceAcdfgs(filenames, methodnames, allSlicedACDFGs);
+    sliceAcdfgs(filenames, methodnames, lattice, allSlicedACDFGs);
     std::sort(allSlicedACDFGs.begin(), allSlicedACDFGs.end(), compareBins);
 
     auto end_slicing = std::chrono::steady_clock::now();
@@ -666,7 +672,7 @@ namespace fixrgraphiso {
       }
 
       if (! acdfgSubsumed) {
-        AcdfgBin * newbin = new AcdfgBin(a);
+        AcdfgBin * newbin = new AcdfgBin(a, lattice.getStats());
         lattice.addBin(newbin);
       }
     }
@@ -761,10 +767,11 @@ namespace fixrgraphiso {
       allACDFGs.push_back(new_acdfg);
     }
 
+    Stats stats;
     for (Acdfg * a : allACDFGs){
       for (Acdfg * b : allACDFGs){
         if (a == b) continue;
-        IsoSubsumption isoSub(a, b);
+        IsoSubsumption isoSub(a, b, &stats);
         if (isoSub.check()){
           std:: cout << a -> getName() << " subsumes "
                      << b -> getName() << endl;

@@ -2,6 +2,7 @@
 #include "fixrgraphiso/isomorphismClass.h"
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/acdfg.h"
+#include "fixrgraphiso/collectStats.h"
 
 namespace isotest {
   using std::string;
@@ -24,6 +25,7 @@ namespace isotest {
     string const& fileName = GetParam();
     AcdfgSerializer s;
     vector<MethodNode*> targets;
+    fixrgraphiso::Stats stats;
 
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(fileName.c_str());
     if (NULL == proto_acdfg) {
@@ -38,7 +40,7 @@ namespace isotest {
     Acdfg * slicedAcdfg = acdfg->sliceACDFG(targets, ignoreMethodIds);
     delete(acdfg);
 
-    IsoSubsumption d(slicedAcdfg, slicedAcdfg);
+    IsoSubsumption d(slicedAcdfg, slicedAcdfg, &stats);
     bool result = d.check();
     EXPECT_EQ(result, true);
 

@@ -22,6 +22,7 @@ namespace fixrgraphiso {
 
     void sliceAcdfgs(const vector<string> & filenames,
                      const vector<string> & methodnames,
+                     Lattice& lattice,
                      vector<Acdfg*> & allSlicedACDFGs);
 
     void pruneFrontiers(Lattice &lattice,
