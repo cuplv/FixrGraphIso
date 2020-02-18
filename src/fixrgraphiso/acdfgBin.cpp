@@ -19,8 +19,11 @@ namespace fixrgraphiso {
    */
   bool AcdfgBin::isACDFGBinSubsuming(AcdfgBin * b){
     // First check the graph so far
-    for (AcdfgBin * c : subsumingBins){
-      if (c -> hasSubsumingBin(b)){
+    for (AcdfgBin * c : subsumingBins) {
+      if (b == c) {
+        return true; // already subsuming
+      } else if (c -> hasSubsumingBin(b)){
+        // b subsumes c, c subsume a, then b subsume a
         return true;
       }
     }
@@ -264,6 +267,11 @@ namespace fixrgraphiso {
       this->methodNames.push_back(s);
     }
   }
+
+  Lattice::Lattice(const Stats stats) : Lattice() {
+    this->stats = stats;
+  }
+
 
 
   void Lattice::addBin(AcdfgBin* bin) {

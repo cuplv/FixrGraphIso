@@ -50,6 +50,8 @@ namespace fixrgraphiso {
     void testPairwiseSubsumption(vector<string> & filenames,
                                  vector<string> & methodnames);
 
+    void saveState(Lattice &lattice, bool toSave);
+
     public:
     FrequentSubgraphMiner();
     int mine(int argc, char * argv []);
@@ -72,6 +74,11 @@ namespace fixrgraphiso {
     int anomalyCutOff = 5;
     bool runTestOfSubsumption = false;
     bool rerunClassification = false;
+
+    // If true computes the binning and the lattice at the same time
+    bool anytimeComputation = false;
+    // If true restarts the mining result and saves them regularly
+    bool incremental = false;
 
     bool use_relative_popularity = false;
     double relative_pop_threshold = 0.2;

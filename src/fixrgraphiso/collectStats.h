@@ -11,6 +11,23 @@ namespace fixrgraphiso{
       totalGraphs(0), totalNodes(0), maxNodes(0), maxEdges(0), minNodes(0),
       minEdges(0), satSolverTime(0) {}
 
+    Stats(int numSATCalls,
+          int numSubsumptionChecks,
+          int totalGraphs,
+          int totalNodes,
+          int totalEdges,
+          int maxNodes,
+          int maxEdges,
+          int minNodes,
+          int minEdges,
+          std::chrono::milliseconds satSolverTime) :
+    numSATCalls(numSATCalls), numSubsumptionChecks(numSubsumptionChecks),
+      totalEdges(totalEdges), totalGraphs(totalGraphs), totalNodes(totalNodes),
+      maxNodes(maxNodes), maxEdges(maxEdges),
+      minNodes(minNodes), minEdges(minEdges),
+      satSolverTime(satSolverTime) {}
+
+
     void addSubsumptionCheck(){
       this->numSubsumptionChecks++;
     }
@@ -47,6 +64,17 @@ namespace fixrgraphiso{
 
       out << "# satSolverTime (ms): " << this->satSolverTime.count() << std::endl;
     }
+
+    int getNumSATCalls() const { return numSATCalls; }
+    int getNumSubsumptionChecks() const { return numSubsumptionChecks; }
+    int getTotalGraphs() const { return totalGraphs; }
+    int getTotalNodes() const { return totalNodes; }
+    int getTotalEdges() const { return totalEdges; }
+    int getMaxNodes() const { return maxNodes; }
+    int getMaxEdges() const { return maxEdges; }
+    int getMinNodes() const { return minNodes; }
+    int getMinEdges() const { return minEdges; }
+    std::chrono::milliseconds getSatSolverTime() const { return satSolverTime; }
 
     private:
     int numSATCalls;

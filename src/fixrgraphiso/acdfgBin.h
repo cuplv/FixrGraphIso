@@ -201,6 +201,7 @@ namespace fixrgraphiso {
   public:
     Lattice() {};
     Lattice(const vector<string> & methodNames);
+    Lattice(const Stats stats);
     ~Lattice();
 
     void addMethodName(const string& methodName) { methodNames.push_back(methodName);}
@@ -256,6 +257,7 @@ namespace fixrgraphiso {
     bool isValid() const;
 
     Stats* getStats() { return &stats; }
+    const Stats getStats() const { return stats; };
 
   private:
     vector<string> methodNames;

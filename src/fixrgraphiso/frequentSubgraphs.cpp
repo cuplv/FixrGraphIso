@@ -26,7 +26,8 @@ using std::string;
 using std::ofstream;
 using std::ifstream;
 
-#define LATTICE_ONE_STEP 1
+
+#define INCR_LATTICE_COMPUTATION 0
 
 namespace fixrgraphiso {
   namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
@@ -66,12 +67,19 @@ namespace fixrgraphiso {
     }
   }
 
+  void FrequentSubgraphMiner::saveState(Lattice &lattice, bool toSave) {
+    if (toSave) {
+      cout << "Saving lattice... " << endl;
+      fixrgraphiso::writeLattice(lattice, lattice_filename);
+    }
+  }
+
   int FrequentSubgraphMiner::processCommandLine(int argc, char * argv[],
                                                 vector<string> & filenames,
                                                 vector<string> & methodNames) {
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:cr:"))!= -1) {
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:cr:sa"))!= -1) {
       switch (c){
       case 'm': {
         string methodNamesFile = optarg;
@@ -81,6 +89,14 @@ namespace fixrgraphiso {
         break;
       case 'z':
         runTestOfSubsumption = true;
+        break;
+      case 's':
+        incremental = true;
+        std::cout << "Incremental lattice computation..." << endl;
+        break;
+      case 'a':
+        anytimeComputation = true;
+        std::cout << "Use anytime computation..." << endl;
         break;
       case 'c':
         rerunClassification = true;
@@ -134,6 +150,7 @@ namespace fixrgraphiso {
         "-l [lattice file protobuf] " <<
         "-m [file with method names] -i [file with acdfg names] " <<
         "-p [output path for the found patterns] " <<
+        "-a " <<
         "[list of acdfg.bin files to mine]" << endl <<
         //
         "Usage --- classify bins, re-run the bin classification: " << argv[0] <<
@@ -193,9 +210,11 @@ namespace fixrgraphiso {
 
   void FrequentSubgraphMiner::calculateLatticeGraph(Lattice & lattice) {
     // complete the graph adding all the subsuming relations
+    int i = 0;
     for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
       AcdfgBin * a = *it;
-      for (auto jt = lattice.beginAllBins(); jt != lattice.endAllBins(); ++jt){
+
+      for (auto jt = lattice.beginAllBins(); jt != lattice.endAllBins(); ++jt) {
         AcdfgBin * b = *jt;
         if (a == b) continue;
 
@@ -203,6 +222,9 @@ namespace fixrgraphiso {
           // b subsumes a
           a -> addSubsumingBin(b);
         }
+
+        i += 1;
+        saveState(lattice, i % 10000 == 0 && incremental);
       }
     }
   }
@@ -620,6 +642,8 @@ namespace fixrgraphiso {
       }
 
       binAndSubs(lattice, a);
+
+      saveState(lattice, i % 1000 == 0 && incremental);
     }
 
     // Compute the transitive closure of the lattice
@@ -641,72 +665,75 @@ namespace fixrgraphiso {
     auto end_slicing = std::chrono::steady_clock::now();
     cout << "Slicing took " << diff_times(start, end_slicing).count() << endl;
 
-#if LATTICE_ONE_STEP == 1
-    binAndSubs(lattice, allSlicedACDFGs);
-    lattice.sortByFrequency();
+    if (anytimeComputation) {
+      // Compute bins and lattice at the same time
+      binAndSubs(lattice, allSlicedACDFGs);
+      lattice.sortByFrequency();
 
-    auto end_binning = std::chrono::steady_clock::now();
-    cout << "Binning and lattice computation took " << diff_times(end_slicing, end_binning).count() << endl;
-#else
-    // 2. Compute a binning of all the sliced ACDFGs using the exact isomorphism
-    int i = 0;
-    for (Acdfg* a: allSlicedACDFGs){
-      i++;
-      bool acdfgSubsumed = false;
-      bool delete_a = true;
+      auto end_binning = std::chrono::steady_clock::now();
+      cout << "Binning and lattice computation took " <<
+        diff_times(end_slicing, end_binning).count() << endl;
+    } else {
+      // 2. Compute a binning of all the sliced ACDFGs using the exact
+      // isomorphism
+      int i = 0;
+      for (Acdfg* a: allSlicedACDFGs){
+        i++;
+        bool acdfgSubsumed = false;
+        bool delete_a = true;
 
-      std::cerr << "Acdfg " << i << "/" <<
-        allSlicedACDFGs.size() << ".." << std::endl;
+        std::cerr << "Acdfg " << i << "/" <<
+          allSlicedACDFGs.size() << ".." << std::endl;
 
-      for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it){
-        AcdfgBin * bin = *it;
-        IsoRepr* iso = new IsoRepr(a, bin->getRepresentative());
+        for (auto it = lattice.beginAllBins();
+             it != lattice.endAllBins(); ++it) {
+          AcdfgBin * bin = *it;
+          IsoRepr* iso = new IsoRepr(a, bin->getRepresentative());
 
-        if (bin -> isACDFGEquivalent(a, iso)) {
-          bin->insertEquivalentACDFG(a, iso);
-          acdfgSubsumed = true;
-          break;
-        } else {
-          delete(iso);
+          if (bin -> isACDFGEquivalent(a, iso)) {
+            bin->insertEquivalentACDFG(a, iso);
+            acdfgSubsumed = true;
+            break;
+          } else {
+            delete(iso);
+          }
         }
+
+        if (! acdfgSubsumed) {
+          AcdfgBin * newbin = new AcdfgBin(a, lattice.getStats());
+          lattice.addBin(newbin);
+        }
+
+        saveState(lattice, i % 1000 == 0 && incremental);
       }
 
-      if (! acdfgSubsumed) {
-        AcdfgBin * newbin = new AcdfgBin(a, lattice.getStats());
-        lattice.addBin(newbin);
-      }
+      auto end_binning = std::chrono::steady_clock::now();
+      cout << "Binning took " <<
+        diff_times(end_slicing, end_binning).count() << endl;
+
+      lattice.sortByFrequency();
+
+      // Compute the lattice of bins
+      calculateLatticeGraph(lattice);
+      lattice.makeClosure();
+
+      auto end_lattice = std::chrono::steady_clock::now();
+      cout << "Lattice took " <<
+        diff_times(end_binning, end_lattice).count() << endl;
     }
 
-    auto end_binning = std::chrono::steady_clock::now();
-    cout << "Binning took " << diff_times(end_slicing, end_binning).count() << endl;
-
-    // 3. Sort the bins by frequency
-    lattice.sortByFrequency();
-
-    // 4. Compute the lattice of bins
-    calculateLatticeGraph(lattice);
-
-    // test:
-    lattice.makeClosure();
-
-    auto end_lattice = std::chrono::steady_clock::now();
-    cout << "Lattice took " << diff_times(end_binning, end_lattice).count() << endl;
-#endif
-
-    // DEBUG
-    assert(lattice.isValid());
+    assert(lattice.isValid()); // To run in debug mode
 
     cout << "Total bins " << lattice.getAllBins().size() << endl;
 
-
-    // 5. Classify the bin
+    // Classify the bin
     classifyBins(lattice);
 
     auto end = std::chrono::steady_clock::now();
     std::chrono::seconds time_taken =
       std::chrono::duration_cast<std::chrono::seconds>(end -start);
 
-    // 6. Print all the  patterns
+    // Print all the patterns
     lattice.dumpAllBins(time_taken, output_prefix,
                         info_file_name,
                         lattice_filename);
@@ -786,14 +813,46 @@ namespace fixrgraphiso {
   int FrequentSubgraphMiner::mine(int argc, char * argv [] ){
     vector<string> filenames;
     vector<string> methodnames;
+
     if (0 == processCommandLine(argc, argv, filenames, methodnames)) {
       if (runTestOfSubsumption){
         testPairwiseSubsumption(filenames, methodnames);
       } else if (rerunClassification) {
         reClassifyBins();
       } else {
-        Lattice lattice(methodnames);
-        computePatternsThroughSlicing(lattice, filenames, methodnames);
+        Lattice *lattice_ptr;
+
+        if (incremental) {
+          lattice_ptr = fixrgraphiso::readLattice(lattice_filename);
+          if (NULL == lattice_ptr) {
+            lattice_ptr = new Lattice(filenames);
+          } else {
+            set<string> existing;
+            vector<string> newfiles;
+            for (auto bin : lattice_ptr->getAllBins()) {
+              for (auto name : bin->getAcdfgNames())
+                existing.insert(name);
+            }
+
+            for (auto name : filenames) {
+              if (existing.find(name) == existing.end()) {
+                newfiles.push_back(name);
+              }
+            }
+
+            cout << "Incremental computation, skipping " <<
+              filenames.size() - newfiles.size() <<
+              " already computed graphs." << endl;
+
+            filenames = newfiles;
+          }
+        } else {
+          lattice_ptr = new Lattice(methodnames);
+        }
+
+        computePatternsThroughSlicing(*lattice_ptr, filenames, methodnames);
+
+        delete lattice_ptr;
       }
       return 0;
     } else {

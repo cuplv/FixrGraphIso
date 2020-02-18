@@ -13,6 +13,7 @@
 #include <typeinfo>
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/serializationLattice.h"
+#include "fixrgraphiso/collectStats.h"
 
 namespace fixrgraphiso {
   using namespace std;
@@ -27,8 +28,27 @@ namespace fixrgraphiso {
    */
   Lattice* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* protoLattice,
                                                  std::map<AcdfgBin*, int> &acdfgBin2id) {
-    Lattice* lattice = new Lattice();
+    Stats stats;
+    Lattice* lattice = NULL;
     AcdfgSerializer serializer;
+
+    // 4. Get the statstics
+    if (protoLattice->has_stats()) {
+      stats = Stats(protoLattice->stats().numsatcalls(),
+                    protoLattice->stats().numsubsumptionchecks(),
+                    protoLattice->stats().totalgraphs(),
+                    protoLattice->stats().totalnodes(),
+                    protoLattice->stats().totaledges(),
+                    protoLattice->stats().maxnodes(),
+                    protoLattice->stats().maxedges(),
+                    protoLattice->stats().minnodes(),
+                    protoLattice->stats().minedges(),
+                    std::chrono::milliseconds(protoLattice->stats().satsolvertime()));
+    } else {
+      stats = Stats();
+    }
+
+    lattice = new Lattice(stats);
 
     /* 0. set the method names */
     for (int i = 0; i < protoLattice->method_names_size(); i++) {
@@ -186,6 +206,19 @@ namespace fixrgraphiso {
       AcdfgBin * a = *it;
       protoLattice->add_isolated_bins(acdfgBin2idMap[a]);
     }
+
+    acdfg_protobuf::Lattice::Stats* stats = protoLattice->mutable_stats();
+
+    stats->set_numsatcalls(lattice.getStats().getNumSATCalls());
+    stats->set_numsubsumptionchecks(lattice.getStats().getNumSubsumptionChecks());
+    stats->set_totalgraphs(lattice.getStats().getTotalGraphs());
+    stats->set_totalnodes(lattice.getStats().getTotalNodes());
+    stats->set_totaledges(lattice.getStats().getTotalEdges());
+    stats->set_maxnodes(lattice.getStats().getMaxNodes());
+    stats->set_maxedges(lattice.getStats().getMaxEdges());
+    stats->set_minnodes(lattice.getStats().getMinNodes());
+    stats->set_minedges(lattice.getStats().getMinEdges());
+    stats->set_satsolvertime(lattice.getStats().getSatSolverTime().count());
 
     return protoLattice;
   }
