@@ -16,6 +16,7 @@
 #include <chrono>
 #include "fixrgraphiso/acdfg.h"
 #include "fixrgraphiso/isomorphismClass.h"
+#include "fixrgraphiso/collectStats.h"
 
 namespace fixrgraphiso {
   using std::vector;
@@ -27,11 +28,21 @@ namespace fixrgraphiso {
   class AcdfgBin {
   public:
 
-  AcdfgBin(Acdfg* a) : subsuming(false),
+  enum SubsRel
+  {
+    EQUIVALENT,
+    SUBSUMED,
+    SUBSUMING,
+    NONE
+  };
+
+  AcdfgBin(Acdfg* a, Stats* stats) : subsuming(false),
       anomalous(false), popular(false), isolated(false) {
     acdfgRepr = a;
     IsoRepr* iso = new IsoRepr(a);
     insertEquivalentACDFG(a, iso);
+    isImmediateSubsumingUpdate = true;
+    this->stats = stats;
   }
 
   ~AcdfgBin() {
@@ -44,6 +55,9 @@ namespace fixrgraphiso {
   }
 
   bool isACDFGEquivalent(Acdfg *b, IsoRepr* iso);
+  SubsRel compareACDFG(Acdfg *b,  IsoRepr* iso,
+                       const bool canSubsume,
+                       const bool canBeSubsumed);
 
   void insertEquivalentACDFG(const string b, IsoRepr* iso){
     /* cout << "ACDFG REPR: " << b << */
@@ -77,6 +91,7 @@ namespace fixrgraphiso {
   bool isACDFGBinSubsuming(AcdfgBin * b);
   void insertIncomingEdge(AcdfgBin * c){
     incomingEdges.insert(c);
+    isImmediateSubsumingUpdate = false;
   }
   bool hasSubsumingBin(AcdfgBin* b){
     return (subsumingBins.find(b) != subsumingBins.end());
@@ -84,9 +99,14 @@ namespace fixrgraphiso {
   void addSubsumingBin(AcdfgBin * b){
     subsumingBins.insert(b);
     b->insertIncomingEdge(this);
+    isImmediateSubsumingUpdate = false;
   }
 
   void computeImmediatelySubsumingBins();
+
+  static void getReachable(const set<AcdfgBin*> &initial,
+                           set<AcdfgBin*> &reachable,
+                           const bool invert);
 
   bool isSubsuming() const { return subsuming; }
   void setSubsuming() { subsuming = true; }
@@ -105,14 +125,18 @@ namespace fixrgraphiso {
   bool isClassified() const { return popular || anomalous || isolated;}
 
   const std::vector<string>  & getAcdfgNames() const { return acdfgNames; }
-  bool isAtFrontierOfPopularity(int freq_cutoff) const;
+  bool isAtFrontierOfPopularity(int freq_cutoff);
   bool hasPopularAncestor() const;
 
   const std::set<AcdfgBin*> & getSubsumingBins() const {
     return subsumingBins;
   }
 
-  const std::set<AcdfgBin*> & getImmediateSubsumingBins() const {
+  const std::set<AcdfgBin*> & getImmediateSubsumingBins() {
+    if (! isImmediateSubsumingUpdate) {
+      computeImmediatelySubsumingBins();
+    }
+
     return immediateSubsumingBins;
   }
 
@@ -136,6 +160,8 @@ namespace fixrgraphiso {
 
 
   void resetClassification();
+
+  Stats* getStats() { return stats; }
 
   protected:
   void addSubsumingBinsToSet(set<AcdfgBin*> & what) ;
@@ -166,12 +192,16 @@ namespace fixrgraphiso {
 
   // store the cumulative frequency of the bin
   int cumulativeFrequency;
+  bool isImmediateSubsumingUpdate;
+
+  Stats *stats;
   };
 
   class Lattice {
   public:
     Lattice() {};
     Lattice(const vector<string> & methodNames);
+    Lattice(const Stats stats);
     ~Lattice();
 
     void addMethodName(const string& methodName) { methodNames.push_back(methodName);}
@@ -204,6 +234,8 @@ namespace fixrgraphiso {
     static void deleteTr(map<AcdfgBin*, set<AcdfgBin*>*> & tr);
     void computeTopologicalOrder(vector<AcdfgBin*> &order) const;
 
+    void makeClosure();
+
     void sortByFrequency();
 
     void sortAllByFrequency();
@@ -222,12 +254,18 @@ namespace fixrgraphiso {
 
     int countCommonMethods(const Lattice &other) const;
 
+    bool isValid() const;
+
+    Stats* getStats() { return &stats; }
+    const Stats getStats() const { return stats; };
+
   private:
     vector<string> methodNames;
     vector<AcdfgBin*> allBins;
     vector<AcdfgBin*> popularBins;
     vector<AcdfgBin*> anomalousBins;
     vector<AcdfgBin*> isolatedBins;
+    Stats stats;
   };
 
 }

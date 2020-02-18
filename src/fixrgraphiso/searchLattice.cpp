@@ -39,7 +39,8 @@ namespace fixrgraphiso {
     IsoRepr *appIso = new IsoRepr(slicedQuery,
                                   acdfgBin->getRepresentative());
     IsoSubsumption d(slicedQuery,
-                     acdfgBin->getRepresentative());
+                     acdfgBin->getRepresentative(),
+                     acdfgBin->getStats());
 
     bool res = d.check(appIso);
 
@@ -58,7 +59,8 @@ namespace fixrgraphiso {
                                   slicedQuery);
 
     IsoSubsumption d(acdfgBin->getRepresentative(),
-                     slicedQuery);
+                     slicedQuery,
+                     acdfgBin->getStats());
     bool res = d.check(appIso);
 
     if (res) {

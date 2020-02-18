@@ -26,11 +26,13 @@ using std::string;
 using std::ofstream;
 using std::ifstream;
 
+
+#define INCR_LATTICE_COMPUTATION 0
+
 namespace fixrgraphiso {
   namespace iso_protobuf = edu::colorado::plv::fixr::protobuf;
 
   bool debug = false;
-  stats_struct all_stats;
 
   void loadNamesFromFile (string filename, vector<string> & listOfNames){
     ifstream ifile(filename.c_str());
@@ -41,7 +43,7 @@ namespace fixrgraphiso {
                                   [](char x){ return std::isspace(x);}),
                   line.end());
       listOfNames.push_back(line);
-      std::cout << "\t Adding: " << line << endl;
+      //std::cout << "\t Adding: " << line << endl;
     }
   }
 
@@ -65,12 +67,19 @@ namespace fixrgraphiso {
     }
   }
 
+  void FrequentSubgraphMiner::saveState(Lattice &lattice, bool toSave) {
+    if (toSave) {
+      cout << "Saving lattice... " << endl;
+      fixrgraphiso::writeLattice(lattice, lattice_filename);
+    }
+  }
+
   int FrequentSubgraphMiner::processCommandLine(int argc, char * argv[],
                                                 vector<string> & filenames,
                                                 vector<string> & methodNames) {
     char c;
     int index;
-    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:cr:"))!= -1) {
+    while ((c = getopt(argc, argv, "dm:f:t:o:i:zp:l:cr:sa"))!= -1) {
       switch (c){
       case 'm': {
         string methodNamesFile = optarg;
@@ -80,6 +89,14 @@ namespace fixrgraphiso {
         break;
       case 'z':
         runTestOfSubsumption = true;
+        break;
+      case 's':
+        incremental = true;
+        std::cout << "Incremental lattice computation..." << endl;
+        break;
+      case 'a':
+        anytimeComputation = true;
+        std::cout << "Use anytime computation..." << endl;
         break;
       case 'c':
         rerunClassification = true;
@@ -133,6 +150,7 @@ namespace fixrgraphiso {
         "-l [lattice file protobuf] " <<
         "-m [file with method names] -i [file with acdfg names] " <<
         "-p [output path for the found patterns] " <<
+        "-a " <<
         "[list of acdfg.bin files to mine]" << endl <<
         //
         "Usage --- classify bins, re-run the bin classification: " << argv[0] <<
@@ -154,6 +172,7 @@ namespace fixrgraphiso {
 
   void FrequentSubgraphMiner::sliceAcdfgs(const vector<string> & filenames,
                                           const vector<string> & methodnames,
+                                          Lattice& lattice,
                                           vector<Acdfg*> & allSlicedACDFGs) {
     set<int> ignoreMethodIds;
     for (string f: filenames){
@@ -181,7 +200,7 @@ namespace fixrgraphiso {
                     << "-- Ignorning this file." << endl;
           delete(new_acdfg);
         } else {
-          addGraphStats(new_acdfg->node_count(), new_acdfg->edge_count());
+          lattice.getStats()->addGraphStats(new_acdfg->node_count(), new_acdfg->edge_count());
           allSlicedACDFGs.push_back(new_acdfg);
         }
       }
@@ -191,15 +210,21 @@ namespace fixrgraphiso {
 
   void FrequentSubgraphMiner::calculateLatticeGraph(Lattice & lattice) {
     // complete the graph adding all the subsuming relations
+    int i = 0;
     for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
       AcdfgBin * a = *it;
-      for (auto jt = lattice.beginAllBins(); jt != lattice.endAllBins(); ++jt){
+
+      for (auto jt = lattice.beginAllBins(); jt != lattice.endAllBins(); ++jt) {
         AcdfgBin * b = *jt;
         if (a == b) continue;
+
         if (a -> isACDFGBinSubsuming(b)){
           // b subsumes a
           a -> addSubsumingBin(b);
         }
+
+        i += 1;
+        saveState(lattice, i % 10000 == 0 && incremental);
       }
     }
   }
@@ -253,18 +278,22 @@ namespace fixrgraphiso {
     // Init data structures.
     for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it) {
       AcdfgBin* bin = *it;
-      notCountedSubsumedBinsMap[bin] = new set<AcdfgBin*>();
       totalFrequency += bin->getFrequency();
       cumulativeFrequency[bin] = 0;
     }
 
     for (auto bin : order) {
+      assert(notCountedSubsumedBinsMap.find(bin) == notCountedSubsumedBinsMap.end());
+      notCountedSubsumedBinsMap[bin] = new set<AcdfgBin*>();
+
       set<AcdfgBin*>* notCountedSubsumedBins = notCountedSubsumedBinsMap[bin];
       set<AcdfgBin*> toRemove;
 
       notCountedSubsumedBins->insert(bin);
 
       for (auto toBin : bin->getImmediateSubsumingBins()) {
+        assert(notCountedSubsumedBinsMap.find(toBin) != notCountedSubsumedBinsMap.end());
+
         for(auto toCount : (*notCountedSubsumedBinsMap[toBin])) {
           if (! toBin->isPopular()) {
             // "propagates" down in the lattice all the bins that are not popular
@@ -286,6 +315,7 @@ namespace fixrgraphiso {
         for (auto toCount : *notCountedSubsumedBins) {
           cumulativeFrequencyBin += toCount->getFrequency();
         }
+
         cumulativeFrequency[bin] = cumulativeFrequencyBin;
 
         double to_compare = (double) cumulativeFrequencyBin;
@@ -305,7 +335,6 @@ namespace fixrgraphiso {
               "Compared with: " << to_compare << endl <<
               "Frequency: " << bin->getFrequency() << endl;
           }
-
           bin->setPopular(true);
         }
       }
@@ -402,6 +431,225 @@ namespace fixrgraphiso {
     return;
   }
 
+  std::chrono::seconds diff_times(std::chrono::time_point<std::chrono::steady_clock> start,
+                                  std::chrono::time_point<std::chrono::steady_clock> end) {
+    return std::chrono::duration_cast<std::chrono::seconds>(end -start);
+  }
+
+  std::chrono::milliseconds diff_times_ms(std::chrono::time_point<std::chrono::steady_clock> start,
+                                  std::chrono::time_point<std::chrono::steady_clock> end) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(end -start);
+  }
+
+
+  /**
+   * Prune at the frontier of subsumption
+   */
+  void FrequentSubgraphMiner::pruneFrontiers(Lattice &lattice,
+                                             Acdfg* acdfgToInsert,
+                                             set<AcdfgBin*> &notSubsumedBins,
+                                             set<AcdfgBin*> &notSubsumingBins)
+
+  {
+    for (auto bin : lattice.getAllBins()) {
+      Acdfg* binAcdfg = bin->getRepresentative();
+
+      if (not acdfgToInsert->canSubsumeB(*binAcdfg)) {
+        notSubsumedBins.insert(bin);
+      }
+
+      if (not binAcdfg->canSubsumeB(*acdfgToInsert)) {
+        notSubsumingBins.insert(bin);
+      }
+    }
+  }
+
+  /**
+   * Add the Acdfg to the lattice.
+   */
+  void FrequentSubgraphMiner::binAndSubs(Lattice &lattice, Acdfg* acdfgToInsert) {
+    vector<AcdfgBin*> frontier;
+    set<AcdfgBin*> visited;
+    vector<AcdfgBin*> subsumedBins;
+    vector<AcdfgBin*> subsumingBins;
+
+    // set of bins acdfgToInsert cannot subsume
+    set<AcdfgBin*> notSubsumedBins;
+    // set of bins that cannot subsume acdfgToInsert
+    set<AcdfgBin*> notSubsumingBins;
+
+    // Try to prune the bins that are "easily" not subsumed or subsuming
+    pruneFrontiers(lattice, acdfgToInsert,
+                   notSubsumedBins, notSubsumingBins);
+
+    // Get all non-subsumed bins
+    for (auto bin : lattice.getAllBins())
+      if (bin->getIncomingEdges().size() == 0)
+        frontier.push_back(bin);
+
+    int i = 0;
+    while (frontier.size() > 0) {
+      AcdfgBin* next_bin = frontier.back();
+      IsoRepr* isoRepr = new IsoRepr(acdfgToInsert,
+                                     next_bin->getRepresentative());
+
+      frontier.pop_back();
+
+      // avoid duplicates
+      if (visited.find(next_bin) != visited.end())
+        continue;
+      visited.insert(next_bin);
+
+      bool canBeSubsumed;
+      bool canSubsume;
+
+      canBeSubsumed = notSubsumingBins.find(next_bin) == notSubsumingBins.end();
+      canSubsume = notSubsumedBins.find(next_bin) == notSubsumedBins.end();
+
+      AcdfgBin::SubsRel compareRes = next_bin->compareACDFG(acdfgToInsert,
+                                                            isoRepr,
+                                                            canSubsume,
+                                                            canBeSubsumed);
+      switch(compareRes) {
+      case AcdfgBin::EQUIVALENT:
+        // Do not visit any other bin, the search ends here
+        next_bin->insertEquivalentACDFG(acdfgToInsert, isoRepr);
+        return;
+      case AcdfgBin::SUBSUMED:
+        // acdfgToInsert is subsumed by bin
+        subsumingBins.push_back(next_bin);
+
+        // Removes all the bins subsuming next_bin from the visit
+        {
+          set<AcdfgBin*> reachable;
+          next_bin->getReachable(next_bin->getSubsumingBins(),
+                                 reachable, false);
+          for(auto upperBins : reachable) {
+            subsumingBins.push_back(upperBins);
+            visited.insert(upperBins);
+          }
+        }
+        break;
+      case AcdfgBin::SUBSUMING:
+        // acdfgToInsert subsumes the bin
+        subsumedBins.push_back(next_bin);
+        {
+          set<AcdfgBin*> reachable_prev;
+          next_bin->getReachable(next_bin->getIncomingEdges(),
+                                 reachable_prev, true);
+          for(auto lowerBins : reachable_prev) {
+            subsumedBins.push_back(lowerBins);
+            visited.insert(lowerBins);
+
+            for (auto bin : lowerBins->getImmediateSubsumingBins()) {
+              if (visited.find(bin) == visited.end()) {
+                frontier.push_back(bin);
+              }
+            }
+          }
+        }
+
+        for(auto upperBins : next_bin->getImmediateSubsumingBins())
+          if (visited.find(upperBins) == visited.end()) {
+            frontier.push_back(upperBins);
+          }
+
+        break;
+      case AcdfgBin::NONE:
+        /* From this result and transitivity we infer the following:
+         * 1. acdfgToInsert cannot subsume any bin subsumed by next_bin
+         *   - next_bin <= bin and bin <= acdfgToInsert implies
+         *     next_bin <= acdfgToInsert
+         *     This would contradict ! (next_bin <= acdfgToInsert)
+         *
+         * 2. acdfgToInsert cannot be subsumed by any bin that next_bin subsumes
+         *   - acdfgToInsert <= bin and bin <= next_bin implies
+         *     acdfgToInsert <= next_bin
+         *     This would contradict ! (acdfgToInsert <= next_bin)
+         */
+
+        {
+          // 1. set of bins acdfgToInsert cannot subsume
+          set<AcdfgBin*> reachable;
+          next_bin->getReachable(next_bin->getImmediateSubsumingBins(),
+                                 reachable, false);
+          for (auto bin : reachable)
+            notSubsumedBins.insert(bin);
+
+          // 2. set of bins that cannot subsume acdfgToInsert
+          set<AcdfgBin*> reachable_prev;
+          next_bin->getReachable(next_bin->getIncomingEdges(),
+                                 reachable_prev, true);
+          for (auto bin : reachable_prev)
+            notSubsumingBins.insert(bin);
+
+          // Visit all the children, we enforce what we learned
+          // using the sets
+          for(auto upperBins : next_bin->getImmediateSubsumingBins())
+            frontier.push_back(upperBins);
+        }
+        break;
+      }
+
+      delete isoRepr;
+    } // end of reachability on lattice
+
+
+    // we have to create a new bin
+    AcdfgBin * newbin = new AcdfgBin(acdfgToInsert, lattice.getStats());
+    lattice.addBin(newbin);
+
+    // newBin subsumes subsumed
+    for (auto subsumed : subsumedBins)
+      subsumed->addSubsumingBin(newbin);
+
+    // subsuming subsumes newBin
+    for (auto subsuming : subsumingBins)
+      newbin->addSubsumingBin(subsuming);
+  }
+
+
+  int get_acdfg_counts(Acdfg* b) {
+    return 
+      b->node_count() +
+      b->edge_count() +
+      b->data_node_count() +
+      b->method_node_count() +
+      b->control_edge_count() +
+      b->use_edge_count() +
+      b->def_edge_count() +
+      b->exceptional_edge_count();
+  }
+
+  bool compareBins(Acdfg* b1, Acdfg* b2)
+  {
+    return get_acdfg_counts(b1) < get_acdfg_counts(b2);
+  }
+
+  /**
+   * Add the Acdfgs to the lattice.
+   */
+  void FrequentSubgraphMiner::binAndSubs(Lattice &lattice,
+                                         vector<Acdfg*> & allSlicedACDFGs) {
+    int i = 0;
+
+    for (Acdfg* a: allSlicedACDFGs) {
+      i++;
+
+      if (i % 10 == 0) {
+        cout << "Processing acdfg " << i << "/" <<
+          allSlicedACDFGs.size() << ".." << endl;
+      }
+
+      binAndSubs(lattice, a);
+
+      saveState(lattice, i % 1000 == 0 && incremental);
+    }
+
+    // Compute the transitive closure of the lattice
+    lattice.makeClosure();
+  }
+
   void FrequentSubgraphMiner::computePatternsThroughSlicing(Lattice & lattice,
                                                             vector<string> & filenames,
                                                             vector<string> & methodnames) {
@@ -411,45 +659,81 @@ namespace fixrgraphiso {
     // 1. Slice all the ACDFGs using the methods in the method names as the
     // target
     vector<Acdfg*> allSlicedACDFGs;
-    sliceAcdfgs(filenames, methodnames, allSlicedACDFGs);
+    sliceAcdfgs(filenames, methodnames, lattice, allSlicedACDFGs);
+    std::sort(allSlicedACDFGs.begin(), allSlicedACDFGs.end(), compareBins);
 
-    // 2. Compute a binning of all the sliced ACDFGs using the exact isomorphism
-    for (Acdfg* a: allSlicedACDFGs){
-      bool acdfgSubsumed = false;
-      bool delete_a = true;
+    auto end_slicing = std::chrono::steady_clock::now();
+    cout << "Slicing took " << diff_times(start, end_slicing).count() << endl;
 
-      for (auto it = lattice.beginAllBins(); it != lattice.endAllBins(); ++it){
-        AcdfgBin * bin = *it;
-        IsoRepr* iso = new IsoRepr(a, bin->getRepresentative());
-        if (bin -> isACDFGEquivalent(a, iso)) {
-          bin->insertEquivalentACDFG(a, iso);
-          acdfgSubsumed = true;
-          break;
-        } else {
-          delete(iso);
+    if (anytimeComputation) {
+      // Compute bins and lattice at the same time
+      binAndSubs(lattice, allSlicedACDFGs);
+      lattice.sortByFrequency();
+
+      auto end_binning = std::chrono::steady_clock::now();
+      cout << "Binning and lattice computation took " <<
+        diff_times(end_slicing, end_binning).count() << endl;
+    } else {
+      // 2. Compute a binning of all the sliced ACDFGs using the exact
+      // isomorphism
+      int i = 0;
+      for (Acdfg* a: allSlicedACDFGs){
+        i++;
+        bool acdfgSubsumed = false;
+        bool delete_a = true;
+
+        std::cerr << "Acdfg " << i << "/" <<
+          allSlicedACDFGs.size() << ".." << std::endl;
+
+        for (auto it = lattice.beginAllBins();
+             it != lattice.endAllBins(); ++it) {
+          AcdfgBin * bin = *it;
+          IsoRepr* iso = new IsoRepr(a, bin->getRepresentative());
+
+          if (bin -> isACDFGEquivalent(a, iso)) {
+            bin->insertEquivalentACDFG(a, iso);
+            acdfgSubsumed = true;
+            break;
+          } else {
+            delete(iso);
+          }
         }
+
+        if (! acdfgSubsumed) {
+          AcdfgBin * newbin = new AcdfgBin(a, lattice.getStats());
+          lattice.addBin(newbin);
+        }
+
+        saveState(lattice, i % 1000 == 0 && incremental);
       }
 
-      if (! acdfgSubsumed) {
-        AcdfgBin * newbin = new AcdfgBin(a);
-        lattice.addBin(newbin);
-      }
+      auto end_binning = std::chrono::steady_clock::now();
+      cout << "Binning took " <<
+        diff_times(end_slicing, end_binning).count() << endl;
+
+      lattice.sortByFrequency();
+
+      // Compute the lattice of bins
+      calculateLatticeGraph(lattice);
+      lattice.makeClosure();
+
+      auto end_lattice = std::chrono::steady_clock::now();
+      cout << "Lattice took " <<
+        diff_times(end_binning, end_lattice).count() << endl;
     }
 
-    // 3. Sort the bins by frequency
-    lattice.sortByFrequency();
+    assert(lattice.isValid()); // To run in debug mode
 
-    // 4. Compute the lattice of bins
-    calculateLatticeGraph(lattice);
+    cout << "Total bins " << lattice.getAllBins().size() << endl;
 
-    // 5. Classify the bin
+    // Classify the bin
     classifyBins(lattice);
 
     auto end = std::chrono::steady_clock::now();
     std::chrono::seconds time_taken =
       std::chrono::duration_cast<std::chrono::seconds>(end -start);
 
-    // 6. Print all the  patterns
+    // Print all the patterns
     lattice.dumpAllBins(time_taken, output_prefix,
                         info_file_name,
                         lattice_filename);
@@ -510,10 +794,11 @@ namespace fixrgraphiso {
       allACDFGs.push_back(new_acdfg);
     }
 
+    Stats stats;
     for (Acdfg * a : allACDFGs){
       for (Acdfg * b : allACDFGs){
         if (a == b) continue;
-        IsoSubsumption isoSub(a, b);
+        IsoSubsumption isoSub(a, b, &stats);
         if (isoSub.check()){
           std:: cout << a -> getName() << " subsumes "
                      << b -> getName() << endl;
@@ -528,14 +813,46 @@ namespace fixrgraphiso {
   int FrequentSubgraphMiner::mine(int argc, char * argv [] ){
     vector<string> filenames;
     vector<string> methodnames;
+
     if (0 == processCommandLine(argc, argv, filenames, methodnames)) {
       if (runTestOfSubsumption){
         testPairwiseSubsumption(filenames, methodnames);
       } else if (rerunClassification) {
         reClassifyBins();
       } else {
-        Lattice lattice(methodnames);
-        computePatternsThroughSlicing(lattice, filenames, methodnames);
+        Lattice *lattice_ptr;
+
+        if (incremental) {
+          lattice_ptr = fixrgraphiso::readLattice(lattice_filename);
+          if (NULL == lattice_ptr) {
+            lattice_ptr = new Lattice(filenames);
+          } else {
+            set<string> existing;
+            vector<string> newfiles;
+            for (auto bin : lattice_ptr->getAllBins()) {
+              for (auto name : bin->getAcdfgNames())
+                existing.insert(name);
+            }
+
+            for (auto name : filenames) {
+              if (existing.find(name) == existing.end()) {
+                newfiles.push_back(name);
+              }
+            }
+
+            cout << "Incremental computation, skipping " <<
+              filenames.size() - newfiles.size() <<
+              " already computed graphs." << endl;
+
+            filenames = newfiles;
+          }
+        } else {
+          lattice_ptr = new Lattice(methodnames);
+        }
+
+        computePatternsThroughSlicing(*lattice_ptr, filenames, methodnames);
+
+        delete lattice_ptr;
       }
       return 0;
     } else {

@@ -81,37 +81,93 @@ namespace fixrgraphiso {
   int findDuplicatesList(const vector<pair<string,int>> &latticeNamesList,
                          dup_tuple &identicalBins) {
 
+    vector<tuple<int, Lattice*, map<AcdfgBin*,int>* >> all_lattices;
+
+    cout << "Reading lattices..." << endl;
     for (auto i1 = latticeNamesList.begin();
          i1 != latticeNamesList.end(); ++i1) {
-      Lattice *lattice_1;
-      map<AcdfgBin*, int> acdfgBin2id_1;
+      Lattice* lattice;
+      map<AcdfgBin*,int>* acdfgBin2id = new map<AcdfgBin*,int>();
+      lattice = fixrgraphiso::readLattice(i1->first, *acdfgBin2id);
 
-      lattice_1 = fixrgraphiso::readLattice(i1->first, acdfgBin2id_1);
-      if (NULL == lattice_1) return 1;
+      all_lattices.push_back(make_tuple(i1->second, lattice, acdfgBin2id));
+    }
 
+    int i = 0;
+    for (auto i1 = all_lattices.begin();
+         i1 != all_lattices.end(); ++i1) {
+      i++;
+      cout << "Processing " << i << "/" << latticeNamesList.size() << endl;
+
+      int id1 = std::get<0>(*i1);
+      Lattice *lattice_1 = std::get<1>(*i1);
+      map<AcdfgBin*, int>* acdfgBin2id_1 = std::get<2>(*i1);
+
+      int j = i;
       for (auto i2 = i1 + 1;
-           i2 != latticeNamesList.end(); ++i2) {
-        Lattice *lattice_2;
-        map<AcdfgBin*, int> acdfgBin2id_2;
-        lattice_2 = fixrgraphiso::readLattice(i2->first, acdfgBin2id_2);
-        if (NULL == lattice_2) {
-          return 1;
-          delete lattice_1;
-        }
+           i2 != all_lattices.end(); ++i2) {
+        int id2 = std::get<0>(*i2);
+        Lattice *lattice_2 = std::get<1>(*i2);
+        map<AcdfgBin*, int>* acdfgBin2id_2 = std::get<2>(*i2);
+
+        j++;
+        cout << "  ... " << j << "/" << (latticeNamesList.size() - i) << endl;
 
         if (lattice_1->countCommonMethods(*lattice_2) >= 2) {
-          // Find the duplicates
-          acdfgBin2id_2.insert(acdfgBin2id_1.begin(), acdfgBin2id_1.end());
-          findDuplicatesAux(*lattice_1, i1->second,
-                            *lattice_2, i2->second,
-                            acdfgBin2id_2, identicalBins);
+          map<AcdfgBin*, int> app;
+          app.insert(acdfgBin2id_1->begin(), acdfgBin2id_1->end());
+          app.insert(acdfgBin2id_2->begin(), acdfgBin2id_2->end());
+          findDuplicatesAux(*lattice_1, id1,
+                            *lattice_2, id2,
+                            app, identicalBins);
         }
-
-        delete lattice_2;
       }
 
       delete lattice_1;
+      delete acdfgBin2id_1;
     }
+
+    // int i = 0;
+    // for (auto i1 = latticeNamesList.begin();
+    //      i1 != latticeNamesList.end(); ++i1) {
+    //   Lattice *lattice_1;
+    //   map<AcdfgBin*, int> acdfgBin2id_1;
+
+    //   i++;
+    //   cout << "Processing " << i << "/" << latticeNamesList.size() << endl;
+
+    //   lattice_1 = fixrgraphiso::readLattice(i1->first, acdfgBin2id_1);
+    //   if (NULL == lattice_1) return 1;
+
+    //   int j = i;
+    //   for (auto i2 = i1 + 1;
+    //        i2 != latticeNamesList.end(); ++i2) {
+    //     Lattice *lattice_2;
+    //     map<AcdfgBin*, int> acdfgBin2id_2;
+
+    //     j++;
+    //     cout << "  ... " << j << "/" << (latticeNamesList.size() - i) << endl;
+
+
+    //     lattice_2 = fixrgraphiso::readLattice(i2->first, acdfgBin2id_2);
+    //     if (NULL == lattice_2) {
+    //       return 1;
+    //       delete lattice_1;
+    //     }
+
+    //     if (lattice_1->countCommonMethods(*lattice_2) >= 2) {
+    //       // Find the duplicates
+    //       acdfgBin2id_2.insert(acdfgBin2id_1.begin(), acdfgBin2id_1.end());
+    //       findDuplicatesAux(*lattice_1, i1->second,
+    //                         *lattice_2, i2->second,
+    //                         acdfgBin2id_2, identicalBins);
+    //     }
+
+    //     delete lattice_2;
+    //   }
+
+    //   delete lattice_1;
+    // }
 
     return 0;
   }

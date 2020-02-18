@@ -22,7 +22,16 @@ namespace fixrgraphiso {
 
     void sliceAcdfgs(const vector<string> & filenames,
                      const vector<string> & methodnames,
+                     Lattice& lattice,
                      vector<Acdfg*> & allSlicedACDFGs);
+
+    void pruneFrontiers(Lattice &lattice,
+                        Acdfg* acdfgToInsert,
+                        set<AcdfgBin*> &notSubsumedBins,
+                        set<AcdfgBin*> &notSubsumingBins);
+    void binAndSubs(Lattice &lattice, Acdfg* a);
+    void binAndSubs(Lattice &lattice,
+                    vector<Acdfg*> &allSlicedACDFGs);
 
     void calculateLatticeGraph(Lattice & lattice);
 
@@ -40,6 +49,8 @@ namespace fixrgraphiso {
 
     void testPairwiseSubsumption(vector<string> & filenames,
                                  vector<string> & methodnames);
+
+    void saveState(Lattice &lattice, bool toSave);
 
     public:
     FrequentSubgraphMiner();
@@ -63,6 +74,11 @@ namespace fixrgraphiso {
     int anomalyCutOff = 5;
     bool runTestOfSubsumption = false;
     bool rerunClassification = false;
+
+    // If true computes the binning and the lattice at the same time
+    bool anytimeComputation = false;
+    // If true restarts the mining result and saves them regularly
+    bool incremental = false;
 
     bool use_relative_popularity = false;
     double relative_pop_threshold = 0.2;

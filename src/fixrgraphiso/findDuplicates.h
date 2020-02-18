@@ -1,4 +1,6 @@
 #include <string>
+#include <vector>
+#include <tuple>
 
 #ifndef D__FIND_DUPLICATES__H_
 #define D__FIND_DUPLICATES__H_
