@@ -100,6 +100,8 @@ namespace fixrgraphiso {
 #ifdef USE_GUROBI_SOLVER
       this->gurobi_timeout = gurobi_timeout;
 #endif
+
+      lattice->sortAllByFrequency();
     }
 
     ~SearchLattice() {

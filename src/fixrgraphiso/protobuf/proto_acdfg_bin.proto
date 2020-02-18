@@ -10,6 +10,19 @@ message Lattice {
     required UnweightedIso iso = 2;
   }
 
+  message Stats {
+    required uint64 numSATCalls = 1;
+    required uint64 numSubsumptionChecks = 2;
+    required uint64 totalGraphs = 3;
+    required uint64 totalNodes = 4;
+    required uint64 totalEdges = 5;
+    required uint64 maxNodes = 6;
+    required uint64 maxEdges = 7;
+    required uint64 minNodes = 8;
+    required uint64 minEdges = 9;
+    required uint64 satSolverTime = 10;
+  }
+
   message AcdfgBin {
     required uint64 id = 1;
     required Acdfg acdfg_repr = 2;
@@ -29,4 +42,5 @@ message Lattice {
   repeated uint64 anomalous_bins = 4;
   repeated uint64 isolated_bins = 5;
   repeated string method_names = 6;
+  optional Stats stats = 7;
 }

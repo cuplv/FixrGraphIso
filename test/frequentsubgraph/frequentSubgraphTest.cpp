@@ -205,7 +205,9 @@ namespace frequentSubgraph {
           ASSERT_TRUE(NULL != ref) << "No reference pattern!";
 
           {
-            IsoSubsumption d(ref->getRepresentative(), query);
+            fixrgraphiso::Stats stats;
+            IsoSubsumption d(ref->getRepresentative(), query,
+                             &stats);
             ASSERT_TRUE(d.check()) << "Pattern does not subsume query";
           }
           delete(query);
