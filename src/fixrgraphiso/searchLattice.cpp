@@ -215,13 +215,16 @@ namespace fixrgraphiso {
          */
         // Stop the search here
 
+        assert(iso != NULL);
+
         IsoRepr* iso2 = NULL;
         if (subsumes(bin, iso2)) {
           SearchResult* r = new SearchResult(CORRECT);
           r->setReferencePattern(bin);
           r->setIsoToReference((const IsoRepr&) *iso2);
           results.push_back(r);
-          delete(iso);
+
+          delete iso; // iso not used in the result
         } else {
           SearchResult* r = new SearchResult(ANOMALOUS_SUBSUMED);
           r->setReferencePattern(bin);
@@ -230,6 +233,8 @@ namespace fixrgraphiso {
         }
       } else if (subsumes(bin, iso)) {
         /* bin <= query */
+
+        assert (iso != NULL);
 
         /* get the "next" reachable descendant popular children */
         bool noPopularChildren = true;
@@ -252,8 +257,9 @@ namespace fixrgraphiso {
           r->setReferencePattern(bin);
           r->setIsoToReference((const IsoRepr&) *iso);
           results.push_back(r);
+        } else {
+          delete iso; // iso not used in the results
         }
-
 
       } else {
         // Do nothing, not comparable
