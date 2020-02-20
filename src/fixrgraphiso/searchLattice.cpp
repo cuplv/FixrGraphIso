@@ -181,6 +181,10 @@ namespace fixrgraphiso {
     map<AcdfgBin*, set<AcdfgBin*>*> tr;
     map<AcdfgBin*, set<AcdfgBin*>*> inverseTr;
 
+    // Skip empty query --- this may happen after slicing
+    if (this->slicedQuery->method_node_count() == 0)
+      return;
+
     lattice->buildTr(tr);
 
     for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
