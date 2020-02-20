@@ -47,6 +47,31 @@ namespace fixrgraphiso {
     }
   }
 
+  void filterFileNames(Lattice& lattice, vector<string>& fileNames) {
+    set<string> existing;
+    vector<string> newfiles;
+    for (auto bin : lattice.getAllBins()) {
+      for (auto name : bin->getAcdfgNames())
+        existing.insert(name);
+    }
+
+    for (auto name : fileNames) {
+      if (existing.find(name) == existing.end()) {
+        newfiles.push_back(name);
+      }
+    }
+
+    fileNames.clear();
+
+    cout << "Incremental computation, skipping " <<
+      fileNames.size() - newfiles.size() <<
+      " already computed graphs." << endl;
+
+    for (auto name : newfiles) {
+      fileNames.push_back(name);
+    }
+  }
+
   Acdfg * loadACDFGFromFilename(string filename){
     AcdfgSerializer s;
     iso_protobuf::Acdfg * proto_acdfg = s.read_protobuf_acdfg(filename.c_str());
@@ -825,26 +850,9 @@ namespace fixrgraphiso {
         if (incremental) {
           lattice_ptr = fixrgraphiso::readLattice(lattice_filename);
           if (NULL == lattice_ptr) {
-            lattice_ptr = new Lattice(filenames);
+            lattice_ptr = new Lattice(methodnames);
           } else {
-            set<string> existing;
-            vector<string> newfiles;
-            for (auto bin : lattice_ptr->getAllBins()) {
-              for (auto name : bin->getAcdfgNames())
-                existing.insert(name);
-            }
-
-            for (auto name : filenames) {
-              if (existing.find(name) == existing.end()) {
-                newfiles.push_back(name);
-              }
-            }
-
-            cout << "Incremental computation, skipping " <<
-              filenames.size() - newfiles.size() <<
-              " already computed graphs." << endl;
-
-            filenames = newfiles;
+            filterFileNames(*lattice_ptr, filenames);
           }
         } else {
           lattice_ptr = new Lattice(methodnames);
@@ -886,6 +894,7 @@ namespace fixrgraphiso {
 
     cout << "Loading ACDFGs from " << acdfgFileName << endl;
     loadNamesFromFile(acdfgFileName, fileNames);
+    filterFileNames(lattice, fileNames);
 
     computePatternsThroughSlicing(lattice, fileNames, methodNames);
 
