@@ -1254,6 +1254,19 @@ namespace fixrgraphiso {
     return true;
   }
 
+  void Acdfg::fill_methods(std::set<std::string> & method_names) {
+    for (auto it = this->begin_nodes();
+         it != this->end_nodes();
+         ++it){
+      if ((*it) -> get_type() == METHOD_NODE) {
+        Node * nb = *it;
+        MethodNode * mb = toMethodNode(nb);
+        method_names.insert(mb->get_name());
+      }
+    }
+  }
+
+
   bool Node::operator==(const Node& other) const {
     return id_ == other.id_ &&
       nType_ == other.nType_ &&
