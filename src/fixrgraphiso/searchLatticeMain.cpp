@@ -52,8 +52,13 @@ int search(string& queryFile, string& latticeFileName,
       return 1;
     } else {
       vector<SearchResult*> results;
-      SearchLattice searchLattice(query, lattice);
-      searchLattice.search(results);
+#ifdef USE_GUROBI_SOLVER
+      SearchLattice searchLattice(query, lattice, false, 30);
+#else
+      SearchLattice searchLattice(query, lattice, false);
+#endif
+      // searchLattice.search(results);
+      searchLattice.newSearch(results);
 
       acdfg_protobuf::SearchResults* protoRes =
         searchLattice.toProto(results);

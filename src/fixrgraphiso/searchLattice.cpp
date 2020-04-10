@@ -16,12 +16,31 @@ namespace fixrgraphiso {
   using std::ostream;
 
 
+  string SearchResult::getTypeRepr(result_type_t type) {
+    switch (type) {
+    case CORRECT:
+      return "CORRECT";
+    case CORRECT_SUBSUMED:
+      return "CORRECT_SUBSUMED";
+    case ANOMALOUS_SUBSUMED:
+      return "ANOMALOUS_SUBSUMED";
+    case ISOLATED_SUBSUMED:
+      return "ISOLATED_SUBSUMED";
+    case ISOLATED_SUBSUMING:
+      return "ISOLATED_SUBSUMING";
+    default:
+      return "Unknown type";
+    }
+  }
+
+
   bool SearchLattice::subsumes(AcdfgBin* acdfgBin,
                                IsoRepr* &isoRepr) {
     IsoRepr *appIso = new IsoRepr(slicedQuery,
                                   acdfgBin->getRepresentative());
     IsoSubsumption d(slicedQuery,
-                     acdfgBin->getRepresentative());
+                     acdfgBin->getRepresentative(),
+                     acdfgBin->getStats());
 
     bool res = d.check(appIso);
 
@@ -40,7 +59,8 @@ namespace fixrgraphiso {
                                   slicedQuery);
 
     IsoSubsumption d(acdfgBin->getRepresentative(),
-                     slicedQuery);
+                     slicedQuery,
+                     acdfgBin->getStats());
     bool res = d.check(appIso);
 
     if (res) {
@@ -104,16 +124,6 @@ namespace fixrgraphiso {
           SearchResult* r = new SearchResult(CORRECT);
           r->setReferencePattern(popBin);
           r->setIsoToReference((const IsoRepr&) *isoPop);
-
-          // int isoSize = (isoPop->getNodesRel()).size();
-          // const map<string, IsoRepr*> names_to_iso = popBin->getAcdfgNameToIso();
-          // for (auto it = names_to_iso.begin(); it != names_to_iso.end(); it++) {
-          //   IsoRepr* otherIso = it->second;
-          //   int otherSize = otherIso->getNodesRel().size();
-          //   cout << "\tOther iso size " << otherSize << endl;
-          //   assert (isoSize == otherSize);
-          // }
-
           results.push_back(r);
 
           /* cannot be subsumed by another popular pattern */
@@ -140,26 +150,191 @@ namespace fixrgraphiso {
     }
 
     if (can_subsume && can_be_subsumed) {
-      for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
-        AcdfgBin* popBin = *it;
+      search_similar(results);
+    }
+  }
 
-        IlpApproxIsomorphism ilp(slicedQuery, popBin->getRepresentative());
-        bool stat = ilp.computeILPEncoding();
+  int compareApproxIsoByNodes(Acdfg* query, Acdfg* pattern, IsoRepr* iso) {
+    std::set<std::string> query_methods;
+    std::set<std::string> pattern_methods;
+    std::set<std::string> iso_methods;
 
-        if (stat) {
-          IsoRepr *appIso = new IsoRepr(slicedQuery,
-                                        popBin->getRepresentative());
-          ilp.populateResults((IsoRepr&) *appIso);
+    query->fill_methods(query_methods);
+    pattern->fill_methods(pattern_methods);
 
-          SearchResult* r = new SearchResult(ISOLATED_SUBSUMED);
+    for (auto nodePair : iso->getNodesRel()) {
+      Node* n1 = query->getNodeFromID(nodePair.first);
+      if (n1->get_type() == METHOD_NODE) {
+        MethodNode* node_q = toMethodNode(n1);
+        MethodNode* node_m = toMethodNode(pattern->getNodeFromID(nodePair.second));
+        iso_methods.insert(node_q->get_name());
+        iso_methods.insert(node_m->get_name());
+      }
+    }
+
+    if (iso_methods.size() == pattern_methods.size()) {
+      // cout << "all equals" << endl;
+      return 0; // match the pattern's methods
+    } else {
+      // check if matches at least "half" of the pattern
+      double pattern_matched =
+        (iso_methods.size()+0.0) / (pattern_methods.size());
+      if ( pattern_matched >= 0.5) {
+        std::set<std::string> difference;
+        std::set_difference(iso_methods.begin(),
+                            iso_methods.end(),
+                            pattern_methods.begin(),
+                            pattern_methods.end(),
+                            std::inserter(difference, difference.end()));
+
+        // if the difference in methods is not so high, tell to add
+        // stuff
+        if (difference.size() <= 3) {
+          // for (auto a : iso_methods)
+          //   cout << a << endl;
+          // for (auto a : pattern_methods)
+          //   cout << a << endl;
+          // cout << "Found -1" << endl;
+          return -1;
+        } else {
+          // cout << "Diff is " << difference.size() << endl;
+        }
+      } else {
+        // cout << "Not match enough! " << pattern_matched << endl;
+      }
+    }
+
+    return 0;
+  }
+
+  void SearchLattice::search_similar(vector<SearchResult*> & results) {
+    for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
+      AcdfgBin* popBin = *it;
+
+      IlpApproxIsomorphism ilp(slicedQuery, popBin->getRepresentative(), debug);
+
+#ifdef USE_GUROBI_SOLVER
+      bool stat = ilp.computeILPEncoding(gurobi_timeout);
+#else
+      bool stat = ilp.computeILPEncoding();
+#endif
+
+      if (stat) {
+        IsoRepr *appIso = new IsoRepr(slicedQuery,
+                                      popBin->getRepresentative());
+        ilp.populateResults((IsoRepr&) *appIso);
+
+        // Heuristic to consider "good" results
+        if (0 > compareApproxIsoByNodes(query,
+                                        popBin->getRepresentative(),
+                                        appIso)) {
+          // Here query misses some method nodes wrt popBin
+          SearchResult* r = new SearchResult(ANOMALOUS_SUBSUMED);
           r->setReferencePattern(popBin);
           r->setIsoToReference((const IsoRepr&) *appIso);
           results.push_back(r);
+        } else {
+          delete appIso;
         }
       }
     }
   }
 
+  void SearchLattice::newSearch(vector<SearchResult*> & results) {
+    vector<AcdfgBin*> queue;
+    set<AcdfgBin*> visited;
+    map<AcdfgBin*, set<AcdfgBin*>*> tr;
+    map<AcdfgBin*, set<AcdfgBin*>*> inverseTr;
+
+    // Skip empty query --- this may happen after slicing
+    if (this->slicedQuery->method_node_count() == 0)
+      return;
+
+    lattice->buildTr(tr);
+
+    for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
+      AcdfgBin* bin = *it;
+      bool has_popular_anc = false;
+
+      for (auto incomingBin : bin->getIncomingEdges()) {
+        has_popular_anc = has_popular_anc || incomingBin->isPopular();
+      }
+      if (! has_popular_anc)
+        queue.push_back(bin);
+    }
+
+    while (! queue.empty()) {
+      AcdfgBin* bin = queue.back();
+      queue.pop_back();
+
+      // avoid to visit the same element twice
+      if (visited.find(bin) != visited.end())
+        break;
+      visited.insert(bin);
+
+      IsoRepr* iso = NULL;
+
+      if (isSubsumed(bin, iso)) {
+        /* Stop, we found a place in the lattice for query:
+           query <= bin
+         */
+        // Stop the search here
+
+        assert(iso != NULL);
+
+        IsoRepr* iso2 = NULL;
+        if (subsumes(bin, iso2)) {
+          SearchResult* r = new SearchResult(CORRECT);
+          r->setReferencePattern(bin);
+          r->setIsoToReference((const IsoRepr&) *iso2);
+          results.push_back(r);
+
+          delete iso; // iso not used in the result
+        } else {
+          SearchResult* r = new SearchResult(ANOMALOUS_SUBSUMED);
+          r->setReferencePattern(bin);
+          r->setIsoToReference((const IsoRepr&) *iso);
+          results.push_back(r);
+        }
+      } else if (subsumes(bin, iso)) {
+        /* bin <= query */
+
+        assert (iso != NULL);
+
+        /* get the "next" reachable descendant popular children */
+        bool noPopularChildren = true;
+        vector<AcdfgBin*> toVisit;
+        for (auto childBin : *tr[bin]) {
+          toVisit.push_back(childBin);
+        }
+        while (! toVisit.empty()) {
+          AcdfgBin* childBin = toVisit.back();
+          toVisit.pop_back();
+          if (childBin->isPopular()) {
+            queue.push_back(childBin);
+            noPopularChildren = false;
+          } else for (auto succ : *tr[childBin])
+                   toVisit.push_back(succ);
+        }
+
+        if (true || noPopularChildren) {
+          SearchResult* r = new SearchResult(CORRECT_SUBSUMED);
+          r->setReferencePattern(bin);
+          r->setIsoToReference((const IsoRepr&) *iso);
+          results.push_back(r);
+        } else {
+          delete iso; // iso not used in the results
+        }
+
+      } else {
+        // Do nothing, not comparable
+      }
+    }
+
+    search_similar(results);
+
+    Lattice::deleteTr(tr);
+  }
 
   void printBin(const AcdfgBin& bin, ostream& out) {
 
@@ -178,7 +353,7 @@ namespace fixrgraphiso {
   void SearchLattice::printResult(const vector<SearchResult*> &results,
                                   ostream& out_stream) {
     out_stream << "Search results summary" << endl;
-    out_stream << "Found " << results.size() << "results" << endl <<
+    out_stream << "Found " << results.size() << " results" << endl <<
       "---" << endl;
 
     map<result_type_t, string> desc;
@@ -282,5 +457,4 @@ namespace fixrgraphiso {
 
     return protoResults;
   }
-
 }

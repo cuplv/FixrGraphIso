@@ -9,6 +9,7 @@
 #include "fixrgraphiso/proto_unweighted_iso.pb.h"
 #include "z3++.h"
 #include "fixrgraphiso/acdfg.h"
+#include "fixrgraphiso/collectStats.h"
 
 namespace fixrgraphiso {
   using std::string;
@@ -78,6 +79,8 @@ namespace fixrgraphiso {
 
     UnweightedIso* proto_from_iso() const;
 
+    friend std::ostream & operator << (std::ostream &out, const IsoRepr &isoRepr);
+
     private:
     Acdfg* acdfg_1;
     Acdfg* acdfg_2;
@@ -103,6 +106,7 @@ namespace fixrgraphiso {
 
     Acdfg * acdfg_a;
     Acdfg * acdfg_b;
+    Stats * stats;
     IsoEncoder e;
     // Encoding variables
     id_pair_map_t node_pairs_to_var;
@@ -130,7 +134,7 @@ namespace fixrgraphiso {
     void buildIsoRepr(IsoRepr* iso);
 
   public:
-    IsoSubsumption(Acdfg * a, Acdfg * b);
+    IsoSubsumption(Acdfg * a, Acdfg * b, Stats *stats);
     ~IsoSubsumption(){}
 
     bool checkNodeCounts() const;
@@ -156,10 +160,11 @@ namespace fixrgraphiso {
     string iso_filename;
     int freq;
     std::vector<std::string> subsumingACDFGs;
+    Stats *stats;
   public:
 
-    IsomorphismClass(Acdfg * what);
-    IsomorphismClass(string const & iso_filename);
+    IsomorphismClass(Acdfg * what, Stats* stats);
+    IsomorphismClass(string const & iso_filename, Stats * stats);
     ~IsomorphismClass();
     bool subsumes(IsomorphismClass const * what) const;
     Acdfg * get_acdfg() const { return acdfg; }

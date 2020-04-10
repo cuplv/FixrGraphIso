@@ -63,6 +63,8 @@ namespace fixrgraphiso {
     IsoRepr* getIsoToReference() const { return isoToReference; }
     IsoRepr* getIsoToAnomalous() const { return isoToAnomalous; }
 
+    static string getTypeRepr(result_type_t type);
+
   private:
     result_type_t type;
     AcdfgBin* referencePattern;
@@ -81,14 +83,26 @@ namespace fixrgraphiso {
     bool isSubsumed(AcdfgBin* acdfgBin, IsoRepr*& isoRepr);
     void findAnomalous(AcdfgBin* popBin, const IsoRepr& isoPop,
                        vector<SearchResult*> &results);
+    void search_similar(vector<SearchResult*> & results);
 
   public:
-    SearchLattice(Acdfg* query, Lattice* lattice) {
+    SearchLattice(Acdfg* query, Lattice* lattice,
+                  const bool debug
+#ifdef USE_GUROBI_SOLVER
+                  , const double gurobi_timeout
+#endif
+                  ) {
       set<int> ignoreMethodIds;
       this->query = query;
       this->lattice = lattice;
       this->slicedQuery = query->sliceACDFG(lattice->getMethodNames(),
                                             ignoreMethodIds);
+      this->debug = debug;
+#ifdef USE_GUROBI_SOLVER
+      this->gurobi_timeout = gurobi_timeout;
+#endif
+
+      lattice->sortAllByFrequency();
     }
 
     ~SearchLattice() {
@@ -101,11 +115,17 @@ namespace fixrgraphiso {
     fixr_protobuf::SearchResults* toProto(const vector<SearchResult*> &results);
 
     void search(vector<SearchResult*> &results);
+    void newSearch(vector<SearchResult*> & results);
 
   private:
     Lattice* lattice;
     Acdfg* query;
     Acdfg* slicedQuery;
+
+    bool debug;
+#ifdef USE_GUROBI_SOLVER
+    double gurobi_timeout;
+#endif
   };
 }
 

@@ -1004,7 +1004,29 @@ namespace fixrgraphiso {
         std::cerr << "Failed to write acdfg." << endl;
       }
     }
+
+    delete acdfg;
   }
+
+  bool Acdfg::canSubsumeB(Acdfg& b) {
+    vector< std::pair<string, int> > a_counts = this -> all_counts();
+    vector< std::pair<string, int> > b_counts = b.all_counts();
+
+    auto jt = b_counts.cbegin();
+    for (auto it = a_counts.cbegin(); it != a_counts.cend(); ++it, ++jt){
+      int count1 = it -> second;
+      int count2 = jt -> second;
+      if (count1 < count2){
+        if (debug) {
+          cout << "\t \t --> " << it -> first << " iso A: " << count1 << " iso B: " << count2 << endl;
+        }
+        return false;
+      }
+    }
+
+    return true;
+  }
+
 
   void Node::addProtoNode(acdfg_protobuf::Acdfg* acdfg) const {
     assert(get_type() == REGULAR_NODE);
@@ -1231,6 +1253,19 @@ namespace fixrgraphiso {
 
     return true;
   }
+
+  void Acdfg::fill_methods(std::set<std::string> & method_names) {
+    for (auto it = this->begin_nodes();
+         it != this->end_nodes();
+         ++it){
+      if ((*it) -> get_type() == METHOD_NODE) {
+        Node * nb = *it;
+        MethodNode * mb = toMethodNode(nb);
+        method_names.insert(mb->get_name());
+      }
+    }
+  }
+
 
   bool Node::operator==(const Node& other) const {
     return id_ == other.id_ &&

@@ -13,6 +13,7 @@
 #include <typeinfo>
 #include "fixrgraphiso/serialization.h"
 #include "fixrgraphiso/serializationLattice.h"
+#include "fixrgraphiso/collectStats.h"
 
 namespace fixrgraphiso {
   using namespace std;
@@ -25,9 +26,29 @@ namespace fixrgraphiso {
   /**
    * Read a lattice from the protobuffer and create a lattice data structure
    */
-  Lattice* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* protoLattice) {
-    Lattice* lattice = new Lattice();
+  Lattice* LatticeSerializer::lattice_from_proto(acdfg_protobuf::Lattice* protoLattice,
+                                                 std::map<AcdfgBin*, int> &acdfgBin2id) {
+    Stats stats;
+    Lattice* lattice = NULL;
     AcdfgSerializer serializer;
+
+    // 4. Get the statstics
+    if (protoLattice->has_stats()) {
+      stats = Stats(protoLattice->stats().numsatcalls(),
+                    protoLattice->stats().numsubsumptionchecks(),
+                    protoLattice->stats().totalgraphs(),
+                    protoLattice->stats().totalnodes(),
+                    protoLattice->stats().totaledges(),
+                    protoLattice->stats().maxnodes(),
+                    protoLattice->stats().maxedges(),
+                    protoLattice->stats().minnodes(),
+                    protoLattice->stats().minedges(),
+                    std::chrono::milliseconds(protoLattice->stats().satsolvertime()));
+    } else {
+      stats = Stats();
+    }
+
+    lattice = new Lattice(stats);
 
     /* 0. set the method names */
     for (int i = 0; i < protoLattice->method_names_size(); i++) {
@@ -45,7 +66,7 @@ namespace fixrgraphiso {
       const acdfg_protobuf::Acdfg & protoRepr = protoAcdfgBin.acdfg_repr();
       Acdfg* repr = serializer.create_acdfg(protoRepr);
 
-      AcdfgBin* acdfgBin = new AcdfgBin(repr);
+      AcdfgBin* acdfgBin = new AcdfgBin(repr, lattice->getStats());
       for (int j = 0; j < protoAcdfgBin.names_to_iso_size(); j++) {
         const acdfg_protobuf::Lattice::IsoPair & protoIso =
           protoAcdfgBin.names_to_iso(j);
@@ -57,10 +78,16 @@ namespace fixrgraphiso {
 
       if (protoAcdfgBin.anomalous()) acdfgBin->setAnomalous();
       if (protoAcdfgBin.subsuming()) acdfgBin->setSubsuming();
-      if (protoAcdfgBin.popular()) acdfgBin->setPopular();
+      if (protoAcdfgBin.popular()) acdfgBin->setPopular(true);
       if (protoAcdfgBin.isolated()) acdfgBin->setIsolated();
 
+      if (protoAcdfgBin.has_cumulative_frequency())
+        acdfgBin->setCumulativeFrequency(protoAcdfgBin.cumulative_frequency());
+      else
+        acdfgBin->setCumulativeFrequency(0);
+
       id2AcdfgBinMap[protoAcdfgBin.id()] = acdfgBin;
+      acdfgBin2id[acdfgBin] = protoAcdfgBin.id();
 
       lattice->addBin(acdfgBin);
     }
@@ -82,9 +109,10 @@ namespace fixrgraphiso {
         AcdfgBin* other = id2AcdfgBinMap[otherId];
         currentBin->insertIncomingEdge(other);
       }
-
-      currentBin->computeImmediatelySubsumingBins();
     }
+
+    for (auto bin : lattice->getAllBins())
+      bin->computeImmediatelySubsumingBins();
 
 
     // 3. Populate popular/anomalous/isolated list
@@ -159,6 +187,7 @@ namespace fixrgraphiso {
       proto_a->set_anomalous(a->isAnomalous());
       proto_a->set_popular(a->isPopular());
       proto_a->set_isolated(a->isIsolated());
+      proto_a->set_cumulative_frequency(a->getCumulativeFrequency());
     }
 
     for (auto it = lattice.beginPopular(); it != lattice.endPopular(); ++it) {
@@ -177,6 +206,19 @@ namespace fixrgraphiso {
       AcdfgBin * a = *it;
       protoLattice->add_isolated_bins(acdfgBin2idMap[a]);
     }
+
+    acdfg_protobuf::Lattice::Stats* stats = protoLattice->mutable_stats();
+
+    stats->set_numsatcalls(lattice.getStats().getNumSATCalls());
+    stats->set_numsubsumptionchecks(lattice.getStats().getNumSubsumptionChecks());
+    stats->set_totalgraphs(lattice.getStats().getTotalGraphs());
+    stats->set_totalnodes(lattice.getStats().getTotalNodes());
+    stats->set_totaledges(lattice.getStats().getTotalEdges());
+    stats->set_maxnodes(lattice.getStats().getMaxNodes());
+    stats->set_maxedges(lattice.getStats().getMaxEdges());
+    stats->set_minnodes(lattice.getStats().getMinNodes());
+    stats->set_minedges(lattice.getStats().getMinEdges());
+    stats->set_satsolvertime(lattice.getStats().getSatSolverTime().count());
 
     return protoLattice;
   }
@@ -202,7 +244,21 @@ namespace fixrgraphiso {
 
     acdfg_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
     if (NULL != proto) {
-      res = s.lattice_from_proto(proto);
+      map<AcdfgBin*, int> acdfgBin2id;
+      res = s.lattice_from_proto(proto, acdfgBin2id);
+    }
+    delete(proto);
+    return res;
+  }
+
+  Lattice* readLattice(string latticeFile,
+                       map<AcdfgBin*, int> &acdfgBin2id) {
+    LatticeSerializer s;
+    Lattice * res = NULL;
+
+    acdfg_protobuf::Lattice * proto = s.read_protobuf(latticeFile.c_str());
+    if (NULL != proto) {
+      res = s.lattice_from_proto(proto, acdfgBin2id);
     }
     delete(proto);
     return res;

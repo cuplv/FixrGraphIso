@@ -31,11 +31,16 @@ namespace fixrgraphiso {
 
   class IlpApproxIsomorphism {
   public:
-  IlpApproxIsomorphism(Acdfg* a, Acdfg* b ): acdfg_a(a), acdfg_b(b){};
+  IlpApproxIsomorphism(Acdfg* a, Acdfg* b, const bool debug): acdfg_a(a), acdfg_b(b), debug(debug){};
     ~IlpApproxIsomorphism(){};
     void prettyPrintEncodingResultInDot(ostream & out);
     void printMatchOfB();
+#ifdef USE_GUROBI_SOLVER
+    bool computeILPEncoding(const double gurobi_timeout);
+#else
     bool computeILPEncoding();
+#endif
+
     void populateResults(IsomorphismResults & res);
     void printResults(ostream &out);
     void populateFrequencies();
@@ -46,6 +51,10 @@ namespace fixrgraphiso {
 
     Acdfg * acdfg_a; // The first graph
     Acdfg * acdfg_b; // The second graph
+    bool debug;
+#ifdef USE_GUROBI_SOLVER
+    double gurobi_timeout;
+#endif
     compatible_node_map_t node_map_a_to_b; // Map each node from a to a compatible list of nodes from b.
     compatible_node_map_t node_map_b_to_a; // Reverse map each node from b to a compatible list of nodes from a.
     std::vector< edge_pair_t > compat_edges_a_to_b; // Let's just make a list of compatible edges from a to b

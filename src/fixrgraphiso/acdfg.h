@@ -332,7 +332,6 @@ namespace fixrgraphiso {
       return typed_node_count(METHOD_NODE);
     }
 
-
     edges_t::const_iterator begin_edges() const;
     edges_t::const_iterator end_edges() const;
     int edge_count() const {return edges_.size();};
@@ -364,6 +363,8 @@ namespace fixrgraphiso {
       };
       return rVal;
     }
+
+    bool canSubsumeB(Acdfg& b);
 
     bool hasNode (node_id_t id) const;
     bool hasEdge (edge_id_t id) const;
@@ -425,7 +426,7 @@ namespace fixrgraphiso {
 
     bool operator==(const Acdfg& other) const;
 
-
+    void fill_methods(std::set<std::string> & method_names);
 
   public:
     SourceInfo source_info;

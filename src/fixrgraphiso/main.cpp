@@ -59,8 +59,13 @@ void process(std::string aName, Acdfg* acdfg_a,
   //   }
   // }
 
-  IlpApproxIsomorphism ilp(acdfg_a, acdfg_b);
+  IlpApproxIsomorphism ilp(acdfg_a, acdfg_b, debug);
+#ifdef USE_GUROBI_SOLVER
+  bool stat = ilp.computeILPEncoding(gurobi_timeout);
+#else
   bool stat = ilp.computeILPEncoding();
+#endif
+
 
   ilp.printResults(std::cout);
 

@@ -116,6 +116,16 @@ class GenerateIndexPage:
                     java_fname = l.split(" ")[1]
                     self.acdfg2java_map[acdfg_name] = os.path.join(self.configPaths.sourceCodePath,java_fname)
 
+    @staticmethod
+    def getPrintableMethods(methodList):
+        #listOfMethods1 = [s.replace('<','\<')  for s in mList]
+        listOfMethods1 = [s.replace('<','&lt;')  for s in methodList]
+        #listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
+        listOfMethods2 = [s.replace('>','&gt') for s in listOfMethods1]
+        listOfMethods3 = ['<b>'+s+'</b>' for s in listOfMethods2]
+        methodsStr = ', '.join(listOfMethods3)
+
+        return methodsStr
 
     def makeIndexFile(self):
         f = open('%s/index.html'%(self.configPaths.htmlOutputDir), 'w')
@@ -123,24 +133,20 @@ class GenerateIndexPage:
         for (cID,mList) in self.clusterMethods.items():
             if (cID in self.clusterPages):
                 cluster_pg = self.clusterPages[cID]
-                listOfMethods1 = [s.replace('<','\<')  for s in mList]
-                listOfMethods2 = [s.replace('>','\>') for s in listOfMethods1]
-                listOfMethods3 = ['<b>'+s+'</b>' for s in listOfMethods2]
-                methods_str = ', '.join(listOfMethods3)
-                s = '<li>  %s <a href=\"%s\"> page </a>'%(methods_str, cluster_pg)
+                methodsStr = GenerateIndexPage.getPrintableMethods(mList)
+                s = '<li>  %s <a href=\"%s\"> page </a>' % (methodsStr, cluster_pg)
                 print(s,file=f)
         print('</ul></body></html>', file = f)
         f.close()
 
     def printClusterHeader(self, f, clusterID, cluster_methods):
-        cluster_method_str = '</b>, <b> '.join(cluster_methods)
-        cluster_method_str = '<b>'+ cluster_method_str + '</b>'
+        methodStr = GenerateIndexPage.getPrintableMethods(cluster_methods)
         s ="""<html> <body>
         <h1> Cluster %d </h1>
         <div class = \"methodNameBlocks\">
         %s
         </div>
-        """%(clusterID, cluster_method_str)
+        """%(clusterID, methodStr)
         print(s, file = f)
 
     def printClusterTrailer(self, f, clusterID):
@@ -280,6 +286,21 @@ class GenerateIndexPage:
         except IOError:
             print('Error: could not open file --', filename)
 
+    def addPngMakefile(self):
+        makefile="""DOTS := $(shell find . -name "*.dot")
+PNGS := $(DOTS:.dot=.png)
+
+all: $(PNGS)
+	echo "Created images"
+
+%.png: %.dot
+	dot -Tpng -o$@ $<
+"""
+
+        f = open('%s/makefile'%(self.configPaths.htmlOutputDir), 'w')
+        f.write(makefile)
+        f.close()
+
 def help_message():
     print ("gatherResults.py [options]")
     print ("\t -a | --start <starting cluster id> default: 1")
@@ -333,6 +354,7 @@ def main(argv):
         # except Exception as e:
         #     pass
     g.makeIndexFile()
+    g.addPngMakefile()
 
 
 if __name__ == '__main__':

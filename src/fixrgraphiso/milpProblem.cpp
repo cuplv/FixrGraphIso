@@ -4,9 +4,6 @@
 
 using namespace std;
 namespace fixrgraphiso{
-  extern bool debug;
-  extern double gurobi_timeout;
-
   MILPVariable MILProblem::createVariable(ilp_variable_t typ, node_id_t i, node_id_t j){
     std::ostringstream ss;
     std::string pref="NONE";
@@ -169,7 +166,7 @@ namespace fixrgraphiso{
 
     return len;
   }
-  void MILProblem::solveUsingGLPKLibrary(){
+  void MILProblem::solveUsingGLPKLibrary(const bool debug){
     glp_prob * lp;
     lp = glp_create_prob();
     int nRows = (int) (this -> ineqs.size() + this -> eqs.size());
@@ -354,7 +351,8 @@ namespace fixrgraphiso{
     return retExpr;
   }
 
-  bool MILProblem::solveUsingGurobiLibrary(){
+  bool MILProblem::solveUsingGurobiLibrary(const bool debug,
+                                           const double gurobi_timeout){
 
     try {
       GRBEnv env = GRBEnv();
