@@ -79,6 +79,8 @@ namespace fixrgraphiso {
 
     UnweightedIso* proto_from_iso() const;
 
+    friend std::ostream & operator << (std::ostream &out, const IsoRepr &isoRepr);
+
     private:
     Acdfg* acdfg_1;
     Acdfg* acdfg_2;

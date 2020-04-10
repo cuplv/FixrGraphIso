@@ -891,8 +891,25 @@ namespace fixrgraphiso {
         this->addNodeRel(it->second, it->first);
       }
     }
- 
   }
+
+  std::ostream & operator << (std::ostream &out, const IsoRepr &isoRepr)
+  {
+    out << "Nodes:" << endl;
+    for (auto nodePair : isoRepr.getNodesRel()) {
+      out << "(" << nodePair.first << "," <<
+        nodePair.second << ")" << endl;
+    }
+
+    out << "Edges:" << endl;
+    for (auto nodePair : isoRepr.getEdgesRel()) {
+      out << "(" << nodePair.first << "," <<
+        nodePair.second << ")" << endl;
+    }
+    return out;
+  }
+ 
+
 
 
 }
