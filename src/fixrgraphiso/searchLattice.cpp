@@ -150,26 +150,91 @@ namespace fixrgraphiso {
     }
 
     if (can_subsume && can_be_subsumed) {
-      for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
-        AcdfgBin* popBin = *it;
+      search_similar(results);
+    }
+  }
 
-        IlpApproxIsomorphism ilp(slicedQuery, popBin->getRepresentative(), debug);
+  int compareApproxIsoByNodes(Acdfg* query, Acdfg* pattern, IsoRepr* iso) {
+    std::set<std::string> query_methods;
+    std::set<std::string> pattern_methods;
+    std::set<std::string> iso_methods;
+
+    query->fill_methods(query_methods);
+    pattern->fill_methods(pattern_methods);
+
+    for (auto nodePair : iso->getNodesRel()) {
+      Node* n1 = query->getNodeFromID(nodePair.first);
+      if (n1->get_type() == METHOD_NODE) {
+        MethodNode* node_q = toMethodNode(n1);
+        MethodNode* node_m = toMethodNode(pattern->getNodeFromID(nodePair.second));
+        iso_methods.insert(node_q->get_name());
+        iso_methods.insert(node_m->get_name());
+      }
+    }
+
+    if (iso_methods.size() == pattern_methods.size()) {
+      // cout << "all equals" << endl;
+      return 0; // match the pattern's methods
+    } else {
+      // check if matches at least "half" of the pattern
+      double pattern_matched =
+        (iso_methods.size()+0.0) / (pattern_methods.size());
+      if ( pattern_matched >= 0.5) {
+        std::set<std::string> difference;
+        std::set_difference(iso_methods.begin(),
+                            iso_methods.end(),
+                            pattern_methods.begin(),
+                            pattern_methods.end(),
+                            std::inserter(difference, difference.end()));
+
+        // if the difference in methods is not so high, tell to add
+        // stuff
+        if (difference.size() <= 3) {
+          // for (auto a : iso_methods)
+          //   cout << a << endl;
+          // for (auto a : pattern_methods)
+          //   cout << a << endl;
+          // cout << "Found -1" << endl;
+          return -1;
+        } else {
+          // cout << "Diff is " << difference.size() << endl;
+        }
+      } else {
+        // cout << "Not match enough! " << pattern_matched << endl;
+      }
+    }
+
+    return 0;
+  }
+
+  void SearchLattice::search_similar(vector<SearchResult*> & results) {
+    for (auto it = lattice->beginPopular(); it != lattice->endPopular(); it++) {
+      AcdfgBin* popBin = *it;
+
+      IlpApproxIsomorphism ilp(slicedQuery, popBin->getRepresentative(), debug);
 
 #ifdef USE_GUROBI_SOLVER
-        bool stat = ilp.computeILPEncoding(gurobi_timeout);
+      bool stat = ilp.computeILPEncoding(gurobi_timeout);
 #else
-        bool stat = ilp.computeILPEncoding();
+      bool stat = ilp.computeILPEncoding();
 #endif
 
-        if (stat) {
-          IsoRepr *appIso = new IsoRepr(slicedQuery,
-                                        popBin->getRepresentative());
-          ilp.populateResults((IsoRepr&) *appIso);
+      if (stat) {
+        IsoRepr *appIso = new IsoRepr(slicedQuery,
+                                      popBin->getRepresentative());
+        ilp.populateResults((IsoRepr&) *appIso);
 
-          SearchResult* r = new SearchResult(ISOLATED_SUBSUMED);
+        // Heuristic to consider "good" results
+        if (0 > compareApproxIsoByNodes(query,
+                                        popBin->getRepresentative(),
+                                        appIso)) {
+          // Here query misses some method nodes wrt popBin
+          SearchResult* r = new SearchResult(ANOMALOUS_SUBSUMED);
           r->setReferencePattern(popBin);
           r->setIsoToReference((const IsoRepr&) *appIso);
           results.push_back(r);
+        } else {
+          delete appIso;
         }
       }
     }
@@ -266,6 +331,8 @@ namespace fixrgraphiso {
       }
     }
 
+    search_similar(results);
+
     Lattice::deleteTr(tr);
   }
 
@@ -286,7 +353,7 @@ namespace fixrgraphiso {
   void SearchLattice::printResult(const vector<SearchResult*> &results,
                                   ostream& out_stream) {
     out_stream << "Search results summary" << endl;
-    out_stream << "Found " << results.size() << "results" << endl <<
+    out_stream << "Found " << results.size() << " results" << endl <<
       "---" << endl;
 
     map<result_type_t, string> desc;

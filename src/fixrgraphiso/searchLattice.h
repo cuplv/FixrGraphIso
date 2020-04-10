@@ -83,6 +83,7 @@ namespace fixrgraphiso {
     bool isSubsumed(AcdfgBin* acdfgBin, IsoRepr*& isoRepr);
     void findAnomalous(AcdfgBin* popBin, const IsoRepr& isoPop,
                        vector<SearchResult*> &results);
+    void search_similar(vector<SearchResult*> & results);
 
   public:
     SearchLattice(Acdfg* query, Lattice* lattice,
